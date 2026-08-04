@@ -4,13 +4,13 @@ build-backend = "hatchling.build"
 
 [project]
 name = "epi13-local-harness"
-version = "0.2.0"
-description = "A local, policy-aware AI harness that routes tasks across Ollama models and verifies tool-driven work."
+version = "0.3.0"
+description = "A local, policy-aware AI harness that routes tasks across local models and verifies tool-driven work."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "Apache-2.0" }
 authors = [{ name = "Alexander Collamore" }]
-keywords = ["ollama", "gemma", "local-ai", "agents", "tool-calling", "tui"]
+keywords = ["ollama", "local-ai", "agents", "tool-calling", "tui", "routing"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "License :: OSI Approved :: Apache Software License",
@@ -23,6 +23,11 @@ classifiers = [
 dependencies = ["textual>=8.2,<9"]
 
 [project.optional-dependencies]
+router = [
+  "torch>=2.4",
+  "transformers>=5.1,<6",
+  "huggingface-hub>=0.34",
+]
 dev = ["pytest>=8.0", "ruff>=0.9"]
 
 [project.scripts]
