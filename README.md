@@ -29,6 +29,7 @@ It includes:
 - a multi-turn tool-calling loop;
 - workspace confinement and command policy checks;
 - interactive approval for writes and command execution;
+- a Textual terminal UI for chat, routing previews, diagnostics, and metrics;
 - Python, shell, JSON, and TOML verification;
 - SQLite run and tool-call metrics;
 - model health checks and configured-model pulling;
@@ -70,6 +71,32 @@ The default file is written to:
 ```text
 ~/.config/epi13-local-harness/config.toml
 ```
+
+## Terminal interface
+
+Launch the full-screen terminal interface from any workspace:
+
+```bash
+cd ~/epi13-local-harness
+source .venv/bin/activate
+elh-tui --workspace .
+```
+
+The TUI provides:
+
+- automatic or forced model-role selection;
+- workspace and image inputs;
+- route previews without invoking a worker model;
+- local-model chat through the existing `LocalAgent`;
+- Ollama diagnostics and model status;
+- recent metrics;
+- visible guarded auto-approval for policy-allowed writes and commands.
+
+Auto-approval is disabled by default. With it disabled, writes and commands are denied
+rather than opening a competing stdin prompt beneath the TUI. Enabling it does not
+bypass blocked-command or workspace policy.
+
+See [Terminal UI](docs/TUI.md) for controls and keyboard shortcuts.
 
 ## Pull the model cascade
 
@@ -196,11 +223,12 @@ See [docs/SECURITY.md](docs/SECURITY.md) before widening the tool surface.
 - [Architecture](docs/ARCHITECTURE.md)
 - [Routing and escalation](docs/ROUTING.md)
 - [Security model](docs/SECURITY.md)
+- [Terminal UI](docs/TUI.md)
 - [Roadmap](docs/ROADMAP.md)
 
 ## Development
 
-The standard-library test suite requires no third-party packages:
+The test suite runs with:
 
 ```bash
 python -m unittest discover -s tests -v
