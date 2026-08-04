@@ -6,7 +6,14 @@ from pathlib import Path
 
 from epi13_local_harness.config import load_config
 from epi13_local_harness.models import RoutePlan, TaskProfile
-from epi13_local_harness.tui import HarnessTui, parse_image_paths, role_options, route_summary
+from epi13_local_harness.semantic_router import RouterRuntimeStatus
+from epi13_local_harness.tui import (
+    HarnessTui,
+    parse_image_paths,
+    role_options,
+    route_summary,
+    router_status_summary,
+)
 
 
 class TuiHelperTests(unittest.TestCase):
@@ -53,6 +60,25 @@ class TuiHelperTests(unittest.TestCase):
         self.assertIn("e4b -> coder -> reviewer", summary)
         self.assertIn("code detected", summary)
 
+    def test_router_summary_distinguishes_cached_from_active(self) -> None:
+        status = RouterRuntimeStatus(
+            enabled=True,
+            mode="hybrid",
+            backend="transformers",
+            model="LiquidAI/router",
+            revision="a" * 40,
+            device="cpu",
+            local_files_only=True,
+            cache_directory=Path("/tmp/router"),
+            missing_dependencies=(),
+            cached=True,
+            active=False,
+            state="cached",
+        )
+        summary = router_status_summary(status)
+        self.assertIn("state=cached", summary)
+        self.assertIn("active=False", summary)
+
 
 class TuiAppTests(unittest.IsolatedAsyncioTestCase):
     async def test_app_mounts_without_contacting_ollama(self) -> None:
@@ -65,3 +91,7 @@ class TuiAppTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(workspace.value, str(Path(temp_dir).resolve()))
                 self.assertEqual(model.selection, "")
                 self.assertFalse(auto_approve.value)
+
+
+if __name__ == "__main__":
+    unittest.main()

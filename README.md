@@ -1,6 +1,6 @@
 # epi13-local-harness
 
-A local, policy-aware AI harness for routing work across multiple Ollama models,
+A local, policy-aware AI harness for routing work across multiple local models,
 executing narrowly scoped tools, and escalating only when deterministic checks say
 that a smaller model was not enough.
 
@@ -8,7 +8,8 @@ The default cascade is intentionally sized for Alexander's Fedora workstation:
 
 ```text
 request
-  -> deterministic task profile
+  -> deterministic safety and modality preflight
+  -> optional LiquidAI encoder routing across configured lanes
   -> Gemma 4 E2B for small read-only work
   -> Gemma 4 E4B for ordinary tool use and coding
   -> Qwen3 8B as an optional coding specialist
@@ -25,13 +26,14 @@ This repository contains a functional alpha rather than only an architecture ske
 It includes:
 
 - deterministic routing and escalation plans;
-- a dependency-free Ollama HTTP client;
+- an optional pinned LiquidAI semantic prompt router;
+- a dependency-free Ollama HTTP client for worker models;
 - a multi-turn tool-calling loop;
 - workspace confinement and command policy checks;
 - interactive approval for writes and command execution;
 - a Textual terminal UI for chat, routing previews, diagnostics, and metrics;
 - Python, shell, JSON, and TOML verification;
-- SQLite run and tool-call metrics;
+- SQLite run, router, and tool-call metrics;
 - model health checks and configured-model pulling;
 - an evaluation runner for routing experiments;
 - unit tests and GitHub Actions CI.
@@ -72,6 +74,41 @@ The default file is written to:
 ~/.config/epi13-local-harness/config.toml
 ```
 
+## Optional LiquidAI semantic router
+
+Install the router dependencies separately so deterministic-only installations do not
+need PyTorch or Transformers:
+
+```bash
+python -m pip install -e '.[router]'
+```
+
+Download the pinned router snapshot:
+
+```bash
+hf download LiquidAI/LFM2.5-Encoder-350M-Prompt-Router \
+  --revision 35ca4a0469f180f1cf05a630df8842fa17ac18e3
+```
+
+Check the configured, cached, and active state:
+
+```bash
+elh router status
+elh router prepare
+```
+
+After the smoke test succeeds, enable semantic routing in the user configuration:
+
+```toml
+[router]
+enable_semantic_routing = true
+local_files_only = true
+```
+
+The full model revision remains pinned because the official checkpoint requires custom
+Transformers code. The router only selects a worker lane; deterministic policy remains
+authoritative. See [Semantic prompt router](docs/SEMANTIC_ROUTER.md).
+
 ## Terminal interface
 
 Launch the full-screen terminal interface from any workspace:
@@ -85,6 +122,7 @@ elh-tui --workspace .
 The TUI provides:
 
 - automatic or forced model-role selection;
+- separate semantic-router and Ollama-worker status;
 - workspace and image inputs;
 - route previews without invoking a worker model;
 - local-model chat through the existing `LocalAgent`;
@@ -126,10 +164,10 @@ elh doctor
 elh models
 ```
 
-`doctor` checks the Ollama server, installed model tags, optional verification tools,
-and the writable metrics location.
+`doctor` distinguishes semantic-router state from Ollama worker tags, checks optional
+verification tools, and confirms that the metrics location is writable.
 
-## Preview routing without running a model
+## Preview routing without running a worker model
 
 ```bash
 elh route "Explain what systemctl status ollama means"
@@ -137,8 +175,9 @@ elh route "Repair the Python tests in this repository"
 elh route "Delete and reinstall the system service as root"
 ```
 
-Routing is deterministic and inspectable. A model is not spent merely to decide
-which other model should answer.
+Deterministic preflight always runs first. When enabled and available, the semantic
+router scores eligible lane descriptions. Any router failure falls back to the
+inspectable deterministic route.
 
 ## Ask the local agent
 
@@ -164,7 +203,7 @@ Force a particular configured role:
 elh ask "Review this implementation" --model reviewer --workspace .
 ```
 
-Attach an image for a multimodal Gemma model:
+Attach an image for a multimodal worker:
 
 ```bash
 elh ask "Explain this terminal screenshot" --image screenshot.png
@@ -190,8 +229,7 @@ elh eval
 ```
 
 The included cases verify expected first-choice routes. Add project-specific examples
-to `evals/tasks.jsonl` and use the results to tune the deterministic router before
-considering learned routing.
+to `evals/tasks.jsonl` and use the results to tune routing thresholds.
 
 ## Inspect metrics
 
@@ -200,7 +238,8 @@ elh metrics --limit 20
 ```
 
 Each attempt records model role, model tag, routing rationale, token counts, model
-load time, generation time, verifier status, and escalation source. Prompts and file
+load time, generation time, verifier status, and escalation source. Semantic runs also
+record backend, revision, lane, score, margin, and router latency. Prompts and file
 contents are not stored by default; only a SHA-256 task fingerprint is recorded.
 
 ## Safety boundaries
@@ -214,6 +253,7 @@ The initial implementation deliberately does **not** provide an unrestricted she
   and dangerous Git operations are blocked;
 - writes and execution require approval unless `--yes` is supplied;
 - E2B receives read-only tools by default;
+- semantic routing never authorizes tools or overrides policy;
 - model output is never treated as authorization.
 
 See [docs/SECURITY.md](docs/SECURITY.md) before widening the tool surface.
@@ -222,6 +262,7 @@ See [docs/SECURITY.md](docs/SECURITY.md) before widening the tool surface.
 
 - [Architecture](docs/ARCHITECTURE.md)
 - [Routing and escalation](docs/ROUTING.md)
+- [Semantic prompt router](docs/SEMANTIC_ROUTER.md)
 - [Security model](docs/SECURITY.md)
 - [Terminal UI](docs/TUI.md)
 - [Roadmap](docs/ROADMAP.md)
@@ -241,6 +282,8 @@ python -m pip install -e '.[dev]'
 ruff check .
 pytest
 ```
+
+The normal test suite mocks the semantic backend and does not download model files.
 
 ## License
 

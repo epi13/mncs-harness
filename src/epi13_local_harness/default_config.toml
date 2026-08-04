@@ -44,17 +44,18 @@ top_k = 64
 tools = ["read_file", "list_directory", "search_text", "write_file", "run_command", "git_diff", "system_info"]
 
 [router]
-mode = "deterministic"
-backend = "deterministic"
+mode = "hybrid"
+backend = "transformers"
 model = "LiquidAI/LFM2.5-Encoder-350M-Prompt-Router"
-revision = "main"
+revision = "35ca4a0469f180f1cf05a630df8842fa17ac18e3"
 device = "cpu"
 minimum_score = 0.60
 minimum_margin = 0.12
 enable_semantic_routing = false
 fallback = "deterministic"
 ambiguity_lane = "review"
-local_files_only = true
+cache_directory = "~/.cache/huggingface/hub"
+local_files_only = false
 
 [lanes.chat]
 description = "Simple explanatory or conversational work"
@@ -67,6 +68,7 @@ description = "Code and patch work"
 worker_role = "coder"
 enabled = true
 requires_image = false
+escalation = ["review"]
 
 [lanes.review]
 description = "High-risk or high-complexity review"
@@ -75,10 +77,11 @@ enabled = true
 requires_image = false
 
 [lanes.ocr]
-description = "Vision and document extraction requests"
+description = "OCR, screenshots, scanned documents, tables, and text extraction"
 worker_role = "reviewer"
 enabled = true
 requires_image = true
+escalation = ["review"]
 
 [routing]
 code_specialist_enabled = true
@@ -88,9 +91,9 @@ max_attempts = 3
 simple_word_limit = 80
 complex_word_limit = 220
 semantic_enabled = false
-semantic_backend = "deterministic"
+semantic_backend = "transformers"
 semantic_model = "LiquidAI/LFM2.5-Encoder-350M-Prompt-Router"
-semantic_revision = "main"
+semantic_revision = "35ca4a0469f180f1cf05a630df8842fa17ac18e3"
 semantic_device = "cpu"
 minimum_score = 0.60
 minimum_margin = 0.12
