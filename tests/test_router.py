@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unittest
+from dataclasses import replace
 from pathlib import Path
 
 from epi13_local_harness.config import load_config
@@ -36,6 +37,23 @@ class RouterTests(unittest.TestCase):
     def test_forced_role_disables_escalation(self) -> None:
         plan = plan_route("Any task", self.config, forced_role="coder")
         self.assertEqual(plan.all_roles, ("coder",))
+
+    def test_ocr_keyword_routes_to_ocr_lane(self) -> None:
+        config = replace(
+            self.config,
+            router=replace(
+                self.config.router,
+                enable_semantic_routing=True,
+                mode="hybrid",
+            ),
+        )
+        plan = plan_route(
+            "Extract all visible text from this scanned invoice into JSON.",
+            config,
+            images=[Path("invoice.png")],
+        )
+        self.assertEqual(plan.lane, "ocr")
+        self.assertEqual(plan.primary_role, "reviewer")
 
 
 if __name__ == "__main__":

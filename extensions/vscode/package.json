@@ -1,0 +1,175 @@
+{
+  "name": "epi13-local-harness-vscode",
+  "displayName": "Epi13 Local Harness",
+  "description": "Use the existing Epi13 Local Harness from the VS Code Chat window via a trusted Python sidecar.",
+  "version": "0.1.0",
+  "publisher": "epi13",
+  "engines": {
+    "vscode": "^1.100.0"
+  },
+  "categories": ["AI", "Other"],
+  "icon": "resources/icon.png",
+  "activationEvents": [
+    "onCommand:epi13-local-harness.startBackend",
+    "onCommand:epi13-local-harness.stopBackend",
+    "onCommand:epi13-local-harness.restartBackend",
+    "onCommand:epi13-local-harness.runDoctor",
+    "onCommand:epi13-local-harness.previewRoute",
+    "onCommand:epi13-local-harness.showModels",
+    "onCommand:epi13-local-harness.showLanes",
+    "onCommand:epi13-local-harness.showMetrics",
+    "onCommand:epi13-local-harness.openConfig",
+    "onCommand:epi13-local-harness.openSettings",
+    "onCommand:epi13-local-harness.showLogs",
+    "onCommand:epi13-local-harness.selectPythonInterpreter",
+    "onCommand:epi13-local-harness.selectRepository",
+    "onLanguageModelChatProvider:epi13-local"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "epi13-local-harness.startBackend",
+        "title": "Epi13 Local Harness: Start Backend"
+      },
+      {
+        "command": "epi13-local-harness.stopBackend",
+        "title": "Epi13 Local Harness: Stop Backend"
+      },
+      {
+        "command": "epi13-local-harness.restartBackend",
+        "title": "Epi13 Local Harness: Restart Backend"
+      },
+      {
+        "command": "epi13-local-harness.runDoctor",
+        "title": "Epi13 Local Harness: Run Doctor"
+      },
+      {
+        "command": "epi13-local-harness.previewRoute",
+        "title": "Epi13 Local Harness: Preview Route"
+      },
+      {
+        "command": "epi13-local-harness.showModels",
+        "title": "Epi13 Local Harness: Show Models"
+      },
+      {
+        "command": "epi13-local-harness.showLanes",
+        "title": "Epi13 Local Harness: Show Lanes"
+      },
+      {
+        "command": "epi13-local-harness.showMetrics",
+        "title": "Epi13 Local Harness: Show Metrics"
+      },
+      {
+        "command": "epi13-local-harness.openConfig",
+        "title": "Epi13 Local Harness: Open Harness Configuration"
+      },
+      {
+        "command": "epi13-local-harness.openSettings",
+        "title": "Epi13 Local Harness: Open Extension Settings"
+      },
+      {
+        "command": "epi13-local-harness.showLogs",
+        "title": "Epi13 Local Harness: Show Logs"
+      },
+      {
+        "command": "epi13-local-harness.selectPythonInterpreter",
+        "title": "Epi13 Local Harness: Select Python Interpreter"
+      },
+      {
+        "command": "epi13-local-harness.selectRepository",
+        "title": "Epi13 Local Harness: Select Repository"
+      }
+    ],
+    "chatParticipants": [
+      {
+        "id": "epi13.localHarness",
+        "name": "epi13",
+        "fullName": "Epi13 Local Harness",
+        "isDefault": false,
+        "commands": [
+          { "name": "route" },
+          { "name": "doctor" },
+          { "name": "models" },
+          { "name": "lanes" },
+          { "name": "metrics" },
+          { "name": "chat" },
+          { "name": "ocr" },
+          { "name": "coding" },
+          { "name": "review" }
+        ]
+      }
+    ],
+    "languageModelChatProviders": [
+      {
+        "vendor": "epi13-local",
+        "id": "epi13-local",
+        "name": "Epi13 Local Harness"
+      }
+    ],
+    "configuration": {
+      "title": "Epi13 Local Harness",
+      "properties": {
+        "epi13LocalHarness.pythonPath": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute Python interpreter path for the trusted backend sidecar."
+        },
+        "epi13LocalHarness.repositoryPath": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute path to the local harness repository root."
+        },
+        "epi13LocalHarness.configPath": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute path to the harness configuration file."
+        },
+        "epi13LocalHarness.autoStart": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically start the Python sidecar when the extension activates."
+        },
+        "epi13LocalHarness.showRouting": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show route preview and routing status in chat responses."
+        },
+        "epi13LocalHarness.logLevel": {
+          "type": "string",
+          "default": "info",
+          "enum": ["debug", "info", "warning", "error"],
+          "description": "Log verbosity for the VS Code extension output channel."
+        },
+        "epi13LocalHarness.requestTimeoutSeconds": {
+          "type": "number",
+          "default": 120,
+          "description": "Timeout for backend requests before returning a response error."
+        },
+        "epi13LocalHarness.maxImageBytes": {
+          "type": "number",
+          "default": 4194304,
+          "description": "Maximum size for an attached image payload to be sent to the backend."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./tsconfig.json",
+    "watch": "tsc -p ./tsconfig.json --watch",
+    "lint": "tsc -p ./tsconfig.json --noEmit",
+    "typecheck": "tsc -p ./tsconfig.json --noEmit",
+    "test": "npm run test:unit",
+    "test:unit": "npm run compile && node --test ./dist/test/**/*.test.js",
+    "test:integration": "node -e \"console.log('Integration tests are opt-in and require ELH_RUN_VSCODE_INTEGRATION=1 or ELH_RUN_OLLAMA_INTEGRATION=1.')\"",
+    "package": "npx @vscode/vsce package --out ./epi13-local-harness-vscode-0.1.0.vsix",
+    "install-local": "code --install-extension ./epi13-local-harness-vscode-0.1.0.vsix --force"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/vscode": "^1.100.0",
+    "@vscode/vsce": "^3.5.0",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.8.3"
+  }
+}

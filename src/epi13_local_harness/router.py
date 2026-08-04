@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from .models import HarnessConfig, RoutePlan, TaskProfile
+from .models import HarnessConfig, RoutePlan, SemanticRouteResult, TaskProfile
 
 CODE_TERMS = {
     "code", "coding", "function", "class", "method", "script", "python", "bash",
@@ -97,26 +97,85 @@ def profile_task(text: str, config: HarnessConfig, images: list[Path] | None = N
     )
 
 
-def plan_route(
-    text: str,
-    config: HarnessConfig,
-    images: list[Path] | None = None,
-    forced_role: str | None = None,
-) -> RoutePlan:
-    profile = profile_task(text, config, images)
+def _semantic_lane_scores(text: str, config: HarnessConfig, profile: TaskProfile) -> SemanticRouteResult | None:
+    if not config.router.enable_semantic_routing:
+        return None
+    if not config.lanes:
+        return None
 
-    if forced_role:
-        if forced_role not in config.models:
-            raise ValueError(
-                f"Unknown model role {forced_role!r}; choose from {', '.join(config.models)}"
-            )
-        return RoutePlan(
-            primary_role=forced_role,
-            escalation_roles=(),
-            reasons=(f"model role forced to {forced_role}",),
-            profile=profile,
+    normalized = " ".join(text.lower().split())
+    lane_labels = {
+        "chat": 0.35,
+        "coding": 0.55,
+        "review": 0.48,
+        "ocr": 0.67,
+    }
+
+    if profile.has_image:
+        lane_labels["ocr"] += 0.15
+    if profile.has_code and (profile.asks_for_edit or profile.asks_for_execution):
+        lane_labels["coding"] += 0.18
+    if profile.is_high_risk or profile.is_complex:
+        lane_labels["review"] += 0.22
+    if profile.asks_for_explanation and not (profile.asks_for_edit or profile.asks_for_execution):
+        lane_labels["chat"] += 0.10
+
+    scores = {}
+    for lane_name, lane in config.lanes.items():
+        if not lane.enabled:
+            continue
+        base = lane_labels.get(lane_name, 0.30)
+        if lane.requires_image and not profile.has_image:
+            base -= 0.10
+        if lane.worker_role == "reviewer":
+            base += 0.05
+        scores[lane_name] = max(0.0, min(1.0, base))
+
+    if not scores:
+        return None
+
+    ranked = sorted(scores.items(), key=lambda item: item[1], reverse=True)
+    selected_lane, selected_score = ranked[0]
+    runner_up_lane, runner_up_score = ranked[1] if len(ranked) > 1 else (None, None)
+    margin = (selected_score - runner_up_score) if runner_up_score is not None else selected_score
+
+    if selected_score < config.routing.minimum_score:
+        return SemanticRouteResult(
+            selected_lane=config.routing.ambiguity_lane,
+            selected_score=selected_score,
+            runner_up_lane=runner_up_lane,
+            runner_up_score=runner_up_score,
+            margin=margin,
+            all_scores=scores,
+            backend=config.router.backend,
+            reason="semantic score below configured threshold",
         )
 
+    if runner_up_score is not None and margin < config.routing.minimum_margin:
+        return SemanticRouteResult(
+            selected_lane=config.routing.ambiguity_lane,
+            selected_score=selected_score,
+            runner_up_lane=runner_up_lane,
+            runner_up_score=runner_up_score,
+            margin=margin,
+            all_scores=scores,
+            backend=config.router.backend,
+            reason="semantic score margin below configured threshold",
+        )
+
+    return SemanticRouteResult(
+        selected_lane=selected_lane,
+        selected_score=selected_score,
+        runner_up_lane=runner_up_lane,
+        runner_up_score=runner_up_score,
+        margin=margin,
+        all_scores=scores,
+        backend=config.router.backend,
+        reason="semantic lane selected",
+    )
+
+
+def _deterministic_route(profile: TaskProfile, config: HarnessConfig) -> RoutePlan:
     if profile.is_high_risk or profile.has_image or profile.is_complex:
         primary = "reviewer"
         escalations: tuple[str, ...] = ()
@@ -146,3 +205,39 @@ def plan_route(
         reasons=tuple(dict.fromkeys(reasons)),
         profile=profile,
     )
+
+
+def plan_route(
+    text: str,
+    config: HarnessConfig,
+    images: list[Path] | None = None,
+    forced_role: str | None = None,
+) -> RoutePlan:
+    profile = profile_task(text, config, images)
+
+    if forced_role:
+        if forced_role not in config.models:
+            raise ValueError(
+                f"Unknown model role {forced_role!r}; choose from {', '.join(config.models)}"
+            )
+        return RoutePlan(
+            primary_role=forced_role,
+            escalation_roles=(),
+            reasons=(f"model role forced to {forced_role}",),
+            profile=profile,
+        )
+
+    plan = _deterministic_route(profile, config)
+    semantic = _semantic_lane_scores(text, config, profile)
+    if semantic and semantic.selected_lane in config.lanes:
+        worker_role = config.lanes[semantic.selected_lane].worker_role
+        if worker_role in config.models:
+            plan = RoutePlan(
+                primary_role=worker_role,
+                escalation_roles=tuple(role for role in plan.escalation_roles if role != worker_role),
+                reasons=tuple(dict.fromkeys((*plan.reasons, semantic.reason or "semantic routing selected a lane"))),
+                profile=plan.profile,
+                lane=semantic.selected_lane,
+                semantic=semantic,
+            )
+    return plan

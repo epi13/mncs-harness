@@ -9,10 +9,12 @@ from typing import Any
 
 from .models import (
     HarnessConfig,
+    LaneConfig,
     MetricsConfig,
     ModelConfig,
     OllamaConfig,
     PolicyConfig,
+    RouterConfig,
     RoutingConfig,
     VerificationConfig,
 )
@@ -50,18 +52,31 @@ def _required(data: dict[str, Any], key: str, context: str) -> Any:
     return data[key]
 
 
+def _merge_dicts(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
+    merged = dict(base)
+    for key, value in override.items():
+        if key in merged and isinstance(merged[key], dict) and isinstance(value, dict):
+            merged[key] = _merge_dicts(merged[key], value)
+        else:
+            merged[key] = value
+    return merged
+
+
 def load_config(path: Path | None = None) -> HarnessConfig:
     selected = (path or default_config_path()).expanduser()
-    source = selected if selected.exists() else bundled_config_path()
-    with source.open("rb") as handle:
-        raw = tomllib.load(handle)
+    raw = tomllib.loads(bundled_config_path().read_text(encoding="utf-8"))
+    if selected.exists():
+        with selected.open("rb") as handle:
+            raw = _merge_dicts(raw, tomllib.load(handle))
 
-    ollama_raw = _required(raw, "ollama", "root")
-    routing_raw = _required(raw, "routing", "root")
-    policy_raw = _required(raw, "policy", "root")
-    verification_raw = _required(raw, "verification", "root")
-    metrics_raw = _required(raw, "metrics", "root")
-    models_raw = _required(raw, "models", "root")
+    ollama_raw = dict(raw.get("ollama", {}))
+    routing_raw = dict(raw.get("routing", {}))
+    router_raw = dict(raw.get("router", {}))
+    policy_raw = dict(raw.get("policy", {}))
+    verification_raw = dict(raw.get("verification", {}))
+    metrics_raw = dict(raw.get("metrics", {}))
+    models_raw = dict(raw.get("models", {}))
+    lanes_raw = dict(raw.get("lanes", {}))
 
     models: dict[str, ModelConfig] = {}
     for role, item in models_raw.items():
@@ -82,6 +97,26 @@ def load_config(path: Path | None = None) -> HarnessConfig:
     if missing:
         raise ValueError(f"Missing required model roles: {', '.join(sorted(missing))}")
 
+    lanes: dict[str, LaneConfig] = {}
+    for lane_name, item in lanes_raw.items():
+        lanes[str(lane_name)] = LaneConfig(
+            name=str(lane_name),
+            description=str(item.get("description", str(lane_name))),
+            worker_role=str(_required(item, "worker_role", f"lanes.{lane_name}")),
+            enabled=bool(item.get("enabled", True)),
+            requires_image=bool(item.get("requires_image", False)),
+            backend=str(item.get("backend", "ollama")),
+            model=str(item.get("model", "")),
+            keep_alive=item.get("keep_alive", "0"),
+            num_ctx=int(item.get("num_ctx", 8192)),
+            think=bool(item.get("think", False)),
+            temperature=float(item.get("temperature", 1.0)),
+            top_p=float(item.get("top_p", 0.95)),
+            top_k=int(item.get("top_k", 64)),
+            tools=tuple(str(value) for value in item.get("tools", [])),
+            escalation=tuple(str(value) for value in item.get("escalation", ())),
+        )
+
     return HarnessConfig(
         ollama=OllamaConfig(
             base_url=str(ollama_raw.get("base_url", "http://127.0.0.1:11434")).rstrip("/"),
@@ -98,7 +133,31 @@ def load_config(path: Path | None = None) -> HarnessConfig:
             max_attempts=max(1, int(routing_raw.get("max_attempts", 3))),
             simple_word_limit=int(routing_raw.get("simple_word_limit", 80)),
             complex_word_limit=int(routing_raw.get("complex_word_limit", 220)),
+            semantic_enabled=bool(router_raw.get("enable_semantic_routing", False)),
+            semantic_backend=str(router_raw.get("backend", "deterministic")),
+            semantic_model=str(router_raw.get("model", "")),
+            semantic_revision=str(router_raw.get("revision", "")),
+            semantic_device=str(router_raw.get("device", "cpu")),
+            minimum_score=float(router_raw.get("minimum_score", 0.60)),
+            minimum_margin=float(router_raw.get("minimum_margin", 0.12)),
+            fallback=str(router_raw.get("fallback", "deterministic")),
+            ambiguity_lane=str(router_raw.get("ambiguity_lane", "review")),
         ),
+        router=RouterConfig(
+            mode=str(router_raw.get("mode", "deterministic")),
+            backend=str(router_raw.get("backend", "deterministic")),
+            model=str(router_raw.get("model", "")),
+            revision=str(router_raw.get("revision", "")),
+            device=str(router_raw.get("device", "cpu")),
+            minimum_score=float(router_raw.get("minimum_score", 0.60)),
+            minimum_margin=float(router_raw.get("minimum_margin", 0.12)),
+            enable_semantic_routing=bool(router_raw.get("enable_semantic_routing", False)),
+            fallback=str(router_raw.get("fallback", "deterministic")),
+            ambiguity_lane=str(router_raw.get("ambiguity_lane", "review")),
+            cache_directory=Path(str(router_raw.get("cache_directory", "~/.cache/epi13-local-harness/router"))).expanduser(),
+            local_files_only=bool(router_raw.get("local_files_only", False)),
+        ),
+        lanes=lanes,
         policy=PolicyConfig(
             approval_mode=str(policy_raw.get("approval_mode", "prompt")),
             max_file_bytes=int(policy_raw.get("max_file_bytes", 1_048_576)),

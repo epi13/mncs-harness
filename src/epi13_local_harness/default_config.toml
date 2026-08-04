@@ -43,6 +43,43 @@ top_p = 0.95
 top_k = 64
 tools = ["read_file", "list_directory", "search_text", "write_file", "run_command", "git_diff", "system_info"]
 
+[router]
+mode = "deterministic"
+backend = "deterministic"
+model = "LiquidAI/LFM2.5-Encoder-350M-Prompt-Router"
+revision = "main"
+device = "cpu"
+minimum_score = 0.60
+minimum_margin = 0.12
+enable_semantic_routing = false
+fallback = "deterministic"
+ambiguity_lane = "review"
+local_files_only = true
+
+[lanes.chat]
+description = "Simple explanatory or conversational work"
+worker_role = "e2b"
+enabled = true
+requires_image = false
+
+[lanes.coding]
+description = "Code and patch work"
+worker_role = "coder"
+enabled = true
+requires_image = false
+
+[lanes.review]
+description = "High-risk or high-complexity review"
+worker_role = "reviewer"
+enabled = true
+requires_image = false
+
+[lanes.ocr]
+description = "Vision and document extraction requests"
+worker_role = "reviewer"
+enabled = true
+requires_image = true
+
 [routing]
 code_specialist_enabled = true
 escalate_on_verifier_failure = true
@@ -50,6 +87,15 @@ escalate_on_tool_error = true
 max_attempts = 3
 simple_word_limit = 80
 complex_word_limit = 220
+semantic_enabled = false
+semantic_backend = "deterministic"
+semantic_model = "LiquidAI/LFM2.5-Encoder-350M-Prompt-Router"
+semantic_revision = "main"
+semantic_device = "cpu"
+minimum_score = 0.60
+minimum_margin = 0.12
+fallback = "deterministic"
+ambiguity_lane = "review"
 
 [policy]
 approval_mode = "prompt"

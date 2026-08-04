@@ -22,6 +22,39 @@ class ConfigTests(unittest.TestCase):
             initialize_config(destination, force=True)
             self.assertIn("[models.e2b]", destination.read_text(encoding="utf-8"))
 
+    def test_lane_config_is_loaded_from_toml(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            destination = Path(directory) / "config.toml"
+            destination.write_text(
+                '''
+[router]
+mode = "hybrid"
+backend = "transformers"
+model = "LiquidAI/LFM2.5-Encoder-350M-Prompt-Router"
+revision = "main"
+minimum_score = 0.60
+minimum_margin = 0.12
+
+[lanes.chat]
+description = "Simple conversation"
+worker_role = "e2b"
+enabled = true
+requires_image = false
+
+[lanes.coding]
+description = "Code work"
+worker_role = "coder"
+enabled = true
+requires_image = false
+'''.strip(),
+                encoding="utf-8",
+            )
+            config = load_config(destination)
+            self.assertEqual(config.router.mode, "hybrid")
+            self.assertIn("chat", config.lanes)
+            self.assertIn("coding", config.lanes)
+            self.assertEqual(config.lanes["chat"].worker_role, "e2b")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,0 +1,10 @@
+**/.git
+**/.DS_Store
+**/*.map
+**/test/**
+**/*.ts
+**/tsconfig.json
+**/node_modules/**
+**/.venv/**
+**/resources/**
+.gitignore
