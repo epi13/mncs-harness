@@ -74,15 +74,19 @@ class LocalAgent:
         workspace: Path,
         images: list[Path] | None,
         auto_approve: bool,
+        interactive_approval: bool | None,
         previous: ModelAttempt | None,
         cumulative_modified: list[Path],
     ) -> ModelAttempt:
         model = self.config.models[role]
+        interactive = (
+            sys.stdin.isatty() if interactive_approval is None else interactive_approval
+        )
         registry = ToolRegistry(
             workspace,
             self.config.policy,
             auto_approve=auto_approve,
-            interactive=sys.stdin.isatty(),
+            interactive=interactive,
         )
         verifier = Verifier(registry.workspace, self.config.verification)
         tools = registry.available_schemas(model.tools)
@@ -170,6 +174,7 @@ class LocalAgent:
         images: list[Path] | None = None,
         forced_role: str | None = None,
         auto_approve: bool = False,
+        interactive_approval: bool | None = None,
     ) -> AgentResult:
         route = plan_route(task, self.config, images, forced_role)
         run_id = self.metrics.begin_run(task, route)
@@ -184,6 +189,7 @@ class LocalAgent:
                 workspace,
                 images,
                 auto_approve,
+                interactive_approval,
                 previous,
                 cumulative_modified,
             )
