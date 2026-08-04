@@ -15,7 +15,6 @@ from textual import work
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Horizontal, Vertical, VerticalScroll
-from textual.worker import get_current_worker
 from textual.widgets import (
     Button,
     Checkbox,
@@ -27,6 +26,7 @@ from textual.widgets import (
     Select,
     Static,
 )
+from textual.worker import get_current_worker
 
 from .agent import LocalAgent
 from .config import default_config_path, load_config
