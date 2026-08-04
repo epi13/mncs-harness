@@ -39,7 +39,7 @@ class RouterConfig:
     enable_semantic_routing: bool = False
     fallback: str = "deterministic"
     ambiguity_lane: str = "review"
-    cache_directory: Path = Path("~/.cache/epi13-local-harness/router")
+    cache_directory: Path = Path("~/.cache/huggingface/hub")
     local_files_only: bool = False
 
 
@@ -114,6 +114,8 @@ class SemanticRouteResult:
     all_scores: dict[str, float]
     backend: str
     reason: str | None = None
+    revision: str | None = None
+    latency_ms: float | None = None
 
 
 @dataclass(frozen=True)
