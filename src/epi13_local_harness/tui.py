@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 from typing import Sequence
 
+from rich.console import Group
 from rich.markdown import Markdown
 from rich.panel import Panel
 from rich.table import Table
@@ -34,6 +35,7 @@ from .metrics import MetricsStore
 from .models import AgentResult, HarnessConfig, RoutePlan
 from .ollama import OllamaClient, OllamaError
 from .router import plan_route
+from .semantic_router import RouterRuntimeStatus, router_status
 
 
 def role_options(config: HarnessConfig) -> list[tuple[str, str]]:
@@ -75,9 +77,47 @@ def route_summary(plan: RoutePlan) -> str:
                 f"backend={plan.semantic.backend}",
             ]
         )
+        if plan.semantic.latency_ms is not None:
+            parts.append(f"router_ms={plan.semantic.latency_ms:.1f}")
     if plan.reasons:
         parts.append("reasons=" + "; ".join(plan.reasons))
     return " | ".join(parts)
+
+
+def router_status_summary(status: RouterRuntimeStatus) -> str:
+    """Return an honest one-line semantic-router state description."""
+    summary = (
+        f"state={status.state} | enabled={status.enabled} | "
+        f"backend={status.backend} | model={status.model or '(none)'} | "
+        f"revision={status.revision or '(none)'} | cached={status.cached} | "
+        f"active={status.active}"
+    )
+    if status.detail:
+        summary += f" | detail={status.detail}"
+    return summary
+
+
+def router_status_renderable(status: RouterRuntimeStatus) -> Panel:
+    table = Table.grid(padding=(0, 1))
+    table.add_column(style="bold cyan", no_wrap=True)
+    table.add_column()
+    table.add_row("State", status.state)
+    table.add_row("Enabled", str(status.enabled))
+    table.add_row("Mode", status.mode)
+    table.add_row("Backend", status.backend)
+    table.add_row("Model", status.model or "(not configured)")
+    table.add_row("Revision", status.revision or "(not configured)")
+    table.add_row("Device", status.device)
+    table.add_row("Cached", str(status.cached))
+    table.add_row("Active", str(status.active))
+    table.add_row("Local only", str(status.local_files_only))
+    table.add_row("Cache", str(status.cache_directory))
+    if status.missing_dependencies:
+        table.add_row("Missing", ", ".join(status.missing_dependencies))
+    if status.detail:
+        table.add_row("Detail", status.detail)
+    border = "green" if status.state == "active" else "yellow"
+    return Panel(table, title="Semantic routing backend", border_style=border)
 
 
 def route_renderable(plan: RoutePlan) -> Panel:
@@ -85,11 +125,15 @@ def route_renderable(plan: RoutePlan) -> Panel:
     table.add_column(style="bold cyan", no_wrap=True)
     table.add_column()
     table.add_row("Route", " → ".join(plan.all_roles))
-    table.add_row("Lane", plan.lane or "deterministic / legacy")
+    table.add_row("Lane", plan.lane or "deterministic / fallback")
     if plan.semantic:
         table.add_row("Router", plan.semantic.backend)
+        if plan.semantic.revision:
+            table.add_row("Revision", plan.semantic.revision)
         table.add_row("Score", f"{plan.semantic.selected_score:.3f}")
         table.add_row("Margin", f"{plan.semantic.margin:.3f}")
+        if plan.semantic.latency_ms is not None:
+            table.add_row("Latency", f"{plan.semantic.latency_ms:.1f} ms")
         if plan.semantic.runner_up_lane:
             table.add_row(
                 "Runner-up",
@@ -107,7 +151,11 @@ def result_renderables(result: AgentResult) -> list[object]:
     attempts.add_column("Status")
     attempts.add_column("Tools", justify="right")
     for attempt in result.attempts:
-        status = "[green]passed[/green]" if attempt.verification.passed else "[red]failed[/red]"
+        status = (
+            "[green]passed[/green]"
+            if attempt.verification.passed
+            else "[red]failed[/red]"
+        )
         attempts.add_row(
             attempt.role,
             attempt.model,
@@ -132,6 +180,31 @@ def result_renderables(result: AgentResult) -> list[object]:
             Panel("\n".join(f"• {failure}" for failure in failures), title="Verification")
         )
     return renderables
+
+
+def worker_models_table(
+    config: HarnessConfig,
+    installed: set[str],
+) -> Table:
+    table = Table(title="Ollama worker models", expand=True)
+    table.add_column("Role", style="cyan")
+    table.add_column("Model")
+    table.add_column("Context", justify="right")
+    table.add_column("Keep alive")
+    table.add_column("State")
+    for role, model in config.models.items():
+        table.add_row(
+            role,
+            model.name,
+            str(model.num_ctx),
+            str(model.keep_alive),
+            (
+                "[green]installed[/green]"
+                if model.name in installed
+                else "[red]missing[/red]"
+            ),
+        )
+    return table
 
 
 class HarnessTui(App[None]):
@@ -237,7 +310,11 @@ class HarnessTui(App[None]):
                 yield Label("Workspace", classes="field-label")
                 yield Input(value=str(self.initial_workspace), id="workspace")
                 yield Label("Model role", classes="field-label")
-                yield Select[str](role_options(self.config), allow_blank=False, id="model")
+                yield Select[str](
+                    role_options(self.config),
+                    allow_blank=False,
+                    id="model",
+                )
                 yield Label("Images", classes="field-label")
                 yield Input(
                     placeholder='Optional paths, e.g. "receipt scan.png" screenshot.png',
@@ -272,14 +349,14 @@ class HarnessTui(App[None]):
         yield Footer()
 
     def on_mount(self) -> None:
-        log = self.query_one("#log", RichLog)
-        log.write(
+        self._log(
             Panel(
                 Markdown(
                     "**Epi13 Local Harness TUI**\n\n"
-                    "Each prompt is routed independently. Select a role to force it, or leave "
-                    "**Automatic routing** selected. Writes and commands are denied unless the "
-                    "auto-approval checkbox is deliberately enabled."
+                    "Each prompt is routed independently. Select a role to force it, "
+                    "or leave **Automatic routing** selected. The semantic encoder "
+                    "router and Ollama workers are reported separately. Writes and "
+                    "commands are denied unless auto-approval is deliberately enabled."
                 ),
                 border_style="cyan",
             )
@@ -405,7 +482,7 @@ class HarnessTui(App[None]):
                 auto_approve=auto_approve,
                 interactive_approval=False,
             )
-        except Exception as exc:  # worker boundary must report to the UI
+        except Exception as exc:
             self.call_from_thread(self._show_error, exc)
             return
         worker = get_current_worker()
@@ -447,7 +524,7 @@ class HarnessTui(App[None]):
                 self.config.metrics.store_prompt_text,
             ).recent(20)
             table = Table(title="Recent model attempts", expand=True)
-            for column in ("Time", "Role", "Model", "Status", "Tools", "tok/s"):
+            for column in ("Time", "Role", "Model", "Lane", "Status", "Tools", "tok/s"):
                 table.add_column(column)
             for row in rows:
                 duration = row.get("eval_duration_ns") or 0
@@ -457,30 +534,20 @@ class HarnessTui(App[None]):
                     str(row.get("created_at", "")),
                     str(row.get("role", "")),
                     str(row.get("model", "")),
+                    str(row.get("semantic_lane") or "deterministic"),
                     "pass" if row.get("passed") else "fail",
                     str(row.get("tool_call_count", 0)),
                     f"{rate:.1f}",
                 )
             return table if rows else Panel("No model attempts recorded.", title="Metrics")
 
+        semantic = router_status(self.config)
+        semantic_panel = router_status_renderable(semantic)
         client = OllamaClient(self.config.ollama)
         installed = client.model_names()
-        table = Table(title="Configured models", expand=True)
-        table.add_column("Role", style="cyan")
-        table.add_column("Model")
-        table.add_column("Context", justify="right")
-        table.add_column("Keep alive")
-        table.add_column("State")
-        for role, model in self.config.models.items():
-            table.add_row(
-                role,
-                model.name,
-                str(model.num_ctx),
-                str(model.keep_alive),
-                "[green]installed[/green]" if model.name in installed else "[red]missing[/red]",
-            )
+        workers = worker_models_table(self.config, installed)
         if kind == "models":
-            return table
+            return Group(semantic_panel, workers)
 
         version = client.version()
         diagnostics = Table.grid(padding=(0, 1))
@@ -490,6 +557,7 @@ class HarnessTui(App[None]):
         diagnostics.add_row("Config", str(self.config_path or default_config_path()))
         diagnostics.add_row("Ollama", f"{version} at {self.config.ollama.base_url}")
         diagnostics.add_row("Metrics", str(self.config.metrics.path))
+        diagnostics.add_row("Router", router_status_summary(semantic))
         diagnostics.add_row(
             "Tools",
             ", ".join(
@@ -497,7 +565,11 @@ class HarnessTui(App[None]):
                 for name in ("git", "bash", "shellcheck", "ruff", "pytest")
             ),
         )
-        return Panel(diagnostics, title="Doctor", border_style="cyan")
+        return Group(
+            Panel(diagnostics, title="Doctor", border_style="cyan"),
+            semantic_panel,
+            workers,
+        )
 
     def _finish_inspection(self, renderable: object, kind: str) -> None:
         self._log(renderable)
@@ -517,7 +589,10 @@ def run_tui(
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="elh-tui", description="Epi13 Local Harness TUI")
+    parser = argparse.ArgumentParser(
+        prog="elh-tui",
+        description="Epi13 Local Harness TUI",
+    )
     parser.add_argument("--config", type=Path, help="Path to a TOML configuration file")
     parser.add_argument("--workspace", type=Path, default=Path.cwd())
     args = parser.parse_args(argv)
