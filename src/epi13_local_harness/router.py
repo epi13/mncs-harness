@@ -34,6 +34,10 @@ COMPLEX_TERMS = {
     "race condition", "security review", "migration", "dependency graph", "distributed",
     "recursive", "concurrency", "performance", "benchmark", "ambiguous",
 }
+OCR_TERMS = {
+    "ocr", "transcribe", "extract text", "read this document", "scanned", "invoice",
+    "receipt", "table extraction", "handwriting", "document recognition",
+}
 FILE_PATTERN = re.compile(
     r"(?:^|\s)(?:[\w.-]+/)*[\w.-]+\.(?:py|sh|rs|c|h|cpp|hpp|js|ts|tsx|jsx|json|toml|yaml|yml|md|txt)\b",
     re.IGNORECASE,
@@ -112,6 +116,8 @@ def _semantic_lane_scores(text: str, config: HarnessConfig, profile: TaskProfile
     }
 
     if profile.has_image:
+        lane_labels["ocr"] += 0.15
+    if _contains_any(normalized, OCR_TERMS):
         lane_labels["ocr"] += 0.15
     if profile.has_code and (profile.asks_for_edit or profile.asks_for_execution):
         lane_labels["coding"] += 0.18
