@@ -22,6 +22,22 @@ class MetricsStore:
         connection.row_factory = sqlite3.Row
         return connection
 
+    @staticmethod
+    def _ensure_column(
+        connection: sqlite3.Connection,
+        table: str,
+        column: str,
+        declaration: str,
+    ) -> None:
+        existing = {
+            row["name"]
+            for row in connection.execute(f"PRAGMA table_info({table})").fetchall()
+        }
+        if column not in existing:
+            connection.execute(
+                f"ALTER TABLE {table} ADD COLUMN {column} {declaration}"
+            )
+
     def _initialize(self) -> None:
         with self._connect() as connection:
             connection.executescript(
@@ -32,7 +48,14 @@ class MetricsStore:
                     task_sha256 TEXT NOT NULL,
                     prompt_text TEXT,
                     primary_role TEXT NOT NULL,
-                    route_reasons TEXT NOT NULL
+                    route_reasons TEXT NOT NULL,
+                    semantic_backend TEXT,
+                    semantic_revision TEXT,
+                    semantic_lane TEXT,
+                    semantic_score REAL,
+                    semantic_margin REAL,
+                    semantic_latency_ms REAL,
+                    semantic_reason TEXT
                 );
                 CREATE TABLE IF NOT EXISTS attempts (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -62,15 +85,29 @@ class MetricsStore:
                 );
                 """
             )
+            for column, declaration in (
+                ("semantic_backend", "TEXT"),
+                ("semantic_revision", "TEXT"),
+                ("semantic_lane", "TEXT"),
+                ("semantic_score", "REAL"),
+                ("semantic_margin", "REAL"),
+                ("semantic_latency_ms", "REAL"),
+                ("semantic_reason", "TEXT"),
+            ):
+                self._ensure_column(connection, "runs", column, declaration)
 
     def begin_run(self, task: str, route: RoutePlan) -> int:
         fingerprint = hashlib.sha256(task.encode("utf-8")).hexdigest()
         prompt = task if self.store_prompt_text else None
+        semantic = route.semantic
         with self._connect() as connection:
             cursor = connection.execute(
                 """
-                INSERT INTO runs(created_at, task_sha256, prompt_text, primary_role, route_reasons)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO runs(
+                    created_at, task_sha256, prompt_text, primary_role, route_reasons,
+                    semantic_backend, semantic_revision, semantic_lane, semantic_score,
+                    semantic_margin, semantic_latency_ms, semantic_reason
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     datetime.now(timezone.utc).isoformat(),
@@ -78,6 +115,13 @@ class MetricsStore:
                     prompt,
                     route.primary_role,
                     json.dumps(route.reasons),
+                    semantic.backend if semantic else None,
+                    semantic.revision if semantic else None,
+                    route.lane,
+                    semantic.selected_score if semantic else None,
+                    semantic.margin if semantic else None,
+                    semantic.latency_ms if semantic else None,
+                    semantic.reason if semantic else None,
                 ),
             )
             return int(cursor.lastrowid)
@@ -141,6 +185,8 @@ class MetricsStore:
             rows = connection.execute(
                 """
                 SELECT r.created_at, r.task_sha256, r.primary_role,
+                       r.semantic_backend, r.semantic_revision, r.semantic_lane,
+                       r.semantic_score, r.semantic_margin, r.semantic_latency_ms,
                        a.attempt_index, a.role, a.model, a.passed,
                        a.tool_call_count, a.eval_count, a.eval_duration_ns, a.error
                 FROM attempts a
