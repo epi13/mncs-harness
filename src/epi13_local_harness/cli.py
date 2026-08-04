@@ -15,6 +15,11 @@ from .evals import evaluate_routes, load_cases
 from .metrics import MetricsStore
 from .ollama import OllamaClient, OllamaError
 from .router import plan_route
+from .semantic_router import (
+    SemanticRouterError,
+    prepare_router,
+    router_status,
+)
 from .verifiers import Verifier
 
 
@@ -25,7 +30,7 @@ def _path(value: str) -> Path:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="elh",
-        description="Route local AI tasks through policy-aware Ollama model tiers.",
+        description="Route local AI tasks through policy-aware model tiers.",
     )
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     parser.add_argument("--config", type=_path, help="Path to a TOML configuration file")
@@ -35,13 +40,19 @@ def build_parser() -> argparse.ArgumentParser:
     init_parser.add_argument("--force", action="store_true", help="Replace an existing config")
     init_parser.add_argument("--path", type=_path, help="Destination path")
 
-    subparsers.add_parser("doctor", help="Check Ollama, model tags, and optional tools")
-    subparsers.add_parser("models", help="Show configured and locally installed models")
+    subparsers.add_parser("doctor", help="Check router, Ollama, models, and tools")
+    subparsers.add_parser("models", help="Show router and Ollama worker models")
 
-    pull_parser = subparsers.add_parser("pull", help="Pull one or all configured Ollama models")
+    router_parser = subparsers.add_parser(
+        "router",
+        help="Inspect or prepare the semantic prompt router",
+    )
+    router_parser.add_argument("action", choices=("status", "prepare"))
+
+    pull_parser = subparsers.add_parser("pull", help="Pull one or all Ollama models")
     pull_parser.add_argument("--role", action="append", help="Configured role to pull")
 
-    route_parser = subparsers.add_parser("route", help="Preview deterministic routing")
+    route_parser = subparsers.add_parser("route", help="Preview hybrid routing")
     route_parser.add_argument("task", nargs="?", help="Task text; reads stdin when omitted")
     route_parser.add_argument("--image", action="append", type=_path, default=[])
     route_parser.add_argument("--model", help="Force a configured model role")
@@ -58,7 +69,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     ask_parser.add_argument("--verbose", action="store_true")
 
-    chat_parser = subparsers.add_parser("chat", help="Start a simple routed terminal session")
+    chat_parser = subparsers.add_parser("chat", help="Start a routed terminal session")
     chat_parser.add_argument("--workspace", type=_path, default=Path.cwd())
     chat_parser.add_argument("--model", help="Force a configured model role")
     chat_parser.add_argument("--yes", action="store_true")
@@ -67,7 +78,7 @@ def build_parser() -> argparse.ArgumentParser:
     verify_parser.add_argument("paths", nargs="*", type=_path, default=[Path.cwd()])
     verify_parser.add_argument("--workspace", type=_path, default=Path.cwd())
 
-    eval_parser = subparsers.add_parser("eval", help="Evaluate deterministic routing cases")
+    eval_parser = subparsers.add_parser("eval", help="Evaluate routing cases")
     eval_parser.add_argument("--file", type=_path, help="JSONL evaluation file")
 
     metrics_parser = subparsers.add_parser("metrics", help="Show recent model attempts")
@@ -97,10 +108,29 @@ def _validate_images(images: list[Path]) -> list[Path]:
     return result
 
 
+def _semantic_payload(semantic) -> dict[str, object] | None:
+    if semantic is None:
+        return None
+    return {
+        "selected_lane": semantic.selected_lane,
+        "selected_score": semantic.selected_score,
+        "runner_up_lane": semantic.runner_up_lane,
+        "runner_up_score": semantic.runner_up_score,
+        "margin": semantic.margin,
+        "all_scores": semantic.all_scores,
+        "backend": semantic.backend,
+        "revision": semantic.revision,
+        "latency_ms": semantic.latency_ms,
+        "reason": semantic.reason,
+    }
+
+
 def _plan_payload(plan) -> dict[str, object]:
     return {
         "primary_role": plan.primary_role,
         "escalation_roles": plan.escalation_roles,
+        "lane": plan.lane,
+        "semantic": _semantic_payload(plan.semantic),
         "reasons": plan.reasons,
         "profile": {
             "word_count": plan.profile.word_count,
@@ -116,6 +146,44 @@ def _plan_payload(plan) -> dict[str, object]:
     }
 
 
+def _router_status_payload(config) -> dict[str, object]:
+    status = router_status(config)
+    return {
+        "enabled": status.enabled,
+        "mode": status.mode,
+        "backend": status.backend,
+        "model": status.model,
+        "revision": status.revision,
+        "device": status.device,
+        "local_files_only": status.local_files_only,
+        "cache_directory": str(status.cache_directory),
+        "missing_dependencies": status.missing_dependencies,
+        "cached": status.cached,
+        "active": status.active,
+        "state": status.state,
+        "detail": status.detail,
+    }
+
+
+def _print_router_status(config) -> None:
+    status = router_status(config)
+    print("Semantic router:")
+    print(f"  state:      {status.state}")
+    print(f"  enabled:    {status.enabled}")
+    print(f"  mode:       {status.mode}")
+    print(f"  backend:    {status.backend}")
+    print(f"  model:      {status.model or '(not configured)'}")
+    print(f"  revision:   {status.revision or '(not configured)'}")
+    print(f"  device:     {status.device}")
+    print(f"  cached:     {status.cached}")
+    print(f"  active:     {status.active}")
+    print(f"  cache:      {status.cache_directory}")
+    if status.missing_dependencies:
+        print("  missing:    " + ", ".join(status.missing_dependencies))
+    if status.detail:
+        print(f"  detail:     {status.detail}")
+
+
 def cmd_init(args: argparse.Namespace) -> int:
     destination = initialize_config(args.path, args.force)
     print(destination)
@@ -129,7 +197,19 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     config_source = "(user)" if config_path.exists() else "(bundled defaults)"
     print(f"Config: {config_path} {config_source}")
     print(f"Metrics: {config.metrics.path}")
+    _print_router_status(config)
+
     failures = 0
+    router = router_status(config)
+    if router.enabled and router.state in {
+        "unsupported",
+        "unpinned",
+        "missing-dependencies",
+    }:
+        failures += 1
+    if router.enabled and router.local_files_only and router.state == "not-cached":
+        failures += 1
+
     client = OllamaClient(config.ollama)
     try:
         version = client.version()
@@ -158,6 +238,8 @@ def cmd_doctor(args: argparse.Namespace) -> int:
 
 def cmd_models(args: argparse.Namespace) -> int:
     config = load_config(args.config)
+    _print_router_status(config)
+    print("\nOllama worker models:")
     client = OllamaClient(config.ollama)
     try:
         installed = client.model_names()
@@ -166,9 +248,20 @@ def cmd_models(args: argparse.Namespace) -> int:
         return 1
     for role, model in config.models.items():
         print(
-            f"{role:8} {model.name:18} ctx={model.num_ctx:<6} keep={str(model.keep_alive):<4} "
+            f"  {role:8} {model.name:18} ctx={model.num_ctx:<6} "
+            f"keep={str(model.keep_alive):<4} "
             f"{'installed' if model.name in installed else 'missing'}"
         )
+    return 0
+
+
+def cmd_router(args: argparse.Namespace) -> int:
+    config = load_config(args.config)
+    if args.action == "status":
+        print(json.dumps(_router_status_payload(config), indent=2))
+        return 0
+    result = prepare_router(config)
+    print(json.dumps(_semantic_payload(result), indent=2))
     return 0
 
 
@@ -292,10 +385,16 @@ def cmd_metrics(args: argparse.Namespace) -> int:
         duration = row.get("eval_duration_ns") or 0
         tokens = row.get("eval_count") or 0
         rate = (tokens / (duration / 1_000_000_000)) if duration else 0
+        route_detail = (
+            f" lane={row['semantic_lane']}"
+            if row.get("semantic_lane")
+            else ""
+        )
         print(
             f"{row['created_at']} {row['role']:8} {row['model']:18} "
             f"{'pass' if row['passed'] else 'fail'} tools={row['tool_call_count']} "
-            f"tokens={tokens} tok/s={rate:.2f} task={row['task_sha256'][:10]}"
+            f"tokens={tokens} tok/s={rate:.2f}{route_detail} "
+            f"task={row['task_sha256'][:10]}"
         )
         if row.get("error"):
             print(f"  error: {row['error']}")
@@ -306,6 +405,7 @@ COMMANDS = {
     "init": cmd_init,
     "doctor": cmd_doctor,
     "models": cmd_models,
+    "router": cmd_router,
     "pull": cmd_pull,
     "route": cmd_route,
     "ask": cmd_ask,
@@ -321,7 +421,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         return COMMANDS[args.command](args)
-    except (ValueError, FileExistsError, OSError) as exc:
+    except (
+        ValueError,
+        FileExistsError,
+        OSError,
+        SemanticRouterError,
+    ) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
 
