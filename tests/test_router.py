@@ -3,8 +3,10 @@ from __future__ import annotations
 import unittest
 from dataclasses import replace
 from pathlib import Path
+from unittest.mock import patch
 
 from epi13_local_harness.config import load_config
+from epi13_local_harness.models import SemanticRouteResult
 from epi13_local_harness.router import plan_route
 
 
@@ -30,7 +32,9 @@ class RouterTests(unittest.TestCase):
 
     def test_image_starts_with_reviewer(self) -> None:
         plan = plan_route(
-            "Explain this screenshot.", self.config, images=[Path("terminal.png")]
+            "Explain this screenshot.",
+            self.config,
+            images=[Path("terminal.png")],
         )
         self.assertEqual(plan.primary_role, "reviewer")
 
@@ -38,12 +42,13 @@ class RouterTests(unittest.TestCase):
         plan = plan_route("Any task", self.config, forced_role="coder")
         self.assertEqual(plan.all_roles, ("coder",))
 
-    def test_ocr_keyword_routes_to_ocr_lane(self) -> None:
+    def test_explicit_heuristic_backend_remains_available(self) -> None:
         config = replace(
             self.config,
             router=replace(
                 self.config.router,
                 enable_semantic_routing=True,
+                backend="heuristic",
                 mode="hybrid",
             ),
         )
@@ -54,6 +59,57 @@ class RouterTests(unittest.TestCase):
         )
         self.assertEqual(plan.lane, "ocr")
         self.assertEqual(plan.primary_role, "reviewer")
+        self.assertEqual(plan.semantic.backend, "heuristic")
+
+    def test_transformers_result_selects_worker_lane(self) -> None:
+        config = replace(
+            self.config,
+            router=replace(
+                self.config.router,
+                enable_semantic_routing=True,
+                backend="transformers",
+                mode="hybrid",
+            ),
+        )
+        semantic = SemanticRouteResult(
+            selected_lane="coding",
+            selected_score=0.82,
+            runner_up_lane="review",
+            runner_up_score=0.10,
+            margin=0.72,
+            all_scores={"coding": 0.82, "review": 0.10},
+            backend="transformers",
+            revision="a" * 40,
+            latency_ms=12.0,
+            reason="semantic lane selected",
+        )
+        with patch(
+            "epi13_local_harness.router.route_with_backend",
+            return_value=(semantic, None),
+        ):
+            plan = plan_route("Fix parser.py.", config)
+        self.assertEqual(plan.lane, "coding")
+        self.assertEqual(plan.primary_role, "coder")
+        self.assertEqual(plan.semantic.backend, "transformers")
+
+    def test_backend_error_preserves_deterministic_route(self) -> None:
+        config = replace(
+            self.config,
+            router=replace(
+                self.config.router,
+                enable_semantic_routing=True,
+                backend="transformers",
+            ),
+        )
+        with patch(
+            "epi13_local_harness.router.route_with_backend",
+            return_value=(None, "model unavailable"),
+        ):
+            plan = plan_route("Explain what uname does.", config)
+        self.assertEqual(plan.primary_role, "e2b")
+        self.assertTrue(
+            any("model unavailable" in reason for reason in plan.reasons)
+        )
 
 
 if __name__ == "__main__":
