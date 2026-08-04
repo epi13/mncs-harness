@@ -16,7 +16,6 @@ from epi13_local_harness.semantic_router import (
     router_status,
 )
 
-
 REVISION = "35ca4a0469f180f1cf05a630df8842fa17ac18e3"
 
 
