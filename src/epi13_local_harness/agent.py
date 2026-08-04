@@ -10,7 +10,6 @@ from .models import (
     AgentResult,
     HarnessConfig,
     ModelAttempt,
-    RoutePlan,
     VerificationResult,
 )
 from .ollama import OllamaClient, OllamaError
