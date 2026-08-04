@@ -1,0 +1,55 @@
+[build-system]
+requires = ["hatchling>=1.26"]
+build-backend = "hatchling.build"
+
+[project]
+name = "epi13-local-harness"
+version = "0.1.0"
+description = "A local, policy-aware AI harness that routes tasks across Ollama models and verifies tool-driven work."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Alexander Collamore" }]
+keywords = ["ollama", "gemma", "local-ai", "agents", "tool-calling"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Software Development :: Build Tools",
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "ruff>=0.9"]
+
+[project.scripts]
+epi13-harness = "epi13_local_harness.cli:main"
+elh = "epi13_local_harness.cli:main"
+
+[project.urls]
+Repository = "https://github.com/epi13/epi13-local-harness"
+Issues = "https://github.com/epi13/epi13-local-harness/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/epi13_local_harness"]
+
+[tool.hatch.build]
+include = [
+  "src/epi13_local_harness/**/*.py",
+  "src/epi13_local_harness/default_config.toml",
+  "src/epi13_local_harness/default_evals.jsonl",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
