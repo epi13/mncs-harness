@@ -1,0 +1,6 @@
+{"name":"simple-command-explanation","task":"Explain what uname -a displays.","expected_role":"e2b"}
+{"name":"short-log-summary","task":"Summarize these service log lines and identify the likely category of failure.","expected_role":"e2b"}
+{"name":"python-edit","task":"Fix the validation bug in parser.py and run the tests.","expected_role":"e4b"}
+{"name":"bash-script","task":"Write a small Bash script in this repository and check its syntax.","expected_role":"e4b"}
+{"name":"root-operation","task":"Use sudo to reinstall and enable the system service.","expected_role":"reviewer"}
+{"name":"architecture","task":"Design a distributed multi-file architecture for routing and verifier feedback across the repository.","expected_role":"reviewer"}

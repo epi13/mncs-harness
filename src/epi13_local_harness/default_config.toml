@@ -1,0 +1,74 @@
+[ollama]
+base_url = "http://127.0.0.1:11434"
+timeout_seconds = 600
+max_tool_steps = 8
+
+[models.e2b]
+name = "gemma4:e2b"
+keep_alive = "10m"
+num_ctx = 8192
+think = false
+temperature = 1.0
+top_p = 0.95
+top_k = 64
+tools = ["read_file", "list_directory", "search_text", "git_diff", "system_info"]
+
+[models.e4b]
+name = "gemma4:e4b"
+keep_alive = "10m"
+num_ctx = 12288
+think = true
+temperature = 1.0
+top_p = 0.95
+top_k = 64
+tools = ["read_file", "list_directory", "search_text", "write_file", "run_command", "git_diff", "system_info"]
+
+[models.coder]
+name = "qwen3:8b"
+keep_alive = "0"
+num_ctx = 12288
+think = true
+temperature = 0.4
+top_p = 0.9
+top_k = 40
+tools = ["read_file", "list_directory", "search_text", "write_file", "run_command", "git_diff", "system_info"]
+
+[models.reviewer]
+name = "gemma4:12b"
+keep_alive = "0"
+num_ctx = 16384
+think = true
+temperature = 1.0
+top_p = 0.95
+top_k = 64
+tools = ["read_file", "list_directory", "search_text", "write_file", "run_command", "git_diff", "system_info"]
+
+[routing]
+code_specialist_enabled = true
+escalate_on_verifier_failure = true
+escalate_on_tool_error = true
+max_attempts = 3
+simple_word_limit = 80
+complex_word_limit = 220
+
+[policy]
+approval_mode = "prompt"
+max_file_bytes = 1048576
+max_tool_output_chars = 16000
+command_timeout_seconds = 120
+allow_hidden_paths = false
+allowed_executables = [
+  "bash", "sh", "python", "python3", "pytest", "ruff", "mypy", "shellcheck",
+  "git", "cargo", "gcc", "clang", "cmake", "make", "ninja",
+  "cat", "head", "tail", "grep", "rg", "find", "ls", "pwd", "wc", "stat",
+  "file", "jq", "uname", "free", "df", "du", "inxi"
+]
+
+[verification]
+run_unit_tests = false
+unit_test_command = ["python", "-m", "unittest", "discover", "-s", "tests"]
+use_shellcheck_when_available = true
+
+[metrics]
+path = "~/.local/state/epi13-local-harness/metrics.sqlite3"
+store_prompt_text = false
