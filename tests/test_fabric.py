@@ -90,7 +90,11 @@ class FabricTests(unittest.TestCase):
             session.initialize()
             status = session.status()
             self.assertEqual(status.state, "unavailable")
-            self.assertIn("trust paths", status.detail or "")
+            detail = status.detail or ""
+            if importlib.util.find_spec("mncs_fabric"):
+                self.assertIn("trust paths", detail)
+            else:
+                self.assertIn("mncs-fabric is not installed", detail)
 
     def test_fallback_provider_preserves_local_response_and_reason(self) -> None:
         provider = FabricOllamaProvider(_FailingSession(), _LocalProvider(), True)
