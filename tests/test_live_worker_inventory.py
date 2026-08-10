@@ -6,9 +6,9 @@ from dataclasses import replace
 from epi13_local_harness.config import load_config
 from epi13_local_harness.fabric_inventory_session import (
     InventoryAwareFabricSession,
-    _FreshDispatchClient,
     _execution_succeeded,
     _fresh_request_id,
+    _FreshDispatchClient,
 )
 
 
