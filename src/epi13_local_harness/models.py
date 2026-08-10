@@ -143,6 +143,9 @@ class FabricConfig:
     fallback_to_local: bool = True
     refresh_on_startup: bool = True
     refresh_timeout_seconds: float = 5.0
+    runtime_probe_on_refresh: bool = True
+    runtime_probe_timeout_seconds: float = 45.0
+    runtime_probe_max_age_seconds: float = 1800.0
     worker_bundle_root: Path = Path(
         "~/.local/state/epi13-local-harness/fabric-worker-bundle"
     )
