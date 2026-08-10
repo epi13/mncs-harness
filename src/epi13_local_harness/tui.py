@@ -457,7 +457,8 @@ class HarnessTui(App[None]):
     def _images(self, workspace: Path) -> list[Path]:
         return parse_image_paths(self.query_one("#images", Input).value, workspace)
 
-    def _task(self) -> str:
+    def _prompt_text(self) -> str:
+        """Return the current prompt without colliding with Textual's internal _task state."""
         return self.query_one("#prompt", Input).value.strip()
 
     def _show_error(self, exc: BaseException) -> None:
@@ -473,7 +474,7 @@ class HarnessTui(App[None]):
         self._set_busy(False, "Cancellation requested")
 
     def action_preview_route(self) -> None:
-        task = self._task()
+        task = self._prompt_text()
         if not task:
             self._show_error(ValueError("Enter a prompt before previewing its route."))
             return
@@ -504,7 +505,7 @@ class HarnessTui(App[None]):
         self.run_inspection("fabric")
 
     def action_send(self) -> None:
-        task = self._task()
+        task = self._prompt_text()
         if not task:
             return
         try:
