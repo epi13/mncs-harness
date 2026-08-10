@@ -48,6 +48,16 @@ class FabricStatus:
         return count
 
     @property
+    def cuda_ready_count(self) -> int:
+        return sum(
+            1
+            for worker in self.workers
+            if worker.get("availability") == "AVAILABLE"
+            and (worker.get("runtime_observation") or {}).get("accelerator_backend") == "cuda"
+            and (worker.get("runtime_observation") or {}).get("runtime_execution_probe") == "PASS"
+        )
+
+    @property
     def offload_capable_count(self) -> int:
         return sum(
             1
@@ -100,6 +110,69 @@ try:
 except json.JSONDecodeError as exc:
     raise SystemExit(f"worker-local Ollama returned invalid JSON: {body[:500]}") from exc
 print("ELH_FABRIC_RESPONSE " + json.dumps(result, separators=(",", ":"), ensure_ascii=True))
+'''
+
+
+def _runtime_probe_script() -> str:
+    return '''from __future__ import annotations
+
+from datetime import datetime, timezone
+import json
+import sys
+
+
+def now():
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+value = {
+    "captured_at": now(),
+    "python_version": sys.version.split()[0],
+    "accelerator_backend": "cuda",
+    "accelerator": None,
+    "runtime_version": None,
+    "execution_probe": "UNKNOWN",
+    "precision_probes": {},
+}
+try:
+    import torch
+except Exception as exc:
+    value["diagnostic"] = "torch import failed: " + type(exc).__name__
+else:
+    value["runtime_version"] = str(getattr(torch.version, "cuda", None) or "unknown")
+    try:
+        available = bool(torch.cuda.is_available())
+    except Exception:
+        available = False
+    if not available:
+        value["diagnostic"] = "torch.cuda.is_available() is false"
+    else:
+        try:
+            index = torch.cuda.current_device()
+            value["accelerator"] = str(torch.cuda.get_device_properties(index).name)
+            device = "cuda:" + str(index)
+
+            def probe(dtype):
+                try:
+                    left = torch.ones((64, 64), device=device, dtype=dtype)
+                    right = torch.full((64, 64), 2, device=device, dtype=dtype)
+                    result = left @ right
+                    torch.cuda.synchronize()
+                    return "PASS" if bool(torch.isfinite(result).all().item()) else "FAIL"
+                except Exception:
+                    return "UNKNOWN"
+
+            fp32 = probe(torch.float32)
+            value["precision_probes"]["float32"] = fp32
+            value["execution_probe"] = "PASS" if fp32 == "PASS" else "FAIL"
+            value["precision_probes"]["float16"] = probe(torch.float16)
+            if hasattr(torch, "bfloat16"):
+                value["precision_probes"]["bfloat16"] = probe(torch.bfloat16)
+            torch.cuda.synchronize()
+        except Exception as exc:
+            value["execution_probe"] = "FAIL"
+            value["diagnostic"] = "synchronized CUDA probe failed: " + type(exc).__name__
+print("ELH_FABRIC_RUNTIME_PROBE " + json.dumps(value, separators=(",", ":"), ensure_ascii=True))
 '''
 
 
@@ -177,12 +250,14 @@ class FabricSession:
                     errors.append(f"{worker.worker_id}: {exc}")
             if self.config.refresh_on_startup and registered:
                 self._refresh_remote_workers()
+                errors.extend(self._ensure_cuda_runtime_observations())
             if registered == 0:
                 self._state = "unavailable"
                 self._detail = "; ".join(errors) or "no Fabric workers are configured"
             else:
                 self._state = "available"
-                self._detail = "; ".join(errors) if errors else None
+                combined = [item for item in (self._detail, *errors) if item]
+                self._detail = "; ".join(dict.fromkeys(combined)) if combined else None
         except ImportError as exc:
             self.client = None
             self._state = "unavailable"
@@ -218,9 +293,121 @@ class FabricSession:
         if failures:
             self._detail = "; ".join(failures)
 
+    @staticmethod
+    def _worker_has_cuda(worker: dict[str, Any]) -> bool:
+        snapshot = worker.get("resource_snapshot") or {}
+        return any(
+            accelerator.get("backend") == "cuda"
+            for accelerator in snapshot.get("accelerators", [])
+            if isinstance(accelerator, dict)
+        )
+
+    def _runtime_observation_is_fresh(self, observation: dict[str, Any] | None) -> bool:
+        if not observation:
+            return False
+        try:
+            from mncs_fabric.runtime import runtime_observation_is_fresh
+
+            return runtime_observation_is_fresh(
+                observation,
+                max_age_seconds=self.config.runtime_probe_max_age_seconds,
+            )
+        except Exception:
+            return False
+
+    def _probe_runtime(self, worker_id: str) -> dict[str, Any]:
+        if self.client is None:
+            raise FabricUnavailable("Fabric client is unavailable")
+        self.config.state_path.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(
+            prefix="elh-fabric-probe-", dir=self.config.state_path.parent
+        ) as directory:
+            source_root = Path(directory)
+            (source_root / "probe.py").write_text(_runtime_probe_script(), encoding="utf-8")
+            from mncs_fabric.artifacts import build_manifest
+            from mncs_fabric.bundles import build_bundle_archive
+            from mncs_fabric.models import validate_job_plan
+
+            manifest = build_manifest(source_root)
+            archive = source_root / "execution-bundle.zip"
+            build_bundle_archive(source_root, archive)
+            plan = validate_job_plan(
+                {
+                    "schema_version": "mncs-fabric.job-plan.v0.1",
+                    "job_id": "elh-cuda-runtime-probe",
+                    "candidate_identity": _identity(
+                        {"worker_id": worker_id, "probe": "synchronized-cuda-v1"}
+                    ),
+                    "evaluator_identity": None,
+                    "artifact_manifest_identity": manifest["manifest_identity"],
+                    "argv": ["@python", "probe.py"],
+                    "working_directory": ".",
+                    "timeout_seconds": self.config.runtime_probe_timeout_seconds,
+                    "output_limit_bytes": 256 * 1024,
+                    "environment": {"PYTHONHASHSEED": "0"},
+                    "required_capabilities": ["python"],
+                    "result_paths": [],
+                    "network_policy": "DECLARED_OFFLINE",
+                }
+            )
+            result = self.client.execute(
+                plan,
+                manifest,
+                worker_id=worker_id,
+                execution_bundle_archive=archive,
+            )[0]
+        record = result.get("record") or {}
+        if result.get("disposition") != "EXECUTED" or record.get("outcome") != "PASS":
+            reason = result.get("reason") or record.get("termination_reason") or "probe failed"
+            raise FabricExecutionError(f"CUDA runtime probe failed on {worker_id}: {reason}")
+        stdout = ((record.get("stdout") or {}).get("captured_utf8") or "").splitlines()
+        response_line = next(
+            (line for line in stdout if line.startswith("ELH_FABRIC_RUNTIME_PROBE ")),
+            None,
+        )
+        if response_line is None:
+            raise FabricExecutionError(f"CUDA runtime probe returned no result on {worker_id}")
+        try:
+            probe = json.loads(response_line.removeprefix("ELH_FABRIC_RUNTIME_PROBE "))
+        except json.JSONDecodeError as exc:
+            raise FabricExecutionError(f"CUDA runtime probe returned invalid JSON on {worker_id}") from exc
+        return self.client.ingest_runtime_observation(worker_id, probe)
+
+    def _ensure_cuda_runtime_observations(self, *, force: bool = False) -> list[str]:
+        if self.client is None or not self.config.runtime_probe_on_refresh:
+            return []
+        try:
+            workers = [dict(worker) for worker in self.client.workers()]
+        except Exception as exc:
+            return [f"runtime probe worker inspection failed: {exc}"]
+        failures: list[str] = []
+        for worker in workers:
+            if worker.get("source") != "remote" or worker.get("availability") != "AVAILABLE":
+                continue
+            if not self._worker_has_cuda(worker):
+                continue
+            observation = worker.get("runtime_observation")
+            if not force and self._runtime_observation_is_fresh(observation):
+                continue
+            worker_id = str(worker.get("worker_id"))
+            try:
+                refreshed = self._probe_runtime(worker_id)
+                if refreshed.get("runtime_execution_probe") != "PASS":
+                    failures.append(
+                        f"{worker_id}: CUDA execution probe "
+                        f"{refreshed.get('runtime_execution_probe', 'UNKNOWN')}"
+                    )
+            except Exception as exc:
+                failures.append(f"{worker_id}: CUDA runtime probe failed: {exc}")
+        return failures
+
     def refresh(self) -> FabricStatus:
         if self._state == "available":
             self._refresh_remote_workers()
+            failures = self._ensure_cuda_runtime_observations()
+            if failures:
+                existing = [self._detail] if self._detail else []
+                self._detail = "; ".join([*existing, *failures])
         return self.status()
 
     def status(self) -> FabricStatus:
@@ -273,6 +460,10 @@ class FabricSession:
     ) -> tuple[dict[str, Any], dict[str, Any]]:
         if self.client is None or self._state != "available":
             raise FabricUnavailable(self._detail or "Fabric is unavailable")
+        if model.execution_device == "accelerator" or model.accelerator_backend == "cuda":
+            failures = self._ensure_cuda_runtime_observations()
+            if failures:
+                self._detail = "; ".join(failures)
         if not images:
             encoded_images: list[str] = []
         else:
@@ -406,6 +597,9 @@ class FabricSession:
             "fabric_request_identity": result.get("request_identity"),
             "resource_snapshot_identity": (result.get("resource_snapshot") or {}).get(
                 "resource_snapshot_identity"
+            ),
+            "runtime_observation_identity": (result.get("runtime_observation") or {}).get(
+                "runtime_observation_identity"
             ),
             "fabric_record_identity": result.get("record_identity"),
             "fabric_receipt_identity": result.get("receipt_identity"),
