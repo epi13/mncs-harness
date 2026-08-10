@@ -179,19 +179,41 @@ class InventoryAwareFabricSession(FabricSession):
         role: str,
         model: ModelConfig,
     ) -> tuple[ModelConfig, ModelSelection | None]:
-        """Select a worker-installed model for one Fabric-backed role."""
+        """Select a worker-installed model for one Fabric-backed role.
+
+        The Fabric execution bundle only performs a loopback HTTP request to
+        worker-local Ollama. Therefore the bundle itself is a CPU job. Ollama,
+        not Fabric's Python runner, owns model loading and GPU/CPU placement.
+        """
 
         if model.provider != "fabric":
             return model, None
         selection = select_installed_model(role, model.name, self._common_remote_inventory())
-        if selection is None:
-            return model, None
+        selected_name = selection.selected_model if selection is not None else model.name
+        selected_size = (
+            selection.stored_size_bytes
+            if selection is not None and selection.stored_size_bytes > 0
+            else model.model_storage_bytes
+        )
         effective = replace(
             model,
-            name=selection.selected_model,
-            model_storage_bytes=(selection.stored_size_bytes or model.model_storage_bytes),
+            name=selected_name,
+            model_storage_bytes=selected_size,
+            execution_device="cpu",
+            accelerator_backend=None,
         )
         return effective, selection
+
+    def _placement(self, model: ModelConfig) -> Any:
+        """Place only the lightweight provider-call bundle, not the Ollama model."""
+
+        from mncs_fabric.api import PlacementRequest
+
+        return PlacementRequest(
+            execution_device="cpu",
+            required_capabilities=model.required_capabilities,
+            resource_max_age_seconds=model.resource_max_age_seconds,
+        )
 
     def status(self) -> FabricStatus:
         base = super().status()
