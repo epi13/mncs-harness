@@ -532,30 +532,70 @@ def _prepare_remote_root(
     _powershell_json(result, "prepare persistent Windows worker root")
 
 
+def _managed_stop_script(remote_root: str, worker_id: str, controller_id: str) -> str:
+    """Build fail-closed stop/migration logic for managed Windows worker state."""
+    root = _ps_quote(remote_root)
+    expected_worker = _ps_quote(worker_id)
+    expected_controller = _ps_quote(controller_id)
+    current_schema = _ps_quote(_LAUNCHER_SCHEMA)
+    return (
+        f"$root={root};$expectedWorker={expected_worker};"
+        f"$expectedController={expected_controller};$currentSchema={current_schema};"
+        "$state=\"$root\\state\\launcher.json\";"
+        "if(!(Test-Path $state)){"
+        "@{outcome='PASS';state='NOT_INSTALLED'}|ConvertTo-Json -Compress;exit};"
+        "$old=Get-Content -Raw $state | ConvertFrom-Json;"
+        "if($null -eq $old.pid){throw 'launcher state has no PID'};"
+        "$pidValue=[int]$old.pid;"
+        "$proc=Get-Process -Id $pidValue -ErrorAction SilentlyContinue;"
+        "if(!$proc){"
+        "Remove-Item -Force $state;"
+        "@{outcome='PASS';state='STALE_STATE_REMOVED';pid=$pidValue}|"
+        "ConvertTo-Json -Compress;exit};"
+        "if($old.schema_version -eq $currentSchema -and $old.process_token){"
+        "$token=$proc.StartTime.ToUniversalTime().ToFileTimeUtc().ToString();"
+        "if($token -ne [string]$old.process_token){"
+        "throw 'recorded worker PID was reused; refusing to stop an unrelated process'};"
+        "Stop-Process -Id $proc.Id -Force;Start-Sleep -Milliseconds 500;"
+        "Remove-Item -Force $state;"
+        "@{outcome='PASS';state='STOPPED';pid=$proc.Id}|ConvertTo-Json -Compress;exit};"
+        "if([string]$old.worker_id -ne $expectedWorker -or "
+        "[string]$old.controller_id -ne $expectedController){"
+        "throw 'legacy launcher identity does not match requested worker/controller'};"
+        "$legacy=Get-CimInstance Win32_Process -Filter (\"ProcessId = $pidValue\") "
+        "-ErrorAction Stop;"
+        "if(!$legacy -or [string]::IsNullOrWhiteSpace([string]$legacy.CommandLine)){"
+        "throw 'legacy launcher process cannot be identified safely'};"
+        "$commandLine=[string]$legacy.CommandLine;"
+        "$expectedBundle=\"$root\\empty-bundle\";"
+        "$looksManaged=("
+        "$commandLine.Contains('-m mncs_fabric worker serve') -and "
+        "$commandLine.Contains('--worker-id') -and "
+        "$commandLine.Contains($expectedWorker) -and "
+        "$commandLine.Contains('--controller-id') -and "
+        "$commandLine.Contains($expectedController) -and "
+        "$commandLine.Contains('--bundle-root') -and "
+        "$commandLine.Contains($expectedBundle));"
+        "if(!$looksManaged){"
+        "throw 'legacy launcher PID is live but does not match the managed Fabric worker; "
+        "refusing to stop it'};"
+        "Stop-Process -Id $pidValue -Force;Start-Sleep -Milliseconds 500;"
+        "Remove-Item -Force $state;"
+        "@{outcome='PASS';state='LEGACY_WORKER_STOPPED';pid=$pidValue}|"
+        "ConvertTo-Json -Compress"
+    )
+
+
 def _stop_managed_remote_worker(
     *,
     host: str,
     user: str,
     key: Path,
     remote_root: str,
+    worker_id: str,
+    controller_id: str,
 ) -> dict[str, Any]:
-    root = _ps_quote(remote_root)
-    script = (
-        f"$root={root};$state=\"$root\\state\\launcher.json\";"
-        "if(!(Test-Path $state)){"
-        "@{outcome='PASS';state='NOT_INSTALLED'}|ConvertTo-Json -Compress;exit};"
-        "$old=Get-Content -Raw $state | ConvertFrom-Json;"
-        f"if($old.schema_version -ne {_ps_quote(_LAUNCHER_SCHEMA)} -or "
-        "-not $old.process_token){throw 'launcher state lacks a validated process token'};"
-        "$proc=Get-Process -Id ([int]$old.pid) -ErrorAction SilentlyContinue;"
-        "if(!$proc){@{outcome='PASS';state='STOPPED';pid=$old.pid}|"
-        "ConvertTo-Json -Compress;exit};"
-        "$token=$proc.StartTime.ToUniversalTime().ToFileTimeUtc().ToString();"
-        "if($token -ne [string]$old.process_token){"
-        "throw 'recorded worker PID was reused; refusing to stop an unrelated process'};"
-        "Stop-Process -Id $proc.Id -Force;Start-Sleep -Milliseconds 500;"
-        "@{outcome='PASS';state='STOPPED';pid=$proc.Id}|ConvertTo-Json -Compress"
-    )
+    script = _managed_stop_script(remote_root, worker_id, controller_id)
     result = _run_powershell(host=host, user=user, key=key, script=script, timeout=20)
     return _powershell_json(result, "stop managed persistent Fabric worker")
 
@@ -731,6 +771,8 @@ def commission_windows(args: argparse.Namespace) -> int:
         user=args.ssh_user,
         key=ssh_key,
         remote_root=remote_root,
+        worker_id=args.worker_id,
+        controller_id=args.controller_id,
     )
     with tempfile.TemporaryDirectory(prefix="elh-fabric-commission-") as directory:
         package_archive, fabric_version = _fabric_package_archive(

@@ -6,6 +6,7 @@ from pathlib import Path
 
 from epi13_local_harness.fabric_commission import (
     _encoded_powershell,
+    _managed_stop_script,
     _scp_base,
     _ssh_base,
     _windows_scp_path,
@@ -44,6 +45,42 @@ class FabricCommissionTests(unittest.TestCase):
         source = "$ProgressPreference='SilentlyContinue'; Write-Output 'ok'"
         decoded = base64.b64decode(_encoded_powershell(source)).decode("utf-16le")
         self.assertEqual(decoded, source)
+
+    def test_stop_script_removes_stale_launcher_when_pid_is_gone(self) -> None:
+        script = _managed_stop_script(
+            "C:/Users/operator/mncs-fabric-worker",
+            "gpu-worker",
+            "fixture-controller",
+        )
+        self.assertIn("STALE_STATE_REMOVED", script)
+        self.assertIn("Remove-Item -Force $state", script)
+        self.assertIn("if(!$proc)", script)
+
+    def test_stop_script_migrates_legacy_state_only_after_process_identity_check(self) -> None:
+        script = _managed_stop_script(
+            "C:/Users/operator/mncs-fabric-worker",
+            "gpu-worker",
+            "fixture-controller",
+        )
+        self.assertIn("Get-CimInstance Win32_Process", script)
+        self.assertIn("-m mncs_fabric worker serve", script)
+        self.assertIn("--worker-id", script)
+        self.assertIn("gpu-worker", script)
+        self.assertIn("--controller-id", script)
+        self.assertIn("fixture-controller", script)
+        self.assertIn("--bundle-root", script)
+        self.assertIn("legacy launcher PID is live but does not match", script)
+        self.assertIn("LEGACY_WORKER_STOPPED", script)
+
+    def test_stop_script_preserves_process_token_guard_for_current_state(self) -> None:
+        script = _managed_stop_script(
+            "C:/Users/operator/mncs-fabric-worker",
+            "gpu-worker",
+            "fixture-controller",
+        )
+        self.assertIn("process_token", script)
+        self.assertIn("recorded worker PID was reused", script)
+        self.assertIn("refusing to stop an unrelated process", script)
 
 
 if __name__ == "__main__":
