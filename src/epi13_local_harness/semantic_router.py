@@ -227,6 +227,27 @@ def clear_router_cache() -> None:
         _LAST_ERRORS.clear()
 
 
+def activate_router(config: HarnessConfig) -> bool:
+    """Load an enabled semantic router on the caller's current thread.
+
+    The Textual TUI routes prompts from worker threads. Pre-activating the model
+    before Textual starts those workers avoids asking model-loading code to spawn
+    or duplicate process resources from inside a threaded UI runtime. Failure is
+    recorded for Doctor/status and deterministic routing remains available.
+    """
+
+    if not config.router.enable_semantic_routing or config.router.backend != "transformers":
+        return False
+    key = _cache_key(config)
+    try:
+        get_router_backend(config).load()
+    except Exception as exc:
+        _LAST_ERRORS[key] = f"{type(exc).__name__}: {exc}"
+        return False
+    _LAST_ERRORS.pop(key, None)
+    return True
+
+
 def route_with_backend(
     text: str,
     config: HarnessConfig,
@@ -247,7 +268,7 @@ def route_with_backend(
     try:
         result = get_router_backend(config).route(text, lanes)
     except Exception as exc:  # model boundary must preserve deterministic fallback
-        detail = str(exc)
+        detail = f"{type(exc).__name__}: {exc}"
         _LAST_ERRORS[key] = detail
         return None, detail
     _LAST_ERRORS.pop(key, None)
