@@ -67,6 +67,18 @@ class OllamaClient:
                     names.add(str(value))
         return names
 
+    def model_size(self, name: str) -> int | None:
+        """Return Ollama's stored model size when the configured tag is present."""
+        for model in self.tags():
+            aliases = {str(model.get(key)) for key in ("name", "model") if model.get(key)}
+            if name not in aliases:
+                continue
+            size = model.get("size")
+            if isinstance(size, int) and not isinstance(size, bool) and size > 0:
+                return size
+            return None
+        return None
+
     @staticmethod
     def encode_images(paths: list[Path] | None) -> list[str]:
         encoded: list[str] = []
