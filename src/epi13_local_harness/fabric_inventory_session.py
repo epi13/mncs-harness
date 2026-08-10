@@ -29,6 +29,14 @@ def _identity(value: object) -> str:
     ).hexdigest()
 
 
+def _execution_failure(result: dict[str, Any], record: dict[str, Any], fallback: str) -> str:
+    reason = result.get("reason") or record.get("termination_reason") or fallback
+    detail = record.get("detail")
+    if detail and str(detail) != str(reason):
+        return f"{reason}: {detail}"
+    return str(reason)
+
+
 def _inventory_script() -> str:
     return '''from __future__ import annotations
 
@@ -111,7 +119,7 @@ class InventoryAwareFabricSession(FabricSession):
             )[0]
         record = result.get("record") or {}
         if result.get("disposition") != "EXECUTED" or record.get("outcome") != "PASS":
-            reason = result.get("reason") or record.get("termination_reason") or "inventory probe failed"
+            reason = _execution_failure(result, record, "inventory probe failed")
             raise FabricExecutionError(f"model inventory failed on {worker_id}: {reason}")
         stdout = ((record.get("stdout") or {}).get("captured_utf8") or "").splitlines()
         response_line = next((line for line in stdout if line.startswith(_INVENTORY_PREFIX)), None)
