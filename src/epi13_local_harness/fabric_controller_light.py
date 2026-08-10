@@ -15,6 +15,26 @@ _CONTROLLER_LIGHT = "controller-light"
 _STATUS = "status"
 
 
+def _remove_toml_keys(text: str, section: str, keys: set[str]) -> str:
+    """Remove flat keys from one TOML table without disturbing neighboring tables."""
+
+    lines = text.splitlines()
+    in_section = False
+    output: list[str] = []
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("[") and stripped.endswith("]"):
+            in_section = stripped == f"[{section}]"
+            output.append(line)
+            continue
+        if in_section and "=" in line:
+            key = line.split("=", 1)[0].strip()
+            if key in keys:
+                continue
+        output.append(line)
+    return "\n".join(output) + "\n"
+
+
 def _apply_controller_light(config_path: Path | None) -> int:
     from .config import load_config
     from .semantic_router import router_status
@@ -46,17 +66,20 @@ def _apply_controller_light(config_path: Path | None) -> int:
         },
     )
     for role in config.models:
+        section = f"models.{role}"
         text = _profile.upsert_toml_section(
             text,
-            f"models.{role}",
+            section,
             {
                 "provider": "fabric",
-                "execution_device": "accelerator",
-                "accelerator_backend": "cuda",
+                # The Fabric bundle is only a small HTTP client talking to worker-local
+                # Ollama. Ollama owns GPU/CPU placement and model loading.
+                "execution_device": "cpu",
                 "offload": "auto",
                 "precision": "auto",
             },
         )
+        text = _remove_toml_keys(text, section, {"accelerator_backend"})
     _profile._atomic_write(path, text)
     effective = load_config(path)
     router = router_status(effective)
@@ -78,6 +101,10 @@ def _apply_controller_light(config_path: Path | None) -> int:
             }
             for role, model in effective.models.items()
         },
+        "provider_boundary": (
+            "Fabric places the lightweight provider-call bundle on the remote worker; worker-local "
+            "Ollama owns model loading, GPU residency, and CPU/GPU split."
+        ),
         "note": (
             "The semantic router chooses a lane locally; response-generation models are Fabric-routed. "
             "If the semantic router is not active, deterministic routing remains the bounded fallback."
@@ -101,7 +128,20 @@ def _inventory_status(config_path: Path | None) -> int:
     session = InventoryAwareFabricSession(config.fabric)
     session.initialize()
     status = session.status()
-    print(json.dumps(_profile._status_payload(path, status), indent=2, sort_keys=True))
+    payload = _profile._status_payload(path, status)
+    provider_ready = [
+        worker
+        for worker in status.workers
+        if worker.get("source") == "remote"
+        and worker.get("availability") == "AVAILABLE"
+        and bool(worker.get("model_names"))
+    ]
+    payload["ollama_inventory_ready_count"] = len(provider_ready)
+    payload["provider_execution_boundary"] = (
+        "remote Fabric bundle is a lightweight Ollama client; cuda_ready_count describes the "
+        "worker Python runtime and does not gate worker-local Ollama inference"
+    )
+    print(json.dumps(payload, indent=2, sort_keys=True))
     return 0 if status.state in {"available", "disabled"} else 1
 
 
