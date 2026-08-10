@@ -10,8 +10,10 @@ installed on the worker.
 from __future__ import annotations
 
 import hashlib
+import inspect
 import json
 import tempfile
+import uuid
 from dataclasses import replace
 from pathlib import Path
 from typing import Any
@@ -21,6 +23,7 @@ from .model_selection import ModelSelection, select_installed_model
 from .models import FabricConfig, ModelConfig
 
 _INVENTORY_PREFIX = "ELH_FABRIC_MODEL_INVENTORY "
+_SUCCESS_DISPOSITIONS = {"EXECUTED", "DUPLICATE_IDEMPOTENT"}
 
 
 def _identity(value: object) -> str:
@@ -29,12 +32,28 @@ def _identity(value: object) -> str:
     ).hexdigest()
 
 
+def _fresh_request_id(prefix: str) -> str:
+    """Return a bounded request id for work that must execute again now.
+
+    Fabric's default request identity is deliberately deterministic so retries
+    can be replay-safe. Inventory scans, runtime observations, and provider
+    invocations are different: they represent a new observation or user attempt
+    and must not be satisfied forever by an older idempotent result.
+    """
+
+    return f"{prefix}:{uuid.uuid4().hex}"
+
+
 def _execution_failure(result: dict[str, Any], record: dict[str, Any], fallback: str) -> str:
     reason = result.get("reason") or record.get("termination_reason") or fallback
     detail = record.get("detail")
     if detail and str(detail) != str(reason):
         return f"{reason}: {detail}"
     return str(reason)
+
+
+def _execution_succeeded(result: dict[str, Any], record: dict[str, Any]) -> bool:
+    return result.get("disposition") in _SUCCESS_DISPOSITIONS and record.get("outcome") == "PASS"
 
 
 def _inventory_script() -> str:
@@ -57,6 +76,41 @@ print("ELH_FABRIC_MODEL_INVENTORY " + json.dumps(models, separators=(",", ":"), 
 '''
 
 
+class _FreshDispatchClient:
+    """Delegate Fabric calls while making observation/inference dispatches fresh.
+
+    The underlying Fabric API keeps deterministic request identities by default.
+    This wrapper uses the public ``request_id`` seam so Local Harness does not
+    replay an old model inventory or an old failed inference simply because the
+    semantic payload is identical to a prior attempt.
+    """
+
+    def __init__(self, client: Any) -> None:
+        self._client = client
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._client, name)
+
+    def execute(self, *args: Any, **kwargs: Any) -> Any:
+        if "request_id" not in kwargs:
+            kwargs["request_id"] = _fresh_request_id("elh-dispatch")
+        return self._client.execute(*args, **kwargs)
+
+
+def _supports_request_id(client: Any) -> bool:
+    execute = getattr(client, "execute", None)
+    if not callable(execute):
+        return False
+    try:
+        parameters = inspect.signature(execute).parameters.values()
+    except (TypeError, ValueError):
+        return False
+    return any(
+        parameter.name == "request_id" or parameter.kind == inspect.Parameter.VAR_KEYWORD
+        for parameter in parameters
+    )
+
+
 class InventoryAwareFabricSession(FabricSession):
     """Fabric session that tracks the live model inventory of remote workers."""
 
@@ -68,11 +122,22 @@ class InventoryAwareFabricSession(FabricSession):
     def initialize(self) -> None:
         super().initialize()
         if self.enabled and self.client is not None:
+            if _supports_request_id(self.client) and not isinstance(self.client, _FreshDispatchClient):
+                self.client = _FreshDispatchClient(self.client)
             self._refresh_model_inventories()
 
     def refresh(self) -> FabricStatus:
         super().refresh()
         if self.enabled and self.client is not None:
+            self._refresh_model_inventories()
+        return self.status()
+
+    def refresh_model_inventory(self) -> FabricStatus:
+        """Refresh worker availability and query Ollama tags again right now."""
+
+        if self.enabled and self.client is not None:
+            if self._state == "available":
+                self._refresh_remote_workers()
             self._refresh_model_inventories()
         return self.status()
 
@@ -116,9 +181,10 @@ class InventoryAwareFabricSession(FabricSession):
                 manifest,
                 worker_id=worker_id,
                 execution_bundle_archive=archive,
+                request_id=_fresh_request_id(f"elh-inventory:{worker_id}"),
             )[0]
         record = result.get("record") or {}
-        if result.get("disposition") != "EXECUTED" or record.get("outcome") != "PASS":
+        if not _execution_succeeded(result, record):
             reason = _execution_failure(result, record, "inventory probe failed")
             raise FabricExecutionError(f"model inventory failed on {worker_id}: {reason}")
         stdout = ((record.get("stdout") or {}).get("captured_utf8") or "").splitlines()
@@ -143,8 +209,11 @@ class InventoryAwareFabricSession(FabricSession):
         except Exception as exc:
             self.model_inventory_errors["*"] = str(exc)
             return
+        observed_remote_ids: set[str] = set()
         for worker in workers:
             worker_id = str(worker.get("worker_id") or "")
+            if worker.get("source") == "remote" and worker_id:
+                observed_remote_ids.add(worker_id)
             if (
                 not worker_id
                 or worker.get("source") != "remote"
@@ -155,7 +224,15 @@ class InventoryAwareFabricSession(FabricSession):
                 self.model_inventories[worker_id] = self._probe_model_inventory(worker_id)
                 self.model_inventory_errors.pop(worker_id, None)
             except Exception as exc:
+                # Do not route from a stale inventory after a failed fresh scan.
+                self.model_inventories.pop(worker_id, None)
                 self.model_inventory_errors[worker_id] = str(exc)
+        for worker_id in tuple(self.model_inventories):
+            if worker_id not in observed_remote_ids:
+                self.model_inventories.pop(worker_id, None)
+        for worker_id in tuple(self.model_inventory_errors):
+            if worker_id != "*" and worker_id not in observed_remote_ids:
+                self.model_inventory_errors.pop(worker_id, None)
 
     def _common_remote_inventory(self) -> tuple[dict[str, Any], ...]:
         base = super().status()
@@ -239,6 +316,7 @@ class InventoryAwareFabricSession(FabricSession):
                         if model.get("name") or model.get("model")
                     }
                 )
+                item["model_count"] = len(item["model_names"])
             if worker_id in self.model_inventory_errors:
                 item["model_inventory_error"] = self.model_inventory_errors[worker_id]
             workers.append(item)
