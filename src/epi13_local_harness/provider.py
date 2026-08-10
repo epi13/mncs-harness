@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -38,6 +39,9 @@ class LocalOllamaProvider:
             "execution_source": "local",
         }
 
+    def model_size(self, name: str) -> int | None:
+        return self.client.model_size(name)
+
     def chat(
         self,
         model: ModelConfig,
@@ -62,6 +66,20 @@ class FabricOllamaProvider:
         self.fallback_to_local = fallback_to_local
         self.last_metadata: dict[str, Any] = {}
 
+    def _effective_model(self, model: ModelConfig) -> tuple[ModelConfig, str]:
+        if model.model_storage_bytes > 0:
+            return model, "configured"
+        resolver = getattr(self.local_provider, "model_size", None)
+        if resolver is None:
+            return model, "unknown"
+        try:
+            size = resolver(model.name)
+        except Exception:
+            return model, "unknown"
+        if isinstance(size, int) and size > 0:
+            return replace(model, model_storage_bytes=size), "ollama-tags"
+        return model, "unknown"
+
     def chat(
         self,
         model: ModelConfig,
@@ -69,8 +87,17 @@ class FabricOllamaProvider:
         tools: list[dict[str, Any]] | None = None,
         images: list[Path] | None = None,
     ) -> dict[str, Any]:
+        effective_model, size_source = self._effective_model(model)
         try:
-            response, metadata = self.session.chat(model, messages, tools=tools, images=images)
+            response, metadata = self.session.chat(
+                effective_model,
+                messages,
+                tools=tools,
+                images=images,
+            )
+            metadata = dict(metadata)
+            metadata["model_storage_bytes"] = effective_model.model_storage_bytes
+            metadata["model_storage_source"] = size_source
             self.last_metadata = metadata
             return response
         except (FabricExecutionError, FabricUnavailable, ImportError, OSError, ValueError) as exc:
@@ -83,6 +110,8 @@ class FabricOllamaProvider:
                     "fabric_enabled": True,
                     "fabric_fallback": True,
                     "fabric_fallback_reason": str(exc),
+                    "model_storage_bytes": effective_model.model_storage_bytes,
+                    "model_storage_source": size_source,
                 }
             )
             self.last_metadata = local_metadata
