@@ -1,9 +1,6 @@
-from __future__ import annotations
-
 import unittest
 
 from epi13_local_harness.model_selection import select_installed_model
-
 
 INVENTORY = [
     {"name": "devstral-small-2:24b", "size": 15_177_374_099},
