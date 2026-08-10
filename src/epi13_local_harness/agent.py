@@ -45,6 +45,15 @@ class LocalAgent:
             )
         return local
 
+    def _resolve_model(self, role: str):
+        configured_model = self.config.models[role]
+        resolver = getattr(self.fabric_session, "resolve_model", None)
+        if callable(resolver):
+            return resolver(role, configured_model)
+        # Preserve the existing public/testing session seam. Inventory-aware
+        # resolution is additive rather than a new requirement on custom sessions.
+        return configured_model, None
+
     @staticmethod
     def _tool_call_parts(call: dict[str, Any]) -> tuple[str, dict[str, Any]]:
         function = call.get("function", {})
@@ -109,8 +118,7 @@ class LocalAgent:
         previous: ModelAttempt | None,
         cumulative_modified: list[Path],
     ) -> ModelAttempt:
-        configured_model = self.config.models[role]
-        model, model_selection = self.fabric_session.resolve_model(role, configured_model)
+        model, model_selection = self._resolve_model(role)
         interactive = (
             sys.stdin.isatty() if interactive_approval is None else interactive_approval
         )
