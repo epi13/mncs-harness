@@ -6,11 +6,37 @@ import unittest
 from pathlib import Path
 
 from epi13_local_harness.metrics import MetricsStore
-from epi13_local_harness.models import RoutePlan, SemanticRouteResult, TaskProfile
+from epi13_local_harness.models import (
+    ModelAttempt,
+    RoutePlan,
+    SemanticRouteResult,
+    TaskProfile,
+    VerificationResult,
+)
 
 
 class MetricsTests(unittest.TestCase):
-    def test_existing_database_is_migrated_for_semantic_fields(self) -> None:
+    @staticmethod
+    def _simple_plan() -> RoutePlan:
+        return RoutePlan(
+            primary_role="e2b",
+            escalation_roles=(),
+            reasons=("simple",),
+            profile=TaskProfile(
+                text="hello",
+                word_count=1,
+                has_code=False,
+                asks_for_edit=False,
+                asks_for_execution=False,
+                asks_for_explanation=False,
+                is_high_risk=False,
+                is_complex=False,
+                has_image=False,
+                file_reference_count=0,
+            ),
+        )
+
+    def test_existing_database_is_migrated_for_semantic_and_provider_fields(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "metrics.sqlite3"
             with sqlite3.connect(path) as connection:
@@ -52,41 +78,52 @@ class MetricsTests(unittest.TestCase):
                     );
                     """
                 )
-            MetricsStore(path)
+
+            store = MetricsStore(path)
             with sqlite3.connect(path) as connection:
-                columns = {
+                run_columns = {
                     row[1]
                     for row in connection.execute("PRAGMA table_info(runs)").fetchall()
                 }
-            self.assertIn("semantic_backend", columns)
-            self.assertIn("semantic_latency_ms", columns)
-            self.assertIn("fabric_worker", columns)
-            self.assertIn("placement_mode", columns)
+                attempt_columns = {
+                    row[1]
+                    for row in connection.execute("PRAGMA table_info(attempts)").fetchall()
+                }
+            self.assertIn("semantic_backend", run_columns)
+            self.assertIn("semantic_latency_ms", run_columns)
+            self.assertNotIn("provider", run_columns)
+            self.assertIn("provider", attempt_columns)
+            self.assertIn("fabric_worker", attempt_columns)
+            self.assertIn("placement_mode", attempt_columns)
+            self.assertIn("tokens_per_second", attempt_columns)
+
+            run_id = store.begin_run("hello", self._simple_plan())
+            store.record_attempt(
+                run_id,
+                0,
+                ModelAttempt(
+                    role="e2b",
+                    model="fixture",
+                    content="ok",
+                    thinking="",
+                    metrics={
+                        "provider": "ollama",
+                        "execution_source": "local",
+                    },
+                    tool_executions=[],
+                    verification=VerificationResult(True, (), ()),
+                ),
+                None,
+            )
+            row = store.recent(1)[0]
+            self.assertEqual(row["provider"], "ollama")
+            self.assertEqual(row["execution_source"], "local")
 
     def test_attempt_records_physical_placement_metadata(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "metrics.sqlite3"
             store = MetricsStore(path)
-            plan = RoutePlan(
-                primary_role="e2b",
-                escalation_roles=(),
-                reasons=("simple",),
-                profile=TaskProfile(
-                    text="hello",
-                    word_count=1,
-                    has_code=False,
-                    asks_for_edit=False,
-                    asks_for_execution=False,
-                    asks_for_explanation=False,
-                    is_high_risk=False,
-                    is_complex=False,
-                    has_image=False,
-                    file_reference_count=0,
-                ),
-            )
-            from epi13_local_harness.models import ModelAttempt, VerificationResult
-
-            run_id = store.begin_run("hello", plan)
+            run_id = store.begin_run("hello", self._simple_plan())
             store.record_attempt(
                 run_id,
                 0,
