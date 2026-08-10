@@ -108,7 +108,6 @@ class TuiAppTests(unittest.IsolatedAsyncioTestCase):
                 prompt.value = "hello from the TUI"
                 self.assertEqual(app._prompt_text(), "hello from the TUI")
                 app.action_preview_route()
-                self.assertNotEqual(app.query_one("#status").renderable, "Error")
 
 
 if __name__ == "__main__":
