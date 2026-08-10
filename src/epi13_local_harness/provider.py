@@ -80,6 +80,30 @@ class FabricOllamaProvider:
             return replace(model, model_storage_bytes=size), "ollama-tags"
         return model, "unknown"
 
+    def _failure_metadata(
+        self,
+        *,
+        reason: str,
+        model_storage_bytes: int,
+        model_storage_source: str,
+    ) -> dict[str, Any]:
+        last = getattr(self.session, "last_inference", None) or {}
+        return {
+            "provider": "ollama-via-mncs-fabric",
+            "backend": "ollama",
+            "fabric_enabled": True,
+            "fabric_failure": True,
+            "fabric_fallback": False,
+            "fabric_failure_reason": reason,
+            "fabric_worker": last.get("worker"),
+            "execution_source": "remote",
+            "placement_mode": last.get("placement"),
+            "placement_reason": last.get("reason"),
+            "fabric_request_identity": last.get("request_identity"),
+            "model_storage_bytes": model_storage_bytes,
+            "model_storage_source": model_storage_source,
+        }
+
     def chat(
         self,
         model: ModelConfig,
@@ -101,6 +125,12 @@ class FabricOllamaProvider:
             self.last_metadata = metadata
             return response
         except (FabricExecutionError, FabricUnavailable, ImportError, OSError, ValueError) as exc:
+            failure = self._failure_metadata(
+                reason=str(exc),
+                model_storage_bytes=effective_model.model_storage_bytes,
+                model_storage_source=size_source,
+            )
+            self.last_metadata = failure
             if not self.fallback_to_local:
                 raise ProviderError(f"Fabric provider failed: {exc}") from exc
             response = self.local_provider.chat(model, messages, tools=tools, images=images)
@@ -108,8 +138,11 @@ class FabricOllamaProvider:
             local_metadata.update(
                 {
                     "fabric_enabled": True,
+                    "fabric_failure": True,
                     "fabric_fallback": True,
                     "fabric_fallback_reason": str(exc),
+                    "fabric_worker": failure.get("fabric_worker"),
+                    "fabric_request_identity": failure.get("fabric_request_identity"),
                     "model_storage_bytes": effective_model.model_storage_bytes,
                     "model_storage_source": size_source,
                 }
