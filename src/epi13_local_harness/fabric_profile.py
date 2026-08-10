@@ -1,8 +1,8 @@
 """Operator-owned Fabric configuration helpers.
 
 `elh-fabric configure-remote` makes a bounded, section-aware edit to the normal
-user TOML configuration.  Trust material itself is never copied into the
-configuration; only operator-provided paths are stored.  A one-time backup is
+user TOML configuration. Trust material itself is never copied into the
+configuration; only operator-provided paths are stored. A one-time backup is
 created before the first managed edit.
 """
 
@@ -22,6 +22,7 @@ KNOWN_ROLES = frozenset((*DEFAULT_LOCAL_ROLES, *DEFAULT_ACCELERATOR_ROLES))
 _SECTION_RE = re.compile(r"^\s*\[([^\]]+)\]\s*(?:#.*)?$")
 _KEY_RE = re.compile(r"^(\s*)([A-Za-z0-9_-]+)\s*=")
 _WORKER_ID_RE = re.compile(r"^[A-Za-z0-9_-]+$")
+_CONTROLLER_ID_RE = re.compile(r"^[A-Za-z0-9._:-]+$")
 
 
 def _checked_path(value: Path, label: str) -> Path:
@@ -115,6 +116,8 @@ def _backup_once(path: Path) -> Path:
 def configure_remote(args: argparse.Namespace) -> int:
     if not _WORKER_ID_RE.fullmatch(args.worker_id):
         raise ValueError("worker id may contain only letters, numbers, '_' and '-'")
+    if not _CONTROLLER_ID_RE.fullmatch(args.controller_id):
+        raise ValueError("controller id contains unsupported characters")
     if not args.host.strip():
         raise ValueError("worker host cannot be empty")
     if args.port < 1 or args.port > 65535:
@@ -145,10 +148,13 @@ def configure_remote(args: argparse.Namespace) -> int:
         "fabric",
         {
             "enabled": True,
-            "controller_id": "epi13-local-harness",
+            "controller_id": args.controller_id,
             "fallback_to_local": args.fallback_to_local,
             "refresh_on_startup": True,
             "refresh_timeout_seconds": 5.0,
+            "runtime_probe_on_refresh": True,
+            "runtime_probe_timeout_seconds": 45.0,
+            "runtime_probe_max_age_seconds": 1800.0,
         },
     )
     text = upsert_toml_section(
@@ -210,6 +216,7 @@ def _status_payload(config: Any, status: Any) -> dict[str, Any]:
         "detail": status.detail,
         "available_workers": status.available_workers,
         "accelerator_count": status.accelerator_count,
+        "cuda_ready_count": status.cuda_ready_count,
         "offload_capable_count": status.offload_capable_count,
         "workers": list(status.workers),
     }
@@ -236,7 +243,11 @@ def show_fabric(args: argparse.Namespace) -> int:
     payload = {
         "config": str(path),
         "enabled": config.fabric.enabled,
+        "controller_id": config.fabric.controller_id,
         "fallback_to_local": config.fabric.fallback_to_local,
+        "runtime_probe_on_refresh": config.fabric.runtime_probe_on_refresh,
+        "runtime_probe_timeout_seconds": config.fabric.runtime_probe_timeout_seconds,
+        "runtime_probe_max_age_seconds": config.fabric.runtime_probe_max_age_seconds,
         "workers": [
             {
                 "worker_id": worker.worker_id,
@@ -270,7 +281,7 @@ def show_fabric(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="elh-fabric",
-        description="Configure and inspect MNCS Fabric execution for the local harness.",
+        description="Configure, commission, and inspect MNCS Fabric execution.",
     )
     parser.add_argument("--config", type=Path, help="Harness TOML configuration path")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -279,6 +290,7 @@ def build_parser() -> argparse.ArgumentParser:
         "configure-remote",
         help="Enable one explicit mTLS Fabric worker and GPU routing policy",
     )
+    configure.add_argument("--controller-id", default="epi13-local-harness")
     configure.add_argument("--worker-id", required=True)
     configure.add_argument("--host", required=True)
     configure.add_argument("--port", type=int, default=7443)
@@ -308,6 +320,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
     configure.set_defaults(func=configure_remote)
 
+    from .fabric_commission import add_windows_commission_arguments, commission_windows
+
+    commission = subparsers.add_parser(
+        "commission-windows",
+        help="Create a persistent mTLS enrollment and provision one explicit Windows worker",
+    )
+    add_windows_commission_arguments(commission)
+    commission.set_defaults(func=commission_windows)
+
     show = subparsers.add_parser("show", help="Show effective Fabric routing configuration")
     show.set_defaults(func=show_fabric)
     disable = subparsers.add_parser("disable", help="Disable Fabric without deleting worker settings")
@@ -322,6 +343,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         return int(args.func(args))
     except (OSError, ValueError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    except RuntimeError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
 
