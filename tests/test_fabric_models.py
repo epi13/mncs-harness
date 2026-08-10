@@ -29,10 +29,19 @@ class FabricCompatibilityTests(unittest.TestCase):
             def execute(self, plan: object, manifest: object, *, execution_bundle_archive=None):
                 return []
 
-        with patch.dict(sys.modules, {"mncs_fabric": self._module(Client, "0.2.0a8")}):
+        with patch.dict(sys.modules, {"mncs_fabric": self._module(Client, "0.2.0a9")}):
             result = require_execution_bundle_archive_api()
-        self.assertEqual(result["version"], "0.2.0a8")
-        self.assertEqual(result["required_version"], "0.2.0a8")
+        self.assertEqual(result["version"], "0.2.0a9")
+        self.assertEqual(result["required_version"], "0.2.0a9")
+
+    def test_guard_rejects_a8_even_though_signature_exists(self) -> None:
+        class Client:
+            def execute(self, plan: object, manifest: object, *, execution_bundle_archive=None):
+                return []
+
+        with patch.dict(sys.modules, {"mncs_fabric": self._module(Client, "0.2.0a8")}):
+            with self.assertRaisesRegex(RuntimeError, "0.2.0a8.*0.2.0a9"):
+                require_execution_bundle_archive_api()
 
     def test_guard_rejects_stale_editable_fabric(self) -> None:
         class Client:
@@ -40,7 +49,7 @@ class FabricCompatibilityTests(unittest.TestCase):
                 return []
 
         with patch.dict(sys.modules, {"mncs_fabric": self._module(Client, "0.2.0a7")}):
-            with self.assertRaisesRegex(RuntimeError, "0.2.0a7.*0.2.0a8"):
+            with self.assertRaisesRegex(RuntimeError, "0.2.0a7.*0.2.0a9"):
                 require_execution_bundle_archive_api()
 
 
