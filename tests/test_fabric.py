@@ -118,7 +118,11 @@ class FabricTests(unittest.TestCase):
                     "worker_id": "gpu",
                     "availability": "AVAILABLE",
                     "capabilities": ["python", "placement:sequential-cpu-offload"],
-                    "resource_snapshot": {"accelerators": [{"execution_probe": "PASS"}]},
+                    "resource_snapshot": {"accelerators": [{"execution_probe": "UNKNOWN"}]},
+                    "runtime_observation": {
+                        "accelerator_backend": "cuda",
+                        "runtime_execution_probe": "PASS",
+                    },
                 },
                 {
                     "worker_id": "stale-cpu",
@@ -130,6 +134,7 @@ class FabricTests(unittest.TestCase):
         )
         self.assertEqual(status.available_workers, 1)
         self.assertEqual(status.accelerator_count, 1)
+        self.assertEqual(status.cuda_ready_count, 1)
         self.assertEqual(status.offload_capable_count, 1)
 
     def test_agent_keeps_semantic_route_and_uses_fabric_metadata(self) -> None:
