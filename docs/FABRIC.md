@@ -13,14 +13,14 @@ whether a provider or placement failure may return to local Ollama.
                       model role
                          |
                 narrow inference provider
-                    /                 \\
-                   /                   \\
+                    /                 \
+                   /                   \
           local Ollama          Fabric-backed Ollama
                                       |
                               PlacementRequest
                                       |
                                 MNCS Fabric
-                           /       |        \\
+                           /       |        \
                         local    Fedora    Windows
                          CPU      worker     GPU
                                       |
@@ -42,10 +42,19 @@ quantization, KV cache, and actual layer movement.
 
 ## Configuration
 
-Install the optional dependency from a checked-out or released Fabric package:
+The Fabric-backed inference provider requires MNCS Fabric `0.2.0a8` or newer in
+the `0.2.x` line because that release adds request-scoped bundle staging after
+placement admission. Install the optional dependency from a released package:
 
 ```bash
 python -m pip install -e '.[fabric]'
+```
+
+For sibling development checkouts, install Fabric first and then the harness:
+
+```bash
+python -m pip install -e ../mncs-fabric
+python -m pip install -e .
 ```
 
 Add only operator-owned worker entries to the user configuration. Paths are
@@ -131,8 +140,15 @@ access to the local workspace.
 
 ## Tests and live smoke tests
 
-The normal suite uses local Ollama fakes and an in-process Fabric worker; it does
-not require hardware or a LAN worker:
+The normal suite deliberately remains runnable without the optional Fabric
+package. Fabric-only integration coverage is skipped when the dependency is not
+installed, while disabled/unavailable behavior is still tested:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+With a sibling Fabric checkout installed, run the complete integration coverage:
 
 ```bash
 PYTHONPATH=src:/path/to/mncs-fabric/src python -m pytest
