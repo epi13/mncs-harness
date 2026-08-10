@@ -182,6 +182,19 @@ class LocalAgent:
             else:  # pragma: no cover - loop has an explicit max-step branch
                 error = "Tool loop ended unexpectedly"
         except (OllamaError, ProviderError) as exc:
+            # Provider failures are still physical execution observations. Keep
+            # their provider/worker/placement metadata rather than making failed
+            # remote attempts look like local Ollama calls in metrics and the TUI.
+            provider_metadata = dict(getattr(provider, "last_metadata", {}))
+            if model_selection is not None:
+                provider_metadata.update(
+                    {
+                        "configured_model": model_selection.configured_model,
+                        "selected_model": model_selection.selected_model,
+                        "model_selection_reason": model_selection.reason,
+                        "model_selection_source": "worker-inventory",
+                    }
+                )
             error = str(exc)
 
         for path in registry.modified_paths:

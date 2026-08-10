@@ -22,6 +22,7 @@ class ControllerLightTests(unittest.TestCase):
             config = load_config(config_path)
             self.assertTrue(config.fabric.enabled)
             self.assertFalse(config.fabric.fallback_to_local)
+            self.assertFalse(config.fabric.runtime_probe_on_refresh)
             self.assertTrue(config.router.enable_semantic_routing)
             self.assertEqual(config.router.device, "cpu")
             for model in config.models.values():

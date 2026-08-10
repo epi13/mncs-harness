@@ -6,7 +6,7 @@ import inspect
 import pathlib
 import re
 
-REQUIRED_FABRIC_VERSION = "0.2.0a9"
+REQUIRED_FABRIC_VERSION = "0.2.0a10"
 _REQUIRED_EXECUTE_PARAMETER = "execution_bundle_archive"
 _VERSION_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)(?:a(\d+))?")
 
@@ -50,7 +50,8 @@ def require_execution_bundle_archive_api() -> dict[str, object]:
             "incompatible mncs-fabric consumer runtime: "
             f"loaded version {version} from {module_path}; Local Harness requires "
             f"mncs-fabric >= {REQUIRED_FABRIC_VERSION} with canonical transferred-bundle dispatch "
-            f"binding and FabricClient.execute(..., {_REQUIRED_EXECUTE_PARAMETER}=...)"
+            "binding, published-cache content verification/recovery, and "
+            f"FabricClient.execute(..., {_REQUIRED_EXECUTE_PARAMETER}=...)"
         )
     return {
         "version": version,

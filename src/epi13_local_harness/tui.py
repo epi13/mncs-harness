@@ -36,7 +36,7 @@ from .metrics import MetricsStore
 from .models import AgentResult, HarnessConfig, RoutePlan
 from .ollama import OllamaClient, OllamaError
 from .router import plan_route
-from .semantic_router import RouterRuntimeStatus, router_status
+from .semantic_router import RouterRuntimeStatus, activate_router, router_status
 
 
 def role_options(config: HarnessConfig) -> list[tuple[str, str]]:
@@ -222,11 +222,17 @@ def result_renderables(result: AgentResult) -> list[object]:
             if attempt.verification.passed
             else "[red]failed[/red]"
         )
+        provider = attempt.metrics.get("provider") or "unknown"
+        placement = (
+            attempt.metrics.get("placement_mode")
+            or attempt.metrics.get("execution_source")
+            or "unknown"
+        )
         attempts.add_row(
             attempt.role,
             attempt.model,
-            str(attempt.metrics.get("provider", "ollama")),
-            str(attempt.metrics.get("placement_mode") or "local"),
+            str(provider),
+            str(placement),
             status,
             str(len(attempt.tool_executions)),
         )
@@ -665,6 +671,10 @@ def run_tui(
     selected_workspace = (workspace or Path.cwd()).expanduser().resolve()
     if not selected_workspace.is_dir():
         raise ValueError(f"Workspace is not a directory: {selected_workspace}")
+    # Load the small semantic router before Textual starts thread-backed routing
+    # work. A failed activation is recorded for Doctor and deterministic routing
+    # remains available; it does not prevent the TUI from starting.
+    activate_router(config)
     HarnessTui(config, selected_workspace, config_path=config_path).run()
 
 

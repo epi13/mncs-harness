@@ -4,7 +4,8 @@ import unittest
 from dataclasses import replace
 
 from epi13_local_harness.config import load_config
-from epi13_local_harness.provider import FabricOllamaProvider
+from epi13_local_harness.fabric import FabricExecutionError, FabricStatus
+from epi13_local_harness.provider import FabricOllamaProvider, ProviderError
 
 
 class _CapturingSession:
@@ -16,6 +17,29 @@ class _CapturingSession:
         return (
             {"message": {"role": "assistant", "content": "ok"}},
             {"provider": "ollama-via-mncs-fabric", "placement_mode": "full-accelerator"},
+        )
+
+
+class _FailingSession:
+    last_inference = {
+        "worker": "collamore02-windows",
+        "placement": "cpu",
+        "reason": "INTEGRITY_FAILURE",
+        "request_identity": "request-123",
+    }
+
+    def chat(self, model, messages, tools=None, images=None):
+        raise FabricExecutionError("INTEGRITY_FAILURE")
+
+    def status(self):
+        return FabricStatus(
+            True,
+            "available",
+            "fixture-controller",
+            detail=(
+                "collamore02-windows: model inventory failed: INTEGRITY_FAILURE: "
+                "artifact identity mismatch: inventory.py"
+            ),
         )
 
 
@@ -40,6 +64,18 @@ class ProviderTests(unittest.TestCase):
         self.assertEqual(session.model.model_storage_bytes, 6_000_000_000)
         self.assertEqual(provider.last_metadata["model_storage_source"], "ollama-tags")
         self.assertEqual(provider.last_metadata["model_storage_bytes"], 6_000_000_000)
+
+    def test_failed_fabric_attempt_keeps_remote_provider_and_worker_metadata(self) -> None:
+        provider = FabricOllamaProvider(_FailingSession(), _SizedLocalProvider(), False)
+        model = replace(load_config(None).models["coder"], model_storage_bytes=1)
+        with self.assertRaisesRegex(ProviderError, "artifact identity mismatch"):
+            provider.chat(model, [{"role": "user", "content": "hello"}])
+        self.assertEqual(provider.last_metadata["provider"], "ollama-via-mncs-fabric")
+        self.assertEqual(provider.last_metadata["execution_source"], "remote")
+        self.assertEqual(provider.last_metadata["fabric_worker"], "collamore02-windows")
+        self.assertEqual(provider.last_metadata["placement_mode"], "cpu")
+        self.assertFalse(provider.last_metadata["fabric_fallback"])
+        self.assertIn("INTEGRITY_FAILURE", provider.last_metadata["fabric_failure_reason"])
 
 
 if __name__ == "__main__":

@@ -11,6 +11,7 @@ from epi13_local_harness.router import profile_task
 from epi13_local_harness.semantic_router import (
     LfmPromptRouter,
     SemanticRouterError,
+    activate_router,
     clear_router_cache,
     route_with_backend,
     router_status,
@@ -125,7 +126,33 @@ class SemanticRouterTests(unittest.TestCase):
         ):
             result, reason = route_with_backend("Explain this file.", config, profile)
         self.assertIsNone(result)
+        self.assertIn("SemanticRouterError", reason or "")
         self.assertIn("checkpoint unavailable", reason or "")
+
+    def test_activate_router_records_typed_failure_without_raising(self) -> None:
+        config = self._config()
+        failing = LfmPromptRouter(
+            config,
+            loader=lambda: (FakeAutoModel, FakeTokenizer),
+        )
+        with (
+            patch(
+                "epi13_local_harness.semantic_router.get_router_backend",
+                return_value=failing,
+            ),
+            patch(
+                "epi13_local_harness.semantic_router._missing_dependencies",
+                return_value=(),
+            ),
+            patch.object(
+                FakeAutoModel,
+                "from_pretrained",
+                side_effect=ValueError("bad value(s) in fds_to_keep"),
+            ),
+        ):
+            self.assertFalse(activate_router(config))
+        status = router_status(config)
+        self.assertIn("ValueError: bad value(s) in fds_to_keep", status.detail)
 
     def test_status_distinguishes_disabled_from_active(self) -> None:
         config = load_config(Path("/missing/config.toml"))
