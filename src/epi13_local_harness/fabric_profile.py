@@ -329,6 +329,15 @@ def build_parser() -> argparse.ArgumentParser:
     add_windows_commission_arguments(commission)
     commission.set_defaults(func=commission_windows)
 
+    from .fabric_models import add_windows_model_arguments, install_models_windows
+
+    install_models = subparsers.add_parser(
+        "install-models-windows",
+        help="Stage and run worker-local Ollama pulls without transferring model blobs over the LAN",
+    )
+    add_windows_model_arguments(install_models)
+    install_models.set_defaults(func=install_models_windows)
+
     show = subparsers.add_parser("show", help="Show effective Fabric routing configuration")
     show.set_defaults(func=show_fabric)
     disable = subparsers.add_parser("disable", help="Disable Fabric without deleting worker settings")
