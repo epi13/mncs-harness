@@ -277,6 +277,12 @@ def _parse_fabric_config(raw: dict[str, Any]) -> FabricConfig:
                 timeout_seconds=float(item.get("timeout_seconds", 5.0)),
             )
         )
+    runtime_probe_timeout = float(raw.get("runtime_probe_timeout_seconds", 45.0))
+    runtime_probe_max_age = float(raw.get("runtime_probe_max_age_seconds", 1800.0))
+    if runtime_probe_timeout <= 0 or runtime_probe_timeout > 300:
+        raise ValueError("fabric.runtime_probe_timeout_seconds must be between 0 and 300")
+    if runtime_probe_max_age < 0 or runtime_probe_max_age > 3600:
+        raise ValueError("fabric.runtime_probe_max_age_seconds must be between 0 and 3600")
     return FabricConfig(
         enabled=bool(raw.get("enabled", False)),
         controller_id=str(raw.get("controller_id", "epi13-local-harness")),
@@ -286,6 +292,9 @@ def _parse_fabric_config(raw: dict[str, Any]) -> FabricConfig:
         fallback_to_local=bool(raw.get("fallback_to_local", True)),
         refresh_on_startup=bool(raw.get("refresh_on_startup", True)),
         refresh_timeout_seconds=float(raw.get("refresh_timeout_seconds", 5.0)),
+        runtime_probe_on_refresh=bool(raw.get("runtime_probe_on_refresh", True)),
+        runtime_probe_timeout_seconds=runtime_probe_timeout,
+        runtime_probe_max_age_seconds=runtime_probe_max_age,
         worker_bundle_root=Path(
             str(
                 raw.get(
