@@ -10,14 +10,14 @@ The profile makes four deliberate changes to the active harness configuration:
 
 1. enables the pinned LiquidAI semantic router on CPU;
 2. routes every generation role through Fabric;
-3. requests CUDA placement for generation roles; and
+3. places the small Fabric provider-call bundle on a remote worker as a normal CPU job; and
 4. disables automatic fallback to the controller's local Ollama runtime.
 
-If the semantic-router dependencies are unavailable, deterministic routing remains the bounded fallback. The profile never silently replaces routing with a large local generation model.
+Worker-local Ollama, not the Fabric Python runner, owns model loading, GPU residency, quantization, and CPU/GPU split. If the semantic-router dependencies are unavailable, deterministic routing remains the bounded fallback. The profile never silently replaces routing with a large local generation model.
 
 ## Two-stage routing
 
-The runtime separates two decisions:
+The runtime separates role selection from model selection:
 
 ```text
 prompt
@@ -25,10 +25,20 @@ prompt
   -> role: e2b | e4b | coder | reviewer
   -> live Fabric worker Ollama inventory
   -> installed model for that role
-  -> Fabric placement / execution
+  -> remote Fabric provider-call bundle
+  -> worker-local Ollama
+  -> provider-selected GPU/CPU execution
 ```
 
-The semantic router does not generate the answer. It chooses a lane/role. A generation model still performs the task, but under the controller-light profile that model runs through Fabric rather than being loaded on the controller.
+The semantic router does not generate the answer. It chooses a lane/role. A generation model still performs the task, but under the controller-light profile that model is invoked through the remote worker rather than being loaded on the controller.
+
+## Fabric placement versus provider placement
+
+The Fabric execution bundle is only a small HTTP client. It calls worker-local Ollama on loopback. Requiring that Python process itself to pass CUDA placement would conflate two different authority boundaries and could cause a remote-capable request to fall back locally merely because the worker Python runtime lacks fresh CUDA execution evidence.
+
+Controller-light therefore requests CPU placement for the provider-call bundle. Ollama remains responsible for how the selected model is loaded and executed on the worker's hardware.
+
+`cuda_ready_count` remains useful evidence about the worker Python runtime, but it does not gate worker-local Ollama inference. A future provider-specific observation can record Ollama's actual GPU/CPU model split without pretending the Python CUDA probe proves Ollama placement.
 
 ## Live worker inventory
 
@@ -38,7 +48,7 @@ At Fabric session startup, the harness sends a bounded Python execution bundle t
 http://127.0.0.1:11434/api/tags
 ```
 
-The returned inventory is attached to `elh-fabric status` as `model_names` and `model_inventory`.
+The returned inventory is attached to `elh-fabric status` as `model_names` and `model_inventory`. Status also reports `ollama_inventory_ready_count` so model availability can be distinguished from Python CUDA evidence.
 
 This runtime inventory path uses Fabric mTLS. It does not require SSH credentials and it does not expose Ollama on the LAN.
 
@@ -61,4 +71,4 @@ Until Fabric carries model availability as a first-class scheduling capability, 
 
 ## Fabric version
 
-This feature requires `mncs-fabric >= 0.2.0a9`. Fabric `0.2.0a8` exposes the execution-bundle archive API but has a transferred-bundle dispatch-binding bug that can prevent CUDA and model-inventory probes from executing.
+This feature requires `mncs-fabric >= 0.2.0a9`. Fabric `0.2.0a8` exposes the execution-bundle archive API but has a transferred-bundle dispatch-binding bug that can prevent runtime probes and provider-call bundles from executing correctly.
