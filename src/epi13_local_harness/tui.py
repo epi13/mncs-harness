@@ -33,6 +33,7 @@ from .agent import LocalAgent
 from .config import default_config_path, load_config
 from .fabric import FabricStatus
 from .metrics import MetricsStore
+from .model_selection import select_installed_model
 from .models import AgentResult, HarnessConfig, RoutePlan
 from .ollama import OllamaClient, OllamaError
 from .router import plan_route
@@ -124,9 +125,15 @@ def router_status_renderable(status: RouterRuntimeStatus) -> Panel:
 def fabric_status_summary(status: FabricStatus) -> str:
     if not status.enabled:
         return "state=disabled"
+    model_count = sum(
+        int(worker.get("model_count") or len(worker.get("model_names") or ()))
+        for worker in status.workers
+        if worker.get("source") == "remote"
+    )
     summary = (
         f"state={status.state} | workers={status.available_workers}/{len(status.workers)} "
         f"| accelerators={status.accelerator_count} "
+        f"| worker-models={model_count} "
         f"| offload-capable={status.offload_capable_count}"
     )
     if status.detail:
@@ -141,6 +148,7 @@ def fabric_status_renderable(status: FabricStatus) -> Panel:
     table.add_column("Source")
     table.add_column("CPU/RAM")
     table.add_column("Accelerators")
+    table.add_column("Models")
     for worker in status.workers:
         snapshot = worker.get("resource_snapshot") or {}
         cpu = snapshot.get("cpu_logical_count")
@@ -150,15 +158,22 @@ def fabric_status_renderable(status: FabricStatus) -> Panel:
         accelerator_text = str(len(accelerators))
         if any(item.get("execution_probe") == "PASS" for item in accelerators):
             accelerator_text += " (probe PASS)"
+        if worker.get("model_inventory_error"):
+            model_text = "scan failed"
+        elif "model_names" in worker:
+            model_text = str(worker.get("model_count") or len(worker.get("model_names") or ()))
+        else:
+            model_text = "UNKNOWN"
         table.add_row(
             str(worker.get("worker_id", "unknown")),
             str(worker.get("availability", worker.get("state", "UNKNOWN"))),
             str(worker.get("source", "unknown")),
             f"{cpu or 'UNKNOWN'} / {ram_text}",
             accelerator_text,
+            model_text,
         )
     if not status.workers:
-        table.add_row("—", "—", "—", "—", "—")
+        table.add_row("—", "—", "—", "—", "—", "—")
     if status.detail:
         table.caption = status.detail
     if status.last_inference:
@@ -256,28 +271,121 @@ def result_renderables(result: AgentResult) -> list[object]:
     return renderables
 
 
-def worker_models_table(
+def _common_fabric_inventory(status: FabricStatus) -> tuple[dict, ...]:
+    workers = [
+        worker
+        for worker in status.workers
+        if worker.get("source") == "remote" and worker.get("availability") == "AVAILABLE"
+    ]
+    if not workers or any("model_inventory" not in worker for worker in workers):
+        return ()
+    common_names: set[str] | None = None
+    metadata: dict[str, dict] = {}
+    for worker in workers:
+        inventory = worker.get("model_inventory") or []
+        names = {
+            str(item.get("name") or item.get("model") or "")
+            for item in inventory
+            if isinstance(item, dict) and (item.get("name") or item.get("model"))
+        }
+        common_names = names if common_names is None else common_names & names
+        for item in inventory:
+            if not isinstance(item, dict):
+                continue
+            name = str(item.get("name") or item.get("model") or "")
+            if name and name not in metadata:
+                metadata[name] = dict(item)
+    return tuple(metadata[name] for name in sorted(common_names or ()))
+
+
+def role_models_table(
     config: HarnessConfig,
-    installed: set[str],
+    local_installed: set[str],
+    fabric_status: FabricStatus,
 ) -> Table:
-    table = Table(title="Ollama worker models", expand=True)
+    """Show configured role preferences separately from live availability."""
+
+    table = Table(title="Role model policy", expand=True)
     table.add_column("Role", style="cyan")
-    table.add_column("Model")
-    table.add_column("Context", justify="right")
-    table.add_column("Keep alive")
+    table.add_column("Provider")
+    table.add_column("Preferred")
+    table.add_column("Resolved")
     table.add_column("State")
+    remote_inventory = _common_fabric_inventory(fabric_status)
     for role, model in config.models.items():
-        table.add_row(
-            role,
-            model.name,
-            str(model.num_ctx),
-            str(model.keep_alive),
-            (
-                "[green]installed[/green]"
-                if model.name in installed
-                else "[red]missing[/red]"
-            ),
-        )
+        if model.provider == "fabric":
+            selection = select_installed_model(role, model.name, remote_inventory)
+            if selection is None:
+                resolved = "—"
+                state = "[yellow]worker inventory unavailable[/yellow]"
+            else:
+                resolved = selection.selected_model
+                state = (
+                    "[green]preferred installed[/green]"
+                    if resolved == model.name
+                    else "[yellow]dynamic fallback[/yellow]"
+                )
+        else:
+            resolved = model.name
+            state = (
+                "[green]installed locally[/green]"
+                if model.name in local_installed
+                else "[red]missing locally[/red]"
+            )
+        table.add_row(role, model.provider, model.name, resolved, state)
+    return table
+
+
+def fabric_model_inventory_table(status: FabricStatus) -> Table:
+    """Render every model reported by every currently available Fabric worker."""
+
+    table = Table(title="Live Fabric worker model inventory", expand=True)
+    table.add_column("Worker", style="cyan")
+    table.add_column("Model")
+    table.add_column("Size", justify="right")
+    table.add_column("Family")
+    table.add_column("Params")
+    table.add_column("Quant")
+    rows = 0
+    for worker in status.workers:
+        if worker.get("source") != "remote":
+            continue
+        worker_id = str(worker.get("worker_id") or "unknown")
+        inventory = worker.get("model_inventory")
+        if isinstance(inventory, list):
+            for item in sorted(
+                (value for value in inventory if isinstance(value, dict)),
+                key=lambda value: str(value.get("name") or value.get("model") or ""),
+            ):
+                name = str(item.get("name") or item.get("model") or "")
+                size = item.get("size")
+                size_text = (
+                    f"{size / (1024 ** 3):.2f} GiB"
+                    if isinstance(size, int) and not isinstance(size, bool) and size >= 0
+                    else "—"
+                )
+                details = item.get("details") if isinstance(item.get("details"), dict) else {}
+                table.add_row(
+                    worker_id,
+                    name or "(unnamed)",
+                    size_text,
+                    str(details.get("family") or "—"),
+                    str(details.get("parameter_size") or "—"),
+                    str(details.get("quantization_level") or "—"),
+                )
+                rows += 1
+        elif worker.get("model_inventory_error"):
+            table.add_row(
+                worker_id,
+                "[red]inventory scan failed[/red]",
+                "—",
+                "—",
+                "—",
+                "—",
+            )
+            rows += 1
+    if rows == 0:
+        table.add_row("—", "No live worker inventory available", "—", "—", "—", "—")
     return table
 
 
@@ -499,7 +607,7 @@ class HarnessTui(App[None]):
         self.run_inspection("doctor")
 
     def action_models(self) -> None:
-        self._set_busy(True, "Checking models…")
+        self._set_busy(True, "Refreshing worker model inventory…")
         self.run_inspection("models")
 
     def action_metrics(self) -> None:
@@ -507,7 +615,7 @@ class HarnessTui(App[None]):
         self.run_inspection("metrics")
 
     def action_fabric(self) -> None:
-        self._set_busy(True, "Loading Fabric status…")
+        self._set_busy(True, "Refreshing Fabric status…")
         self.run_inspection("fabric")
 
     def action_send(self) -> None:
@@ -624,14 +732,17 @@ class HarnessTui(App[None]):
 
         semantic = router_status(self.config)
         semantic_panel = router_status_renderable(semantic)
-        fabric_panel = fabric_status_renderable(self.agent.fabric_status())
+        fabric_status = self.agent.refresh_fabric_inventory()
+        fabric_panel = fabric_status_renderable(fabric_status)
         if kind == "fabric":
             return fabric_panel
+
         client = OllamaClient(self.config.ollama)
-        installed = client.model_names()
-        workers = worker_models_table(self.config, installed)
+        local_installed = client.model_names()
+        roles = role_models_table(self.config, local_installed, fabric_status)
+        remote_models = fabric_model_inventory_table(fabric_status)
         if kind == "models":
-            return Group(semantic_panel, fabric_panel, workers)
+            return Group(semantic_panel, fabric_panel, roles, remote_models)
 
         version = client.version()
         diagnostics = Table.grid(padding=(0, 1))
@@ -642,7 +753,7 @@ class HarnessTui(App[None]):
         diagnostics.add_row("Ollama", f"{version} at {self.config.ollama.base_url}")
         diagnostics.add_row("Metrics", str(self.config.metrics.path))
         diagnostics.add_row("Router", router_status_summary(semantic))
-        diagnostics.add_row("Fabric", fabric_status_summary(self.agent.fabric_status()))
+        diagnostics.add_row("Fabric", fabric_status_summary(fabric_status))
         diagnostics.add_row(
             "Tools",
             ", ".join(
@@ -654,7 +765,8 @@ class HarnessTui(App[None]):
             Panel(diagnostics, title="Doctor", border_style="cyan"),
             semantic_panel,
             fabric_panel,
-            workers,
+            roles,
+            remote_models,
         )
 
     def _finish_inspection(self, renderable: object, kind: str) -> None:
