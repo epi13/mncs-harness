@@ -8,6 +8,7 @@ from epi13_local_harness.fabric_commission import (
     _encoded_powershell,
     _scp_base,
     _ssh_base,
+    _windows_scp_path,
 )
 
 
@@ -28,6 +29,16 @@ class FabricCommissionTests(unittest.TestCase):
         self.assertIn("PasswordAuthentication=no", joined)
         self.assertIn("BatchMode=yes", joined)
         self.assertIn("StrictHostKeyChecking=yes", joined)
+
+    def test_windows_scp_path_matches_windows_openssh_form(self) -> None:
+        self.assertEqual(
+            _windows_scp_path("C:/Users/operator/mncs-fabric-worker"),
+            "/Users/operator/mncs-fabric-worker",
+        )
+        self.assertEqual(
+            _windows_scp_path(r"C:\Users\operator\mncs-fabric-worker"),
+            "/Users/operator/mncs-fabric-worker",
+        )
 
     def test_powershell_encoding_round_trips_utf16le(self) -> None:
         source = "$ProgressPreference='SilentlyContinue'; Write-Output 'ok'"
