@@ -8,6 +8,8 @@ from pathlib import Path
 from typing import Any
 
 from .models import (
+    FabricConfig,
+    FabricWorkerConfig,
     HarnessConfig,
     LaneConfig,
     MetricsConfig,
@@ -75,6 +77,7 @@ def load_config(path: Path | None = None) -> HarnessConfig:
     policy_raw = dict(raw.get("policy", {}))
     verification_raw = dict(raw.get("verification", {}))
     metrics_raw = dict(raw.get("metrics", {}))
+    fabric_raw = dict(raw.get("fabric", {}))
     models_raw = dict(raw.get("models", {}))
     lanes_raw = dict(raw.get("lanes", {}))
 
@@ -90,6 +93,42 @@ def load_config(path: Path | None = None) -> HarnessConfig:
             top_p=float(item.get("top_p", 0.95)),
             top_k=int(item.get("top_k", 64)),
             tools=tuple(str(value) for value in item.get("tools", [])),
+            provider=str(item.get("provider", "fabric")),
+            execution_device=str(item.get("execution_device", "auto")),
+            accelerator_backend=(
+                str(item["accelerator_backend"])
+                if item.get("accelerator_backend") is not None
+                else None
+            ),
+            offload=str(item.get("offload", "auto")),
+            precision=str(item.get("precision", "auto")),
+            model_storage_bytes=int(item.get("model_storage_bytes", 0)),
+            estimated_workspace_bytes=int(item.get("estimated_workspace_bytes", 0)),
+            minimum_host_memory_bytes=(
+                int(item["minimum_host_memory_bytes"])
+                if item.get("minimum_host_memory_bytes") is not None
+                else None
+            ),
+            gpu_reserve_bytes=int(item.get("gpu_reserve_bytes", 268_435_456)),
+            maximum_vram_bytes=(
+                int(item["maximum_vram_bytes"])
+                if item.get("maximum_vram_bytes") is not None
+                else None
+            ),
+            minimum_accelerator_working_bytes=(
+                int(item["minimum_accelerator_working_bytes"])
+                if item.get("minimum_accelerator_working_bytes") is not None
+                else None
+            ),
+            runtime_supports_sequential_cpu_offload=(
+                bool(item["runtime_supports_sequential_cpu_offload"])
+                if item.get("runtime_supports_sequential_cpu_offload") is not None
+                else None
+            ),
+            required_capabilities=tuple(
+                str(value) for value in item.get("required_capabilities", [])
+            ),
+            resource_max_age_seconds=float(item.get("resource_max_age_seconds", 300.0)),
         )
 
     required_roles = {"e2b", "e4b", "reviewer"}
@@ -184,4 +223,80 @@ def load_config(path: Path | None = None) -> HarnessConfig:
             path=Path(str(metrics_raw.get("path", "~/.local/state/epi13-local-harness/metrics.sqlite3"))).expanduser(),
             store_prompt_text=bool(metrics_raw.get("store_prompt_text", False)),
         ),
+        fabric=_parse_fabric_config(fabric_raw),
+    )
+
+
+def _parse_fabric_config(raw: dict[str, Any]) -> FabricConfig:
+    workers_raw = raw.get("workers", {})
+    if not isinstance(workers_raw, dict):
+        raise ValueError("fabric.workers must be a TOML table")
+    workers: list[FabricWorkerConfig] = []
+    for worker_id, item in workers_raw.items():
+        if not isinstance(item, dict):
+            raise ValueError(f"fabric.workers.{worker_id} must be a TOML table")
+        kind = str(item.get("kind", "remote"))
+        if kind not in {"local", "remote"}:
+            raise ValueError(f"fabric.workers.{worker_id}.kind must be local or remote")
+        workers.append(
+            FabricWorkerConfig(
+                worker_id=str(worker_id),
+                kind=kind,
+                state_path=Path(
+                    str(item.get("state_path", f"~/.local/state/{APP_NAME}/fabric-{worker_id}.jsonl"))
+                ).expanduser(),
+                bundle_root=(
+                    Path(str(item["bundle_root"])).expanduser()
+                    if item.get("bundle_root") is not None
+                    else None
+                ),
+                host=str(item["host"]) if item.get("host") is not None else None,
+                port=int(item["port"]) if item.get("port") is not None else None,
+                capabilities=tuple(str(value) for value in item.get("capabilities", ["python"])),
+                ca_file=(
+                    Path(str(item["ca_file"])).expanduser()
+                    if item.get("ca_file") is not None
+                    else None
+                ),
+                client_certificate=(
+                    Path(str(item["client_certificate"])).expanduser()
+                    if item.get("client_certificate") is not None
+                    else None
+                ),
+                client_key=(
+                    Path(str(item["client_key"])).expanduser()
+                    if item.get("client_key") is not None
+                    else None
+                ),
+                trust_state=(
+                    Path(str(item["trust_state"])).expanduser()
+                    if item.get("trust_state") is not None
+                    else None
+                ),
+                concurrency_limit=int(item.get("concurrency_limit", 1)),
+                timeout_seconds=float(item.get("timeout_seconds", 5.0)),
+            )
+        )
+    return FabricConfig(
+        enabled=bool(raw.get("enabled", False)),
+        controller_id=str(raw.get("controller_id", "epi13-local-harness")),
+        state_path=Path(
+            str(raw.get("state_path", "~/.local/state/epi13-local-harness/fabric.jsonl"))
+        ).expanduser(),
+        fallback_to_local=bool(raw.get("fallback_to_local", True)),
+        refresh_on_startup=bool(raw.get("refresh_on_startup", True)),
+        refresh_timeout_seconds=float(raw.get("refresh_timeout_seconds", 5.0)),
+        worker_bundle_root=Path(
+            str(
+                raw.get(
+                    "worker_bundle_root",
+                    "~/.local/state/epi13-local-harness/fabric-worker-bundle",
+                )
+            )
+        ).expanduser(),
+        provider_ollama_base_url=str(
+            raw.get("provider_ollama_base_url", "http://127.0.0.1:11434")
+        ).rstrip("/"),
+        provider_timeout_seconds=int(raw.get("provider_timeout_seconds", 600)),
+        workers=tuple(sorted(workers, key=lambda item: item.worker_id)),
     )

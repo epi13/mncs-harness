@@ -73,7 +73,24 @@ class MetricsStore:
                     eval_count INTEGER,
                     eval_duration_ns INTEGER,
                     tool_call_count INTEGER NOT NULL,
-                    verification_failures TEXT NOT NULL
+                    verification_failures TEXT NOT NULL,
+                    provider TEXT,
+                    backend TEXT,
+                    fabric_enabled INTEGER,
+                    execution_source TEXT,
+                    fabric_worker TEXT,
+                    placement_mode TEXT,
+                    accelerator_backend TEXT,
+                    precision TEXT,
+                    placement_reason TEXT,
+                    placement_reason_code TEXT,
+                    fabric_request_identity TEXT,
+                    resource_snapshot_identity TEXT,
+                    fabric_record_identity TEXT,
+                    fabric_receipt_identity TEXT,
+                    fabric_dispatch_ms REAL,
+                    provider_latency_ms REAL,
+                    tokens_per_second REAL
                 );
                 CREATE TABLE IF NOT EXISTS tool_calls (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -93,6 +110,23 @@ class MetricsStore:
                 ("semantic_margin", "REAL"),
                 ("semantic_latency_ms", "REAL"),
                 ("semantic_reason", "TEXT"),
+                ("provider", "TEXT"),
+                ("backend", "TEXT"),
+                ("fabric_enabled", "INTEGER"),
+                ("execution_source", "TEXT"),
+                ("fabric_worker", "TEXT"),
+                ("placement_mode", "TEXT"),
+                ("accelerator_backend", "TEXT"),
+                ("precision", "TEXT"),
+                ("placement_reason", "TEXT"),
+                ("placement_reason_code", "TEXT"),
+                ("fabric_request_identity", "TEXT"),
+                ("resource_snapshot_identity", "TEXT"),
+                ("fabric_record_identity", "TEXT"),
+                ("fabric_receipt_identity", "TEXT"),
+                ("fabric_dispatch_ms", "REAL"),
+                ("provider_latency_ms", "REAL"),
+                ("tokens_per_second", "REAL"),
             ):
                 self._ensure_column(connection, "runs", column, declaration)
 
@@ -141,8 +175,17 @@ class MetricsStore:
                     run_id, attempt_index, role, model, escalated_from, passed, error,
                     total_duration_ns, load_duration_ns, prompt_eval_count,
                     prompt_eval_duration_ns, eval_count, eval_duration_ns,
-                    tool_call_count, verification_failures
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    tool_call_count, verification_failures, provider, backend,
+                    fabric_enabled, execution_source, fabric_worker, placement_mode,
+                    accelerator_backend, precision, placement_reason,
+                    placement_reason_code, fabric_request_identity,
+                    resource_snapshot_identity, fabric_record_identity,
+                    fabric_receipt_identity, fabric_dispatch_ms, provider_latency_ms,
+                    tokens_per_second
+                ) VALUES (
+                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                )
                 """,
                 (
                     run_id,
@@ -160,6 +203,23 @@ class MetricsStore:
                     metrics.get("eval_duration"),
                     len(attempt.tool_executions),
                     json.dumps(attempt.verification.failures),
+                    metrics.get("provider"),
+                    metrics.get("backend"),
+                    int(bool(metrics["fabric_enabled"])) if "fabric_enabled" in metrics else None,
+                    metrics.get("execution_source"),
+                    metrics.get("fabric_worker"),
+                    metrics.get("placement_mode"),
+                    metrics.get("accelerator_backend"),
+                    metrics.get("precision"),
+                    metrics.get("placement_reason"),
+                    metrics.get("placement_reason_code"),
+                    metrics.get("fabric_request_identity"),
+                    metrics.get("resource_snapshot_identity"),
+                    metrics.get("fabric_record_identity"),
+                    metrics.get("fabric_receipt_identity"),
+                    metrics.get("fabric_dispatch_ms"),
+                    metrics.get("provider_latency_ms"),
+                    metrics.get("tokens_per_second"),
                 ),
             )
             attempt_id = int(cursor.lastrowid)
@@ -188,7 +248,13 @@ class MetricsStore:
                        r.semantic_backend, r.semantic_revision, r.semantic_lane,
                        r.semantic_score, r.semantic_margin, r.semantic_latency_ms,
                        a.attempt_index, a.role, a.model, a.passed,
-                       a.tool_call_count, a.eval_count, a.eval_duration_ns, a.error
+                       a.tool_call_count, a.eval_count, a.eval_duration_ns, a.error,
+                       a.provider, a.backend, a.fabric_enabled, a.execution_source,
+                       a.fabric_worker, a.placement_mode, a.accelerator_backend,
+                       a.precision, a.placement_reason, a.placement_reason_code,
+                       a.fabric_request_identity, a.resource_snapshot_identity,
+                       a.fabric_record_identity, a.fabric_receipt_identity,
+                       a.fabric_dispatch_ms, a.provider_latency_ms, a.tokens_per_second
                 FROM attempts a
                 JOIN runs r ON r.id = a.run_id
                 ORDER BY a.id DESC

@@ -5,10 +5,12 @@ import unittest
 from pathlib import Path
 
 from epi13_local_harness.config import load_config
+from epi13_local_harness.fabric import FabricStatus
 from epi13_local_harness.models import RoutePlan, TaskProfile
 from epi13_local_harness.semantic_router import RouterRuntimeStatus
 from epi13_local_harness.tui import (
     HarnessTui,
+    fabric_status_summary,
     parse_image_paths,
     role_options,
     route_summary,
@@ -78,6 +80,12 @@ class TuiHelperTests(unittest.TestCase):
         summary = router_status_summary(status)
         self.assertIn("state=cached", summary)
         self.assertIn("active=False", summary)
+
+    def test_fabric_summary_distinguishes_disabled_state(self) -> None:
+        summary = fabric_status_summary(
+            FabricStatus(False, "disabled", "fixture-controller")
+        )
+        self.assertEqual(summary, "state=disabled")
 
 
 class TuiAppTests(unittest.IsolatedAsyncioTestCase):

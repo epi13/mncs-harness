@@ -31,6 +31,7 @@ from textual.worker import get_current_worker
 
 from .agent import LocalAgent
 from .config import default_config_path, load_config
+from .fabric import FabricStatus
 from .metrics import MetricsStore
 from .models import AgentResult, HarnessConfig, RoutePlan
 from .ollama import OllamaClient, OllamaError
@@ -120,6 +121,69 @@ def router_status_renderable(status: RouterRuntimeStatus) -> Panel:
     return Panel(table, title="Semantic routing backend", border_style=border)
 
 
+def fabric_status_summary(status: FabricStatus) -> str:
+    if not status.enabled:
+        return "state=disabled"
+    summary = (
+        f"state={status.state} | workers={status.available_workers}/{len(status.workers)} "
+        f"| accelerators={status.accelerator_count} "
+        f"| offload-capable={status.offload_capable_count}"
+    )
+    if status.detail:
+        summary += f" | detail={status.detail}"
+    return summary
+
+
+def fabric_status_renderable(status: FabricStatus) -> Panel:
+    table = Table(expand=True)
+    table.add_column("Worker", style="cyan")
+    table.add_column("Availability")
+    table.add_column("Source")
+    table.add_column("CPU/RAM")
+    table.add_column("Accelerators")
+    for worker in status.workers:
+        snapshot = worker.get("resource_snapshot") or {}
+        cpu = snapshot.get("cpu_logical_count")
+        ram = snapshot.get("host_memory_available_bytes")
+        ram_text = "UNKNOWN" if ram is None else f"{ram / (1024 ** 3):.1f} GiB"
+        accelerators = snapshot.get("accelerators") or []
+        accelerator_text = str(len(accelerators))
+        if any(item.get("execution_probe") == "PASS" for item in accelerators):
+            accelerator_text += " (probe PASS)"
+        table.add_row(
+            str(worker.get("worker_id", "unknown")),
+            str(worker.get("availability", worker.get("state", "UNKNOWN"))),
+            str(worker.get("source", "unknown")),
+            f"{cpu or 'UNKNOWN'} / {ram_text}",
+            accelerator_text,
+        )
+    if not status.workers:
+        table.add_row("—", "—", "—", "—", "—")
+    if status.detail:
+        table.caption = status.detail
+    if status.last_inference:
+        last = status.last_inference
+        table.caption = (table.caption + " | " if table.caption else "") + (
+            "last: "
+            f"worker={last.get('worker') or 'none'} "
+            f"placement={last.get('placement') or 'unknown'} "
+            f"disposition={last.get('disposition') or 'unknown'}"
+        )
+    border = "green" if status.state == "available" else "yellow"
+    if status.state == "unavailable":
+        border = "red"
+    return Panel(
+        Group(
+            Text(
+                f"controller={status.controller_id} | {fabric_status_summary(status)}"
+            ),
+            table,
+        ),
+        title="MNCS Fabric",
+        border_style=border,
+    )
+
+
 def route_renderable(plan: RoutePlan) -> Panel:
     table = Table.grid(padding=(0, 1))
     table.add_column(style="bold cyan", no_wrap=True)
@@ -148,6 +212,8 @@ def result_renderables(result: AgentResult) -> list[object]:
     attempts = Table(title="Attempts", expand=True)
     attempts.add_column("Role", style="cyan")
     attempts.add_column("Model")
+    attempts.add_column("Provider")
+    attempts.add_column("Placement")
     attempts.add_column("Status")
     attempts.add_column("Tools", justify="right")
     for attempt in result.attempts:
@@ -159,6 +225,8 @@ def result_renderables(result: AgentResult) -> list[object]:
         attempts.add_row(
             attempt.role,
             attempt.model,
+            str(attempt.metrics.get("provider", "ollama")),
+            str(attempt.metrics.get("placement_mode") or "local"),
             status,
             str(len(attempt.tool_executions)),
         )
@@ -330,6 +398,7 @@ class HarnessTui(App[None]):
                     yield Button("Doctor", id="doctor")
                     yield Button("Models", id="models")
                     yield Button("Metrics", id="metrics")
+                    yield Button("Fabric", id="fabric")
                     yield Button("Clear", id="clear")
             with Vertical(id="conversation"):
                 yield RichLog(
@@ -370,7 +439,7 @@ class HarnessTui(App[None]):
         self.query_one("#status", Static).update(text)
 
     def _set_busy(self, busy: bool, status: str = "Ready") -> None:
-        for button_id in ("send", "route", "doctor", "models", "metrics"):
+        for button_id in ("send", "route", "doctor", "models", "metrics", "fabric"):
             self.query_one(f"#{button_id}", Button).disabled = busy
         self._status(status)
 
@@ -430,6 +499,10 @@ class HarnessTui(App[None]):
         self._set_busy(True, "Loading metrics…")
         self.run_inspection("metrics")
 
+    def action_fabric(self) -> None:
+        self._set_busy(True, "Loading Fabric status…")
+        self.run_inspection("fabric")
+
     def action_send(self) -> None:
         task = self._task()
         if not task:
@@ -444,7 +517,7 @@ class HarnessTui(App[None]):
         auto_approve = self.query_one("#auto-approve", Checkbox).value
         self._log(Panel(Text(task), title="You", border_style="blue"))
         self.query_one("#prompt", Input).value = ""
-        self._set_busy(True, "Routing and running local model…")
+        self._set_busy(True, "Routing and running provider…")
         self.run_agent_task(task, workspace, images, role, auto_approve)
 
     def on_input_submitted(self, event: Input.Submitted) -> None:
@@ -458,6 +531,7 @@ class HarnessTui(App[None]):
             "doctor": self.action_doctor,
             "models": self.action_models,
             "metrics": self.action_metrics,
+            "fabric": self.action_fabric,
             "clear": self.action_clear_log,
         }
         action = actions.get(event.button.id or "")
@@ -543,11 +617,14 @@ class HarnessTui(App[None]):
 
         semantic = router_status(self.config)
         semantic_panel = router_status_renderable(semantic)
+        fabric_panel = fabric_status_renderable(self.agent.fabric_status())
+        if kind == "fabric":
+            return fabric_panel
         client = OllamaClient(self.config.ollama)
         installed = client.model_names()
         workers = worker_models_table(self.config, installed)
         if kind == "models":
-            return Group(semantic_panel, workers)
+            return Group(semantic_panel, fabric_panel, workers)
 
         version = client.version()
         diagnostics = Table.grid(padding=(0, 1))
@@ -558,6 +635,7 @@ class HarnessTui(App[None]):
         diagnostics.add_row("Ollama", f"{version} at {self.config.ollama.base_url}")
         diagnostics.add_row("Metrics", str(self.config.metrics.path))
         diagnostics.add_row("Router", router_status_summary(semantic))
+        diagnostics.add_row("Fabric", fabric_status_summary(self.agent.fabric_status()))
         diagnostics.add_row(
             "Tools",
             ", ".join(
@@ -568,6 +646,7 @@ class HarnessTui(App[None]):
         return Group(
             Panel(diagnostics, title="Doctor", border_style="cyan"),
             semantic_panel,
+            fabric_panel,
             workers,
         )
 

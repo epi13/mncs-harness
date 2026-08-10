@@ -25,7 +25,12 @@ DeterministicRouter
    `---- 12B: difficult, ambiguous, multimodal, or high-risk review
              |
              v
-        Ollama /api/chat
+       inference provider boundary
+          /               \\
+         /                 \\
+  local Ollama       MNCS Fabric placement
+                              |
+                       worker-local Ollama
              |
              v
       bounded tool-call loop
@@ -61,6 +66,14 @@ A dependency-free HTTP client for Ollama's native API. It supports:
 - per-role context and sampling options;
 - per-request `keep_alive` values;
 - base64 image inputs.
+
+### `provider.py` and `fabric.py`
+
+The provider boundary preserves the Ollama-shaped chat response while allowing
+configured roles to use a Fabric-backed bounded invocation. Fabric owns worker
+state, resource eligibility, transport, and evidence. The local harness still
+owns the tool loop, workspace, policy, verification, and escalation. See
+[FABRIC.md](FABRIC.md) for configuration and the security boundary.
 
 ### `agent.py`
 

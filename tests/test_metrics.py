@@ -60,6 +60,56 @@ class MetricsTests(unittest.TestCase):
                 }
             self.assertIn("semantic_backend", columns)
             self.assertIn("semantic_latency_ms", columns)
+            self.assertIn("fabric_worker", columns)
+            self.assertIn("placement_mode", columns)
+
+    def test_attempt_records_physical_placement_metadata(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "metrics.sqlite3"
+            store = MetricsStore(path)
+            plan = RoutePlan(
+                primary_role="e2b",
+                escalation_roles=(),
+                reasons=("simple",),
+                profile=TaskProfile(
+                    text="hello",
+                    word_count=1,
+                    has_code=False,
+                    asks_for_edit=False,
+                    asks_for_execution=False,
+                    asks_for_explanation=False,
+                    is_high_risk=False,
+                    is_complex=False,
+                    has_image=False,
+                    file_reference_count=0,
+                ),
+            )
+            from epi13_local_harness.models import ModelAttempt, VerificationResult
+
+            run_id = store.begin_run("hello", plan)
+            store.record_attempt(
+                run_id,
+                0,
+                ModelAttempt(
+                    role="e2b",
+                    model="fixture",
+                    content="ok",
+                    thinking="",
+                    metrics={
+                        "provider": "ollama-via-mncs-fabric",
+                        "fabric_enabled": True,
+                        "fabric_worker": "gpu-fixture",
+                        "placement_mode": "full-accelerator",
+                        "fabric_receipt_identity": "sha256:" + "a" * 64,
+                    },
+                    tool_executions=[],
+                    verification=VerificationResult(True, (), ()),
+                ),
+                None,
+            )
+            row = store.recent(1)[0]
+            self.assertEqual(row["fabric_worker"], "gpu-fixture")
+            self.assertEqual(row["placement_mode"], "full-accelerator")
 
     def test_begin_run_records_semantic_router_metadata(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
