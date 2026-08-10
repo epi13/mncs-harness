@@ -51,7 +51,9 @@ def _apply_controller_light(config_path: Path | None) -> int:
             "enabled": True,
             "fallback_to_local": False,
             "refresh_on_startup": True,
-            "runtime_probe_on_refresh": True,
+            # The Fabric Python worker is only the transport-side Ollama client.
+            # Its Torch/CUDA state does not prove or gate worker-local Ollama GPU use.
+            "runtime_probe_on_refresh": False,
         },
     )
     text = _profile.upsert_toml_section(
@@ -93,6 +95,7 @@ def _apply_controller_light(config_path: Path | None) -> int:
         "semantic_router_model": router.model,
         "semantic_router_device": router.device,
         "fabric_fallback_to_local": effective.fabric.fallback_to_local,
+        "runtime_probe_on_refresh": effective.fabric.runtime_probe_on_refresh,
         "generation_roles": {
             role: {
                 "provider": model.provider,
