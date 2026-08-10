@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from . import fabric_commission as _base
+from .fabric_compat import require_execution_bundle_archive_api
 
 add_windows_commission_arguments = _base.add_windows_commission_arguments
 
@@ -126,7 +127,8 @@ def _start_remote_worker(
 
 
 def commission_windows(args: argparse.Namespace) -> int:
-    """Run normal commissioning with the OpenSSH-safe Windows start primitive."""
+    """Run normal commissioning with compatibility and OpenSSH process guards."""
+    require_execution_bundle_archive_api()
     original = _base._start_remote_worker
     _base._start_remote_worker = _start_remote_worker
     try:
