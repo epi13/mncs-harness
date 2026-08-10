@@ -35,6 +35,14 @@ class LocalAgent:
     def fabric_status(self) -> FabricStatus:
         return self.fabric_session.status()
 
+    def refresh_fabric_inventory(self) -> FabricStatus:
+        """Refresh remote worker availability and model inventory on demand."""
+
+        refresher = getattr(self.fabric_session, "refresh_model_inventory", None)
+        if callable(refresher):
+            return refresher()
+        return self.fabric_session.status()
+
     def _provider_for_model(self, model) -> object:
         local = LocalOllamaProvider(self.client)
         if self.config.fabric.enabled and model.provider == "fabric":
@@ -241,6 +249,11 @@ class LocalAgent:
         auto_approve: bool = False,
         interactive_approval: bool | None = None,
     ) -> AgentResult:
+        # Model availability is runtime state, not configuration. Refresh it once
+        # per user run so additions/removals on the worker can affect this route.
+        if self.config.fabric.enabled:
+            self.refresh_fabric_inventory()
+
         route = plan_route(task, self.config, images, forced_role)
         run_id = self.metrics.begin_run(task, route)
         attempts: list[ModelAttempt] = []
