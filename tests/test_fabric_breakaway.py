@@ -4,12 +4,11 @@ import subprocess
 import unittest
 from unittest.mock import patch
 
-from epi13_local_harness import fabric_profile_breakaway
+from epi13_local_harness import fabric_profile_breakaway, windows_worker_launcher
 from epi13_local_harness.fabric_commission_breakaway import (
     _launcher_source,
     _launcher_start_script,
 )
-from epi13_local_harness import windows_worker_launcher
 
 
 class FabricBreakawayCommissionTests(unittest.TestCase):
