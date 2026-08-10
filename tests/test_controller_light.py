@@ -26,8 +26,29 @@ class ControllerLightTests(unittest.TestCase):
             self.assertEqual(config.router.device, "cpu")
             for model in config.models.values():
                 self.assertEqual(model.provider, "fabric")
-                self.assertEqual(model.execution_device, "accelerator")
-                self.assertEqual(model.accelerator_backend, "cuda")
+                self.assertEqual(model.execution_device, "cpu")
+                self.assertIsNone(model.accelerator_backend)
+
+    def test_profile_removes_stale_accelerator_backend_from_existing_user_config(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            config_path = Path(directory) / "config.toml"
+            initialize_config(config_path)
+            text = config_path.read_text(encoding="utf-8")
+            text = fabric_controller_light._profile.upsert_toml_section(
+                text,
+                "models.coder",
+                {
+                    "provider": "fabric",
+                    "execution_device": "accelerator",
+                    "accelerator_backend": "cuda",
+                },
+            )
+            config_path.write_text(text, encoding="utf-8")
+            with contextlib.redirect_stdout(io.StringIO()):
+                fabric_controller_light._apply_controller_light(config_path)
+            config = load_config(config_path)
+            self.assertEqual(config.models["coder"].execution_device, "cpu")
+            self.assertIsNone(config.models["coder"].accelerator_backend)
 
     def test_outer_wrapper_preserves_non_target_commands(self) -> None:
         with patch.object(fabric_controller_light._base, "main", return_value=9) as base:
