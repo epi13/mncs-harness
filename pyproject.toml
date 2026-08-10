@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "epi13-local-harness"
-version = "0.4.5"
+version = "0.4.6"
 description = "A local, policy-aware AI harness that routes tasks across local models and verifies tool-driven work."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -24,7 +24,7 @@ classifiers = [
 dependencies = ["textual>=8.2,<9"]
 
 [project.optional-dependencies]
-fabric = ["mncs-fabric>=0.2.0a8,<0.3"]
+fabric = ["mncs-fabric>=0.2.0a9,<0.3"]
 router = [
   "torch>=2.4",
   "transformers>=5.1,<6",
@@ -36,7 +36,7 @@ dev = ["pytest>=8.0", "ruff>=0.9"]
 epi13-harness = "epi13_local_harness.cli:main"
 elh = "epi13_local_harness.cli:main"
 elh-tui = "epi13_local_harness.tui:main"
-elh-fabric = "epi13_local_harness.fabric_profile_inventory:main"
+elh-fabric = "epi13_local_harness.fabric_controller_light:main"
 
 [project.urls]
 Repository = "https://github.com/epi13/epi13-local-harness"
