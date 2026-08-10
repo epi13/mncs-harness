@@ -4,17 +4,28 @@ from __future__ import annotations
 
 import inspect
 import pathlib
+import re
 
-REQUIRED_FABRIC_VERSION = "0.2.0a8"
+REQUIRED_FABRIC_VERSION = "0.2.0a9"
 _REQUIRED_EXECUTE_PARAMETER = "execution_bundle_archive"
+_VERSION_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)(?:a(\d+))?")
+
+
+def _version_key(value: str) -> tuple[int, int, int, int] | None:
+    match = _VERSION_RE.match(value)
+    if match is None:
+        return None
+    major, minor, patch, alpha = match.groups()
+    prerelease = int(alpha) if alpha is not None else 1_000_000_000
+    return int(major), int(minor), int(patch), prerelease
 
 
 def require_execution_bundle_archive_api() -> dict[str, object]:
-    """Fail before commissioning if the active Fabric package lacks the required API.
+    """Fail before commissioning if the active Fabric package lacks the required behavior.
 
     The local harness stages the *currently imported* ``mncs_fabric`` package onto
-    remote workers. Checking the actual callable surface is therefore more reliable
-    than trusting packaging metadata alone, especially for editable installs.
+    remote workers. Checking both version and callable surface is therefore more
+    reliable than trusting packaging metadata alone, especially for editable installs.
     """
 
     try:
@@ -29,12 +40,17 @@ def require_execution_bundle_archive_api() -> dict[str, object]:
     version = str(getattr(mncs_fabric, "__version__", "unknown"))
     module_path = pathlib.Path(mncs_fabric.__file__).resolve()
     parameters = inspect.signature(FabricClient.execute).parameters
-    if _REQUIRED_EXECUTE_PARAMETER not in parameters:
+    loaded_key = _version_key(version)
+    required_key = _version_key(REQUIRED_FABRIC_VERSION)
+    version_too_old = (
+        loaded_key is None or required_key is None or loaded_key < required_key
+    )
+    if _REQUIRED_EXECUTE_PARAMETER not in parameters or version_too_old:
         raise RuntimeError(
-            "incompatible mncs-fabric consumer API: "
-            f"loaded version {version} from {module_path} does not expose "
-            f"FabricClient.execute(..., {_REQUIRED_EXECUTE_PARAMETER}=...); "
-            f"update/reinstall mncs-fabric to >= {REQUIRED_FABRIC_VERSION} before commissioning"
+            "incompatible mncs-fabric consumer runtime: "
+            f"loaded version {version} from {module_path}; Local Harness requires "
+            f"mncs-fabric >= {REQUIRED_FABRIC_VERSION} with canonical transferred-bundle dispatch "
+            f"binding and FabricClient.execute(..., {_REQUIRED_EXECUTE_PARAMETER}=...)"
         )
     return {
         "version": version,
