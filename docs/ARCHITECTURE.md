@@ -47,6 +47,61 @@ DeterministicRouter
       answer + SQLite metrics
 ```
 
+## Distributed execution semantics
+
+A distributed session must not assume that the machine performing inference is the
+machine that owns the workspace or executes a requested tool. The harness therefore
+treats three locations as independent routing dimensions:
+
+- **inference location** — the worker/runtime that hosts the selected model;
+- **workspace location** — the authority that owns the files or state being changed;
+- **tool execution location** — the enrolled host on which an approved command or
+  worker-local tool actually runs.
+
+For example, a large model on a Windows GPU worker may reason about a repository on
+the Fedora controller. Its filesystem or test request returns through the harness,
+where the existing policy registry validates and executes the operation against the
+Fedora workspace. The remote model receives only the bounded tool result on the next
+inference turn; it does not receive a direct SSH session or ambient access to the
+controller filesystem.
+
+```text
+Fedora controller/workspace                 Windows GPU worker
+---------------------------                 ------------------
+LocalAgent / policy
+        |
+        +------ Fabric inference ----------> model
+        |                                      |
+        |<--------- tool request --------------+
+        |
+ guarded local or targeted tool execution
+        |
+        +--------- bounded result ----------> model
+```
+
+Some tools may later target another enrolled Fabric worker because the resource is
+inherently remote. That path remains an explicit, policy-approved execution target,
+not an unrestricted shell. Model placement and tool placement are evaluated
+separately.
+
+Worker observations may contribute a provider-neutral capability graph covering
+models, runtimes, tools, MCP endpoints, hardware, workspaces, and current resource
+state. Fabric advertises and transports facts; the harness remains responsible for
+semantic task decomposition, model suitability, tool permissions, verification,
+reduction, and escalation.
+
+Controller-hosted MNCS MCPs should normally be exposed to remote models by tool
+schema and proxied invocation through the harness. Worker-local MCPs are reserved for
+capabilities inherently attached to that worker, such as local hardware or an
+application instance. A remote model does not need a duplicate installation of every
+controller MCP merely to call it.
+
+Shell access follows the same authority boundary. The preferred primitive remains a
+guarded executable plus argv. Bash or PowerShell script tools may be added where they
+provide real value, but script content must pass policy inspection and approval before
+execution. Distributed operation must not convert a model placement decision into
+host shell authority.
+
 ## Modules
 
 ### `router.py`
@@ -75,6 +130,11 @@ state, resource eligibility, transport, and evidence. The local harness still
 owns the tool loop, workspace, policy, verification, and escalation. See
 [FABRIC.md](FABRIC.md) for configuration and the security boundary.
 
+The distributed capability/session layer extends this boundary without changing its
+authority model: Fabric placement chooses where inference can run from authenticated
+resource evidence, while the harness separately resolves the workspace and approved
+tool execution target.
+
 ### `agent.py`
 
 Runs the route plan. Each model attempt receives a role-specific system prompt and
@@ -84,11 +144,20 @@ back to the conversation, and bounded by `max_tool_steps`.
 The agent never imports or evaluates generated Python. Tool names are resolved
 against a static registry.
 
+Future task planning may decompose clearly independent work into bounded sub-tasks
+and represent dependencies as an explicit DAG. Fabric can execute those nodes on
+eligible workers, but the harness owns decomposition semantics, reduction, review,
+verification, and escalation.
+
 ### `tools.py`
 
 Implements narrow filesystem, search, Git-diff, system-information, write, and
 command tools. The registry records every decision and modified path for metrics and
 verification.
+
+A future target-aware tool request should identify its execution target explicitly.
+Controller-local tools remain the default. Remote targets must correspond to enrolled
+Fabric capabilities and still pass the same policy and approval checks.
 
 ### `policy.py`
 
@@ -103,6 +172,9 @@ Separates model intent from execution authority. It provides:
 - special restrictions for Git, Python, Bash, and POSIX shell invocations;
 - approval requirements for writes and commands.
 
+Distributed execution must preserve these controls. A remote model or remote worker
+never becomes an authorization source merely because Fabric admitted its placement.
+
 ### `verifiers.py`
 
 Checks modified artifacts independently of model confidence. The initial verifier
@@ -113,6 +185,10 @@ set handles Python, shell, JSON, and TOML. Configured unit tests can be enabled.
 Stores task fingerprints, route decisions, attempt metadata, Ollama timing/token
 counters, tool outcomes, and verification status. Prompt text is disabled by
 default.
+
+Distributed attempts should eventually record inference worker, workspace authority,
+tool execution target, provider/runtime identity, and Fabric evidence separately so
+performance and correctness can be analyzed without conflating them.
 
 ## Model residency
 
@@ -136,4 +212,9 @@ The core interfaces are deliberately small:
 - add a tool definition to `ToolRegistry`;
 - add a verifier keyed to file type or project metadata;
 - add evaluation cases before changing routing thresholds;
-- add a remote-node Ollama client while preserving the same policy boundary.
+- add model/runtime inventory and execution-target resolution while preserving the
+  existing policy boundary;
+- add controller-proxied or worker-local MCP capabilities without making MCP presence
+  an authorization signal; and
+- add task-DAG planning only after single-task distributed sessions are measurable and
+  reliable.
