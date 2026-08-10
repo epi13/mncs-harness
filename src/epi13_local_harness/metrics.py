@@ -102,7 +102,7 @@ class MetricsStore:
                 );
                 """
             )
-            for column, declaration in (
+            run_columns = (
                 ("semantic_backend", "TEXT"),
                 ("semantic_revision", "TEXT"),
                 ("semantic_lane", "TEXT"),
@@ -110,6 +110,8 @@ class MetricsStore:
                 ("semantic_margin", "REAL"),
                 ("semantic_latency_ms", "REAL"),
                 ("semantic_reason", "TEXT"),
+            )
+            attempt_columns = (
                 ("provider", "TEXT"),
                 ("backend", "TEXT"),
                 ("fabric_enabled", "INTEGER"),
@@ -127,8 +129,11 @@ class MetricsStore:
                 ("fabric_dispatch_ms", "REAL"),
                 ("provider_latency_ms", "REAL"),
                 ("tokens_per_second", "REAL"),
-            ):
+            )
+            for column, declaration in run_columns:
                 self._ensure_column(connection, "runs", column, declaration)
+            for column, declaration in attempt_columns:
+                self._ensure_column(connection, "attempts", column, declaration)
 
     def begin_run(self, task: str, route: RoutePlan) -> int:
         fingerprint = hashlib.sha256(task.encode("utf-8")).hexdigest()
