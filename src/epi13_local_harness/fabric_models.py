@@ -1,7 +1,7 @@
 """Worker-local Ollama model provisioning for explicit Windows Fabric workers.
 
 Only a tiny command file and model names cross the controller/worker bootstrap
-channel.  ``ollama pull`` runs on the worker itself, so model blobs are fetched
+channel. ``ollama pull`` runs on the worker itself, so model blobs are fetched
 by the worker directly from its configured Ollama registry rather than copied
 through Fabric or over the controller LAN connection.
 """
@@ -35,7 +35,7 @@ def add_windows_model_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--model",
         action="append",
-        help="Explicit Ollama model tag; repeat for multiple models. Defaults to routed Fabric roles.",
+        help="Explicit Ollama model tag; repeat for multiple models. Defaults to accelerator roles.",
     )
     parser.add_argument(
         "--stage-only",
@@ -69,19 +69,12 @@ def _configured_models(config_path: Path | None) -> tuple[str, ...]:
     from .config import load_config
 
     config = load_config(config_path)
-    routed = [
-        model.name
-        for model in config.models.values()
-        if getattr(model, "provider", None) == "fabric"
-    ]
-    if routed:
-        return _validate_models(routed)
-    defaults = [
+    models = [
         config.models[role].name
         for role in DEFAULT_ACCELERATOR_ROLES
         if role in config.models
     ]
-    return _validate_models(defaults)
+    return _validate_models(models)
 
 
 def _render_installer(models: tuple[str, ...]) -> str:
@@ -120,8 +113,8 @@ def _verify_host(*, host: str, user: str, key: Path, expected_hostname: str) -> 
         key=key,
         script=(
             "$ollama=Get-Command ollama -ErrorAction SilentlyContinue;"
-            "$value=[ordered]@{hostname=$env:COMPUTERNAME;"
-            "ollama_command=if($ollama){$ollama.Source}else{$null}};"
+            "$ollamaSource=$(if($ollama){$ollama.Source}else{$null});"
+            "$value=[ordered]@{hostname=$env:COMPUTERNAME;ollama_command=$ollamaSource};"
             "$value | ConvertTo-Json -Compress"
         ),
     )
