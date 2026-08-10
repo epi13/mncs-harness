@@ -1,6 +1,6 @@
 """Persistent Windows worker commissioning for the local harness.
 
-Commissioning is an operator action.  SSH/SCP are used only to provision the
+Commissioning is an operator action. SSH/SCP are used only to provision the
 explicitly named Windows host; inference and runtime evidence subsequently flow
 through Fabric's mutually authenticated transport.
 """
@@ -10,7 +10,6 @@ from __future__ import annotations
 import argparse
 import base64
 import json
-import os
 import shutil
 import socket
 import ssl
@@ -18,12 +17,15 @@ import subprocess
 import tempfile
 import time
 import zipfile
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Sequence
 
 DEFAULT_CONTROLLER_ID = "epi13-local-harness"
 DEFAULT_WORKER_ID = "collamore02-windows"
 DEFAULT_PORT = 7443
+_ENROLLMENT_SCHEMA = "epi13-local-harness.fabric-enrollment.v0.1"
+_LAUNCHER_SCHEMA = "epi13-local-harness.fabric-launcher.v0.2"
 
 
 class CommissioningError(RuntimeError):
@@ -177,7 +179,13 @@ def _ps_quote(value: str) -> str:
     return "'" + value.replace("'", "''") + "'"
 
 
-def _run_checked(command: Sequence[str], *, label: str, cwd: Path | None = None) -> None:
+def _run_checked(
+    command: Sequence[str],
+    *,
+    label: str,
+    cwd: Path | None = None,
+    timeout: float = 60.0,
+) -> None:
     try:
         result = subprocess.run(
             list(command),
@@ -185,13 +193,20 @@ def _run_checked(command: Sequence[str], *, label: str, cwd: Path | None = None)
             check=False,
             capture_output=True,
             text=True,
-            timeout=30,
+            timeout=timeout,
         )
     except (OSError, subprocess.TimeoutExpired) as exc:
         raise CommissioningError(f"{label} could not run: {exc}") from exc
     if result.returncode != 0:
         diagnostic = (result.stderr or result.stdout or "unknown error")[-2000:]
         raise CommissioningError(f"{label} failed: {diagnostic.strip()}")
+
+
+def _write_json_atomic(path: Path, value: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(path.name + ".tmp")
+    temporary.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    temporary.replace(path)
 
 
 def _certificate_fingerprint(path: Path) -> str:
@@ -217,8 +232,60 @@ def _pki_files(root: Path) -> dict[str, Path]:
     }
 
 
+def _enrollment_manifest(root: Path) -> Path:
+    return root / "enrollment.json"
+
+
 def _complete_enrollment(files: dict[str, Path]) -> bool:
     return all(path.is_file() for path in files.values())
+
+
+def _validate_existing_enrollment(
+    root: Path,
+    files: dict[str, Path],
+    *,
+    controller_id: str,
+    worker_id: str,
+) -> None:
+    manifest_path = _enrollment_manifest(root)
+    if not manifest_path.is_file():
+        raise CommissioningError(
+            f"persistent enrollment has no identity manifest: {root}; "
+            "use --rotate-enrollment to replace it"
+        )
+    try:
+        value = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise CommissioningError(f"persistent enrollment manifest is invalid: {manifest_path}") from exc
+    if not isinstance(value, dict) or value.get("schema_version") != _ENROLLMENT_SCHEMA:
+        raise CommissioningError(f"unsupported persistent enrollment manifest: {manifest_path}")
+    requested = (controller_id, worker_id)
+    recorded = (value.get("controller_id"), value.get("worker_id"))
+    if recorded != requested:
+        raise CommissioningError(
+            "persistent enrollment identity mismatch: "
+            f"recorded controller/worker={recorded!r}, requested={requested!r}; "
+            "use --rotate-enrollment to replace it"
+        )
+    controller_fp = _certificate_fingerprint(files["controller"])
+    worker_fp = _certificate_fingerprint(files["worker"])
+    if value.get("controller_certificate_fingerprint") != controller_fp:
+        raise CommissioningError("persistent controller certificate does not match enrollment manifest")
+    if value.get("worker_certificate_fingerprint") != worker_fp:
+        raise CommissioningError("persistent worker certificate does not match enrollment manifest")
+
+    from mncs_fabric.enrollment import TrustStore
+
+    controller_record = TrustStore(files["controller_trust"]).lookup("worker", worker_id)
+    worker_record = TrustStore(files["worker_trust"]).lookup("controller", controller_id)
+    if not controller_record or not controller_record.get("active"):
+        raise CommissioningError("controller trust ledger does not actively enroll the requested worker")
+    if controller_record.get("certificate_fingerprint") != worker_fp:
+        raise CommissioningError("controller trust ledger worker fingerprint does not match certificate")
+    if not worker_record or not worker_record.get("active"):
+        raise CommissioningError("worker trust ledger does not actively enroll the requested controller")
+    if worker_record.get("certificate_fingerprint") != controller_fp:
+        raise CommissioningError("worker trust ledger controller fingerprint does not match certificate")
 
 
 def _generate_enrollment(
@@ -235,10 +302,18 @@ def _generate_enrollment(
     if root.exists() and rotate:
         shutil.rmtree(root)
     if root.exists() and not _complete_enrollment(files):
-        raise CommissioningError(
-            f"persistent enrollment is incomplete: {root}; use --rotate-enrollment to replace it"
-        )
+        if any(root.iterdir()):
+            raise CommissioningError(
+                f"persistent enrollment is incomplete: {root}; "
+                "use --rotate-enrollment to replace it"
+            )
     if _complete_enrollment(files):
+        _validate_existing_enrollment(
+            root,
+            files,
+            controller_id=controller_id,
+            worker_id=worker_id,
+        )
         return files
 
     if shutil.which("openssl") is None:
@@ -265,17 +340,33 @@ def _generate_enrollment(
             "-sha256",
             "-subj",
             "/CN=Epi13 Local Harness Fabric CA",
+            "-addext",
+            "basicConstraints=critical,CA:TRUE",
+            "-addext",
+            "keyUsage=critical,keyCertSign,cRLSign",
         ],
         label="Fabric CA creation",
     )
-    for name, identity in (("controller", controller_id), ("worker", worker_id)):
+    for name, identity, usage in (
+        ("controller", controller_id, "clientAuth"),
+        ("worker", worker_id, "serverAuth"),
+    ):
         key = files[f"{name}_key"]
         csr = pki / f"{name}.csr"
         cert = files[name]
+        ext = pki / f"{name}.ext"
+        ext.write_text(
+            "basicConstraints=critical,CA:FALSE\n"
+            "keyUsage=critical,digitalSignature,keyEncipherment\n"
+            f"extendedKeyUsage={usage}\n"
+            "subjectKeyIdentifier=hash\n",
+            encoding="ascii",
+        )
         _run_checked(
             [
                 "openssl",
                 "req",
+                "-new",
                 "-newkey",
                 "rsa:3072",
                 "-nodes",
@@ -303,6 +394,8 @@ def _generate_enrollment(
             "-days",
             str(days),
             "-sha256",
+            "-extfile",
+            str(ext),
         ]
         if name == "controller":
             sign.append("-CAcreateserial")
@@ -310,21 +403,24 @@ def _generate_enrollment(
             sign.extend(["-CAserial", str(pki / "ca.srl")])
         _run_checked(sign, label=f"{name} certificate signing")
         csr.unlink(missing_ok=True)
+        ext.unlink(missing_ok=True)
 
     from mncs_fabric.enrollment import TrustStore
 
+    controller_fp = _certificate_fingerprint(files["controller"])
+    worker_fp = _certificate_fingerprint(files["worker"])
     controller_trust = TrustStore(files["controller_trust"])
     controller_trust.enroll(
         "worker",
         worker_id,
-        _certificate_fingerprint(files["worker"]),
+        worker_fp,
         metadata={"purpose": "epi13-local-harness-persistent-worker"},
     )
     worker_trust = TrustStore(files["worker_trust"])
     worker_trust.enroll(
         "controller",
         controller_id,
-        _certificate_fingerprint(files["controller"]),
+        controller_fp,
         metadata={"purpose": "epi13-local-harness-persistent-controller"},
     )
     for path in (files["ca_key"], files["controller_key"], files["worker_key"]):
@@ -332,6 +428,18 @@ def _generate_enrollment(
             path.chmod(0o600)
         except OSError:
             pass
+    _write_json_atomic(
+        _enrollment_manifest(root),
+        {
+            "schema_version": _ENROLLMENT_SCHEMA,
+            "controller_id": controller_id,
+            "worker_id": worker_id,
+            "controller_certificate_fingerprint": controller_fp,
+            "worker_certificate_fingerprint": worker_fp,
+            "certificate_days": days,
+            "created_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        },
+    )
     return files
 
 
@@ -350,6 +458,16 @@ def _fabric_package_archive(destination: Path) -> tuple[Path, str]:
     return destination, version
 
 
+def _windows_scp_path(path: str) -> str:
+    """Use the Windows OpenSSH path form already exercised by Fabric physical tests."""
+    normalized = path.replace("\\", "/")
+    if len(normalized) >= 3 and normalized[1:3] == ":/":
+        normalized = normalized[2:]
+    if not normalized.startswith("/"):
+        normalized = "/" + normalized
+    return normalized.rstrip("/")
+
+
 def _scp_file(
     *,
     host: str,
@@ -359,7 +477,7 @@ def _scp_file(
     destination: str,
 ) -> None:
     command = _scp_base(key) + [str(source), f"{user}@{host}:{destination}"]
-    _run_checked(command, label=f"stage {source.name}")
+    _run_checked(command, label=f"stage {source.name}", timeout=60)
 
 
 def _preflight_windows(
@@ -378,9 +496,10 @@ def _preflight_windows(
         key=key.expanduser(),
         script=(
             f"$python={_ps_quote(python)};"
-            "$py=& $python -c 'import json,sys; "
-            "print(json.dumps({\"python\":sys.executable,\"version\":sys.version.split()[0]}))';"
-            "$value=[ordered]@{hostname=$env:COMPUTERNAME;python=($py | Select-Object -Last 1)};"
+            "$command=Get-Command $python -ErrorAction Stop;"
+            "$version=& $python -c \"import sys; print(sys.version.split()[0])\";"
+            "$value=[ordered]@{hostname=$env:COMPUTERNAME;"
+            "python_executable=$command.Source;python_version=($version | Select-Object -Last 1)};"
             "$value | ConvertTo-Json -Compress"
         ),
     )
@@ -390,12 +509,6 @@ def _preflight_windows(
         raise CommissioningError(
             f"Windows hostname mismatch: expected {expected_hostname!r}, observed {observed!r}"
         )
-    python_record = value.get("python")
-    if isinstance(python_record, str):
-        try:
-            value["python"] = json.loads(python_record)
-        except json.JSONDecodeError:
-            pass
     return value
 
 
@@ -413,12 +526,38 @@ def _prepare_remote_root(
         "\"$root\\state\",\"$root\\logs\",\"$root\\bundle-cache\","
         "\"$root\\empty-bundle\");"
         "foreach($dir in $dirs){New-Item -ItemType Directory -Force -Path $dir | Out-Null};"
-        "if(Test-Path \"$root\\src\\mncs_fabric\"){"
-        "Remove-Item -Recurse -Force \"$root\\src\\mncs_fabric\"};"
         "@{outcome='PASS';root=$root}|ConvertTo-Json -Compress"
     )
     result = _run_powershell(host=host, user=user, key=key, script=script)
     _powershell_json(result, "prepare persistent Windows worker root")
+
+
+def _stop_managed_remote_worker(
+    *,
+    host: str,
+    user: str,
+    key: Path,
+    remote_root: str,
+) -> dict[str, Any]:
+    root = _ps_quote(remote_root)
+    script = (
+        f"$root={root};$state=\"$root\\state\\launcher.json\";"
+        "if(!(Test-Path $state)){"
+        "@{outcome='PASS';state='NOT_INSTALLED'}|ConvertTo-Json -Compress;exit};"
+        "$old=Get-Content -Raw $state | ConvertFrom-Json;"
+        f"if($old.schema_version -ne {_ps_quote(_LAUNCHER_SCHEMA)} -or "
+        "-not $old.process_token){throw 'launcher state lacks a validated process token'};"
+        "$proc=Get-Process -Id ([int]$old.pid) -ErrorAction SilentlyContinue;"
+        "if(!$proc){@{outcome='PASS';state='STOPPED';pid=$old.pid}|"
+        "ConvertTo-Json -Compress;exit};"
+        "$token=$proc.StartTime.ToUniversalTime().ToFileTimeUtc().ToString();"
+        "if($token -ne [string]$old.process_token){"
+        "throw 'recorded worker PID was reused; refusing to stop an unrelated process'};"
+        "Stop-Process -Id $proc.Id -Force;Start-Sleep -Milliseconds 500;"
+        "@{outcome='PASS';state='STOPPED';pid=$proc.Id}|ConvertTo-Json -Compress"
+    )
+    result = _run_powershell(host=host, user=user, key=key, script=script, timeout=20)
+    return _powershell_json(result, "stop managed persistent Fabric worker")
 
 
 def _stage_remote(
@@ -430,7 +569,7 @@ def _stage_remote(
     files: dict[str, Path],
     package_archive: Path,
 ) -> None:
-    remote = remote_root.replace("\\", "/").rstrip("/")
+    remote = _windows_scp_path(remote_root)
     _scp_file(
         host=host,
         user=user,
@@ -460,6 +599,8 @@ def _stage_remote(
     root = _ps_quote(remote_root)
     script = (
         f"$root={root};"
+        "if(Test-Path \"$root\\src\\mncs_fabric\"){"
+        "Remove-Item -Recurse -Force \"$root\\src\\mncs_fabric\"};"
         "Expand-Archive -Force -Path \"$root\\mncs-fabric-package.zip\" "
         "-DestinationPath \"$root\\src\";"
         "Remove-Item -Force \"$root\\mncs-fabric-package.zip\";"
@@ -484,10 +625,6 @@ def _start_remote_worker(
     script = (
         f"$root={root};$python={_ps_quote(python)};"
         "$state=\"$root\\state\\launcher.json\";"
-        "if(Test-Path $state){"
-        "$old=Get-Content -Raw $state | ConvertFrom-Json;"
-        "$proc=Get-Process -Id $old.pid -ErrorAction SilentlyContinue;"
-        "if($proc){Stop-Process -Id $old.pid -Force;Start-Sleep -Milliseconds 500}};"
         "$env:PYTHONPATH=\"$root\\src\";"
         "$arguments=@('-m','mncs_fabric','worker','serve',"
         f"'--worker-id',{_ps_quote(worker_id)},'--controller-id',{_ps_quote(controller_id)},"
@@ -505,8 +642,13 @@ def _start_remote_worker(
         "-WorkingDirectory $root -WindowStyle Hidden -PassThru "
         "-RedirectStandardOutput \"$root\\logs\\worker.stdout.log\" "
         "-RedirectStandardError \"$root\\logs\\worker.stderr.log\";"
-        "$record=[ordered]@{schema_version='epi13-local-harness.fabric-launcher.v0.1';"
-        f"pid=$proc.Id;worker_id={_ps_quote(worker_id)};controller_id={_ps_quote(controller_id)};"
+        "Start-Sleep -Milliseconds 500;"
+        "$live=Get-Process -Id $proc.Id -ErrorAction SilentlyContinue;"
+        "if(!$live){throw 'Fabric worker exited during startup; inspect worker.stderr.log'};"
+        "$token=$live.StartTime.ToUniversalTime().ToFileTimeUtc().ToString();"
+        f"$record=[ordered]@{{schema_version={_ps_quote(_LAUNCHER_SCHEMA)};"
+        f"pid=$live.Id;process_token=$token;worker_id={_ps_quote(worker_id)};"
+        f"controller_id={_ps_quote(controller_id)};"
         "started_at=(Get-Date).ToUniversalTime().ToString('o')};"
         "$record | ConvertTo-Json -Compress | Set-Content -Encoding UTF8 $state;"
         "$record | ConvertTo-Json -Compress"
@@ -584,6 +726,12 @@ def commission_windows(args: argparse.Namespace) -> int:
         key=ssh_key,
         remote_root=remote_root,
     )
+    stop_result = _stop_managed_remote_worker(
+        host=args.ssh_host,
+        user=args.ssh_user,
+        key=ssh_key,
+        remote_root=remote_root,
+    )
     with tempfile.TemporaryDirectory(prefix="elh-fabric-commission-") as directory:
         package_archive, fabric_version = _fabric_package_archive(
             Path(directory) / "mncs-fabric-package.zip"
@@ -640,7 +788,6 @@ def commission_windows(args: argparse.Namespace) -> int:
         None,
     )
     runtime = (worker or {}).get("runtime_observation") or {}
-    ollama_models: tuple[str, ...]
     try:
         ollama_models = _remote_ollama_models(
             host=args.ssh_host,
@@ -654,14 +801,15 @@ def commission_windows(args: argparse.Namespace) -> int:
         for role in ("e4b", "coder", "reviewer")
         if role in config.models and config.models[role].provider == "fabric"
     }
+    missing_routed_models = sorted(routed_names - set(ollama_models))
+    ready = (
+        status.state == "available"
+        and (worker or {}).get("availability") == "AVAILABLE"
+        and runtime.get("runtime_execution_probe") == "PASS"
+        and not missing_routed_models
+    )
     summary = {
-        "outcome": (
-            "PASS"
-            if status.state == "available"
-            and (worker or {}).get("availability") == "AVAILABLE"
-            and runtime.get("runtime_execution_probe") == "PASS"
-            else "UNKNOWN"
-        ),
+        "outcome": "PASS" if ready else "UNKNOWN",
         "controller_id": args.controller_id,
         "worker_id": args.worker_id,
         "worker_host": worker_host,
@@ -670,17 +818,20 @@ def commission_windows(args: argparse.Namespace) -> int:
         "enrollment_root": str(enrollment_root),
         "fabric_version": fabric_version,
         "windows_preflight": preflight,
+        "prior_worker_state": stop_result.get("state"),
         "launcher_pid": launcher.get("pid"),
+        "launcher_process_token": launcher.get("process_token"),
         "fabric_state": status.state,
+        "fabric_detail": status.detail,
         "worker_availability": (worker or {}).get("availability"),
         "cuda_execution_probe": runtime.get("runtime_execution_probe"),
         "cuda_precision_probes": runtime.get("precision_probes", {}),
         "ollama_models": list(ollama_models),
-        "missing_routed_models": sorted(routed_names - set(ollama_models)),
+        "missing_routed_models": missing_routed_models,
         "claim_boundary": (
             "operator-controlled persistent commissioning; authenticated worker and runtime "
             "observations are not hardware attestation or independent assurance"
         ),
     }
     print(json.dumps(summary, indent=2, sort_keys=True))
-    return 0 if summary["outcome"] == "PASS" else 2
+    return 0 if ready else 2
