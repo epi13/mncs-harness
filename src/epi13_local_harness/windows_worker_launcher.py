@@ -1,6 +1,6 @@
 """Windows-native detached process launcher used during Fabric commissioning.
 
-This module is intentionally small and bootstrap-only.  It mirrors the process
+This module is intentionally small and bootstrap-only. It mirrors the process
 boundary already proven by MNCS Fabric's physical Windows launcher: worker
 children are created outside the OpenSSH job object when host policy permits,
 so closing the commissioning SSH session does not tear the worker down.
@@ -17,7 +17,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-SCHEMA_VERSION = "epi13-local-harness.fabric-launcher.v0.3"
+SCHEMA_VERSION = "epi13-local-harness.fabric-launcher.v0.2"
 
 
 class _FileTime(ctypes.Structure):
@@ -56,12 +56,21 @@ def _process_token(pid: int) -> str | None:
 
 def _creation_flags() -> int:
     if os.name != "nt":
-        return 0
-    return (
-        getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
-        | getattr(subprocess, "DETACHED_PROCESS", 0)
-        | getattr(subprocess, "CREATE_BREAKAWAY_FROM_JOB", 0)
-    )
+        raise RuntimeError("Windows worker launcher must run on Windows")
+    values: list[int] = []
+    for name in (
+        "CREATE_NEW_PROCESS_GROUP",
+        "DETACHED_PROCESS",
+        "CREATE_BREAKAWAY_FROM_JOB",
+    ):
+        value = getattr(subprocess, name, None)
+        if not isinstance(value, int) or value == 0:
+            raise RuntimeError(f"required Windows process flag is unavailable: {name}")
+        values.append(value)
+    flags = 0
+    for value in values:
+        flags |= value
+    return flags
 
 
 def _write_json_atomic(path: Path, value: dict[str, Any]) -> None:
@@ -72,8 +81,6 @@ def _write_json_atomic(path: Path, value: dict[str, Any]) -> None:
 
 
 def start(args: argparse.Namespace) -> int:
-    if os.name != "nt":
-        raise RuntimeError("Windows worker launcher must run on Windows")
     command = list(args.worker_command or [])
     if command and command[0] == "--":
         command.pop(0)
