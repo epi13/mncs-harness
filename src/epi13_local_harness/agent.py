@@ -5,7 +5,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from .fabric import FabricSession, FabricStatus
+from .fabric import FabricStatus
+from .fabric_inventory_session import InventoryAwareFabricSession
 from .metrics import MetricsStore
 from .models import (
     AgentResult,
@@ -25,9 +26,9 @@ class LocalAgent:
     def __init__(self, config: HarnessConfig):
         self.config = config
         # ``client`` remains a compatibility seam used by existing callers and
-        # tests.  Provider selection is performed per model role below.
+        # tests. Provider selection is performed per model role below.
         self.client = OllamaClient(config.ollama)
-        self.fabric_session = FabricSession(config.fabric)
+        self.fabric_session = InventoryAwareFabricSession(config.fabric)
         self.fabric_session.initialize()
         self.metrics = MetricsStore(config.metrics.path, config.metrics.store_prompt_text)
 
@@ -108,7 +109,8 @@ class LocalAgent:
         previous: ModelAttempt | None,
         cumulative_modified: list[Path],
     ) -> ModelAttempt:
-        model = self.config.models[role]
+        configured_model = self.config.models[role]
+        model, model_selection = self.fabric_session.resolve_model(role, configured_model)
         interactive = (
             sys.stdin.isatty() if interactive_approval is None else interactive_approval
         )
@@ -136,6 +138,15 @@ class LocalAgent:
             for _step in range(self.config.ollama.max_tool_steps + 1):
                 last_response = provider.chat(model, messages, tools=tools, images=images)
                 provider_metadata = dict(getattr(provider, "last_metadata", {}))
+                if model_selection is not None:
+                    provider_metadata.update(
+                        {
+                            "configured_model": model_selection.configured_model,
+                            "selected_model": model_selection.selected_model,
+                            "model_selection_reason": model_selection.reason,
+                            "model_selection_source": "worker-inventory",
+                        }
+                    )
                 message = dict(last_response.get("message", {}))
                 message.setdefault("role", "assistant")
                 final_content = str(message.get("content", ""))
