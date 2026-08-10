@@ -100,6 +100,16 @@ class TuiAppTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(model.selection, "")
                 self.assertFalse(auto_approve.value)
 
+    async def test_prompt_reader_does_not_collide_with_textual_task_state(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            app = HarnessTui(load_config(None), Path(temp_dir))
+            async with app.run_test(size=(120, 40)):
+                prompt = app.query_one("#prompt")
+                prompt.value = "hello from the TUI"
+                self.assertEqual(app._prompt_text(), "hello from the TUI")
+                app.action_preview_route()
+                self.assertNotEqual(app.query_one("#status").renderable, "Error")
+
 
 if __name__ == "__main__":
     unittest.main()
