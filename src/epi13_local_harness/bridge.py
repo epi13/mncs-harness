@@ -43,12 +43,20 @@ class BridgeServer:
         }
 
     def health_check(self, params: dict[str, Any]) -> dict[str, Any]:
+        fabric = LocalAgent(self.config).fabric_status()
         return {
             "ok": True,
             "python": sys.version.split()[0],
             "repositoryPath": str(self.repository_path),
             "configPath": str(self.config_path),
             "configLoaded": True,
+            "fabric": {
+                "enabled": fabric.enabled,
+                "state": fabric.state,
+                "controller_id": fabric.controller_id,
+                "workers": [dict(worker) for worker in fabric.workers],
+                "detail": fabric.detail,
+            },
         }
 
     def models_list(self, params: dict[str, Any]) -> list[dict[str, Any]]:
@@ -61,6 +69,7 @@ class BridgeServer:
                 "workerRole": model.role,
                 "supportsImage": False,
                 "supportsTools": bool(model.tools),
+                "provider": model.provider,
                 "detail": f"Configured {model.role} lane",
             }
             for model_name, model in self.config.models.items()
@@ -141,6 +150,7 @@ class BridgeServer:
                         "failures": list(attempt.verification.failures),
                     },
                     "error": attempt.error,
+                    "metrics": dict(attempt.metrics),
                 }
                 for attempt in result.attempts
             ],

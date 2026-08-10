@@ -25,7 +25,8 @@ elh-tui --workspace .
   approved; blocked operations remain blocked.
 - **Preview route:** inspect the role chain and semantic-routing details without
   invoking a worker model.
-- **Doctor, Models, Metrics:** inspect the local installation from inside the TUI.
+- **Doctor, Models, Metrics, Fabric:** inspect the local installation and optional
+  Fabric worker/resource state from inside the TUI.
 
 Keyboard shortcuts:
 
@@ -34,6 +35,7 @@ Keyboard shortcuts:
 | `Enter` | Submit the prompt while the prompt field is focused |
 | `Ctrl+R` | Preview route |
 | `Ctrl+D` | Run diagnostics |
+| `Fabric` button | Show Fabric worker/resource status |
 | `Ctrl+L` | Clear the conversation log |
 | `Esc` | Request worker cancellation |
 | `Ctrl+Q` | Quit |

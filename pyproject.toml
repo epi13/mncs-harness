@@ -23,6 +23,7 @@ classifiers = [
 dependencies = ["textual>=8.2,<9"]
 
 [project.optional-dependencies]
+fabric = ["mncs-fabric>=0.2.0a7,<0.3"]
 router = [
   "torch>=2.4",
   "transformers>=5.1,<6",

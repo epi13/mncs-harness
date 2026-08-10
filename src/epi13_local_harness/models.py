@@ -18,6 +18,20 @@ class ModelConfig:
     top_p: float
     top_k: int
     tools: tuple[str, ...]
+    provider: str = "fabric"
+    execution_device: str = "auto"
+    accelerator_backend: str | None = None
+    offload: str = "auto"
+    precision: str = "auto"
+    model_storage_bytes: int = 0
+    estimated_workspace_bytes: int = 0
+    minimum_host_memory_bytes: int | None = None
+    gpu_reserve_bytes: int = 268_435_456
+    maximum_vram_bytes: int | None = None
+    minimum_accelerator_working_bytes: int | None = None
+    runtime_supports_sequential_cpu_offload: bool | None = None
+    required_capabilities: tuple[str, ...] = ()
+    resource_max_age_seconds: float = 300.0
 
 
 @dataclass(frozen=True)
@@ -105,6 +119,39 @@ class MetricsConfig:
 
 
 @dataclass(frozen=True)
+class FabricWorkerConfig:
+    worker_id: str
+    kind: str
+    state_path: Path
+    bundle_root: Path | None = None
+    host: str | None = None
+    port: int | None = None
+    capabilities: tuple[str, ...] = ("python",)
+    ca_file: Path | None = None
+    client_certificate: Path | None = None
+    client_key: Path | None = None
+    trust_state: Path | None = None
+    concurrency_limit: int = 1
+    timeout_seconds: float = 5.0
+
+
+@dataclass(frozen=True)
+class FabricConfig:
+    enabled: bool = False
+    controller_id: str = "epi13-local-harness"
+    state_path: Path = Path("~/.local/state/epi13-local-harness/fabric.jsonl")
+    fallback_to_local: bool = True
+    refresh_on_startup: bool = True
+    refresh_timeout_seconds: float = 5.0
+    worker_bundle_root: Path = Path(
+        "~/.local/state/epi13-local-harness/fabric-worker-bundle"
+    )
+    provider_ollama_base_url: str = "http://127.0.0.1:11434"
+    provider_timeout_seconds: int = 600
+    workers: tuple[FabricWorkerConfig, ...] = ()
+
+
+@dataclass(frozen=True)
 class SemanticRouteResult:
     selected_lane: str
     selected_score: float
@@ -128,6 +175,7 @@ class HarnessConfig:
     policy: PolicyConfig
     verification: VerificationConfig
     metrics: MetricsConfig
+    fabric: FabricConfig = field(default_factory=FabricConfig)
 
 
 @dataclass(frozen=True)

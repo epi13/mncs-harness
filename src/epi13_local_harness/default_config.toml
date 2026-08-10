@@ -5,6 +5,7 @@ max_tool_steps = 8
 
 [models.e2b]
 name = "gemma4:e2b"
+provider = "fabric"
 keep_alive = "10m"
 num_ctx = 8192
 think = false
@@ -15,6 +16,7 @@ tools = ["read_file", "list_directory", "search_text", "git_diff", "system_info"
 
 [models.e4b]
 name = "gemma4:e4b"
+provider = "fabric"
 keep_alive = "10m"
 num_ctx = 12288
 think = true
@@ -25,6 +27,7 @@ tools = ["read_file", "list_directory", "search_text", "write_file", "run_comman
 
 [models.coder]
 name = "qwen3:8b"
+provider = "fabric"
 keep_alive = "0"
 num_ctx = 12288
 think = true
@@ -35,6 +38,7 @@ tools = ["read_file", "list_directory", "search_text", "write_file", "run_comman
 
 [models.reviewer]
 name = "gemma4:12b"
+provider = "fabric"
 keep_alive = "0"
 num_ctx = 16384
 think = true
@@ -121,3 +125,18 @@ use_shellcheck_when_available = true
 [metrics]
 path = "~/.local/state/epi13-local-harness/metrics.sqlite3"
 store_prompt_text = false
+
+[fabric]
+enabled = false
+controller_id = "epi13-local-harness"
+state_path = "~/.local/state/epi13-local-harness/fabric.jsonl"
+fallback_to_local = true
+refresh_on_startup = true
+refresh_timeout_seconds = 5.0
+worker_bundle_root = "~/.local/state/epi13-local-harness/fabric-worker-bundle"
+provider_ollama_base_url = "http://127.0.0.1:11434"
+provider_timeout_seconds = 600
+
+# Add explicit [fabric.workers.<id>] tables for enrolled workers.  Remote
+# certificate/key/trust paths are intentionally operator-provided and are not
+# populated in this bundled configuration.

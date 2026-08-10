@@ -52,6 +52,20 @@ Modified source and configuration files are checked by deterministic parsers or
 syntax tools. Verification failure can escalate to another model, but cannot weaken
 policy.
 
+### Optional Fabric boundary
+
+Fabric receives only the bounded inference bundle intentionally constructed by
+the provider. It does not receive the local workspace tool authority. A remote
+model response returns to `LocalAgent`, where the existing policy registry
+validates and executes any tool call locally. Remote workers are explicit,
+enrolled endpoints; the harness does not scan, disable TLS validation, bypass
+certificate trust, expose unauthenticated Ollama, or let model text select
+arbitrary hosts.
+
+Fabric placement evidence is resource admission evidence, not semantic
+correctness, CUDA proof by itself, attestation, or permission to run tools.
+`UNKNOWN` is preserved for stale or missing resource/runtime observations.
+
 ## Known limitations
 
 - An allowlisted compiler or test program can execute project-controlled build logic.

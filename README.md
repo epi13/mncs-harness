@@ -265,6 +265,7 @@ See [docs/SECURITY.md](docs/SECURITY.md) before widening the tool surface.
 - [Semantic prompt router](docs/SEMANTIC_ROUTER.md)
 - [Security model](docs/SECURITY.md)
 - [Terminal UI](docs/TUI.md)
+- [MNCS Fabric integration](docs/FABRIC.md)
 - [Roadmap](docs/ROADMAP.md)
 
 ## Development

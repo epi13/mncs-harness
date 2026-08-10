@@ -60,6 +60,51 @@ requires_image = false
             self.assertIn("coding", config.lanes)
             self.assertEqual(config.lanes["chat"].worker_role, "e2b")
 
+    def test_fabric_configuration_is_optional_and_explicit(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            destination = Path(directory) / "config.toml"
+            destination.write_text(
+                """
+[fabric]
+enabled = true
+fallback_to_local = false
+refresh_on_startup = false
+state_path = "state/fabric.jsonl"
+
+[fabric.workers.local-fixture]
+kind = "local"
+state_path = "state/worker.jsonl"
+bundle_root = "state/bundle"
+capabilities = ["python", "placement:cpu-precision:float16"]
+""".strip(),
+                encoding="utf-8",
+            )
+            config = load_config(destination)
+            self.assertTrue(config.fabric.enabled)
+            self.assertFalse(config.fabric.fallback_to_local)
+            self.assertEqual(config.fabric.workers[0].worker_id, "local-fixture")
+            self.assertEqual(config.fabric.workers[0].kind, "local")
+            self.assertIn("fabric", config.models["e2b"].provider)
+
+    def test_malformed_fabric_worker_kind_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            destination = Path(directory) / "config.toml"
+            destination.write_text(
+                """
+[fabric.workers.bad]
+kind = "ssh"
+""".strip(),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "local or remote"):
+                load_config(destination)
+
+    def test_defaults_contain_no_fabric_credentials(self) -> None:
+        text = Path("src/epi13_local_harness/default_config.toml").read_text(encoding="utf-8")
+        self.assertNotIn("client_key", text)
+        self.assertNotIn("password", text.lower())
+        self.assertNotIn("token", text.lower())
+
 
 if __name__ == "__main__":
     unittest.main()
