@@ -8,9 +8,9 @@ small and deterministic and reports why a model was selected.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Any, Iterable
-
+from typing import Any
 
 _CODE_HINTS = ("code", "coder", "devstral", "qwen", "granite")
 
