@@ -42,7 +42,7 @@ quantization, KV cache, and actual layer movement.
 
 ## Configuration
 
-The Fabric-backed inference provider requires MNCS Fabric `0.2.0a12` or newer in
+The Fabric-backed inference provider requires MNCS Fabric `0.2.0a13` or newer in
 the `0.2.x` line. That version retains provider-neutral worker capability observations,
 ensures each explicitly supplied request bundle is staged after placement, and
 separates short control waits from job-bounded execution responses. Install from a

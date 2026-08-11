@@ -55,6 +55,11 @@ def add_windows_commission_arguments(parser: argparse.ArgumentParser) -> None:
         type=Path,
         help="Local persistent PKI/trust root",
     )
+    parser.add_argument(
+        "--registry-path",
+        type=Path,
+        help="Fabric worker registry; defaults to ~/.local/state/mncs-fabric/workers.json",
+    )
     parser.add_argument("--certificate-days", type=int, default=365)
     parser.add_argument(
         "--rotate-enrollment",
@@ -740,6 +745,11 @@ def commission_windows(args: argparse.Namespace) -> int:
     ssh_key = args.ssh_key.expanduser().resolve()
     worker_host = args.worker_host or args.ssh_host
     remote_root = args.remote_root or f"C:/Users/{args.ssh_user}/mncs-fabric-worker"
+    registry_path = (
+        args.registry_path.expanduser()
+        if args.registry_path
+        else Path("~/.local/state/mncs-fabric/workers.json").expanduser()
+    )
     enrollment_root = (
         args.enrollment_root.expanduser().resolve()
         if args.enrollment_root
@@ -815,8 +825,28 @@ def commission_windows(args: argparse.Namespace) -> int:
         local_role=None,
         gpu_reserve_mib=args.gpu_reserve_mib,
         fallback_to_local=args.fallback_to_local,
+        registry_path=registry_path,
     )
     configure_remote(configure_args)
+
+    from mncs_fabric import RegistryWorker, WorkerRegistry
+
+    registry = WorkerRegistry(registry_path, args.controller_id)
+    registry_worker = RegistryWorker(
+        worker_id=args.worker_id,
+        host=worker_host,
+        port=args.worker_port,
+        capabilities=("python",),
+        ca_file=str(files["ca"]),
+        client_certificate=str(files["controller"]),
+        client_key=str(files["controller_key"]),
+        trust_state=str(files["controller_trust"]),
+    )
+    known_registry_workers = {item.worker_id for item in registry.load()}
+    if args.worker_id in known_registry_workers:
+        registry_result = registry.update(registry_worker)
+    else:
+        registry_result = registry.register(registry_worker)
 
     from .config import load_config
     from .fabric import FabricSession
@@ -858,6 +888,8 @@ def commission_windows(args: argparse.Namespace) -> int:
         "worker_port": args.worker_port,
         "remote_root": remote_root,
         "enrollment_root": str(enrollment_root),
+        "registry_path": str(registry_path),
+        "registry_action": registry_result["action"],
         "fabric_version": fabric_version,
         "windows_preflight": preflight,
         "prior_worker_state": stop_result.get("state"),

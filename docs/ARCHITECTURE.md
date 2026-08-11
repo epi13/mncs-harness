@@ -1,5 +1,10 @@
 # Architecture
 
+The unified fleet view combines controller policy, the Fabric registry, current
+worker/resource/capability observations, installed/loaded provider models, and
+Harness-owned resident assignments. Runtime routing, Doctor, Models, CLI, and TUI
+consume that view rather than recomputing a controller-centric inventory.
+
 ## Design objective
 
 The harness is a local orchestration layer, not another foundation model. Its job is

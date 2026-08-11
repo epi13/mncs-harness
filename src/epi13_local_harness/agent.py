@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import inspect
 import json
 import sys
 from pathlib import Path
@@ -10,17 +11,24 @@ from .capability_graph import build_capability_graph
 from .commons import CommonsError, CommonsSession, CommonsStatus
 from .fabric import FabricStatus
 from .fabric_inventory_session import InventoryAwareFabricSession
+from .fleet import FleetService
 from .metrics import MetricsStore
 from .models import (
     AgentResult,
     HarnessConfig,
     ModelAttempt,
+    RoutingOverride,
     SessionTargets,
     VerificationResult,
 )
 from .ollama import OllamaClient, OllamaError
 from .prompts import system_prompt
-from .provider import FabricOllamaProvider, LocalOllamaProvider, ProviderError
+from .provider import (
+    DisabledLocalGenerationProvider,
+    FabricOllamaProvider,
+    LocalOllamaProvider,
+    ProviderError,
+)
 from .router import plan_route
 from .tools import ToolRegistry
 from .verifiers import Verifier
@@ -32,11 +40,17 @@ class LocalAgent:
         # ``client`` remains a compatibility seam used by existing callers and
         # tests. Provider selection is performed per model role below.
         self.client = OllamaClient(config.ollama)
-        self.fabric_session = InventoryAwareFabricSession(config.fabric)
+        self.fabric_session = InventoryAwareFabricSession(
+            config.fabric, residency_config=config.model_residency
+        )
         self.fabric_session.initialize()
         self.commons_session = CommonsSession(config.commons)
         self.commons_session.initialize()
         self.metrics = MetricsStore(config.metrics.path, config.metrics.store_prompt_text)
+        self.fleet = FleetService(config, self.fabric_session)
+        self._last_residency_results: tuple[dict[str, Any], ...] = ()
+        if config.model_residency.enabled and config.model_residency.warm_on_startup:
+            self._last_residency_results = self.fleet.residency.reconcile()
 
     def fabric_status(self) -> FabricStatus:
         return self.fabric_session.status()
@@ -114,11 +128,57 @@ class LocalAgent:
 
         refresher = getattr(self.fabric_session, "refresh_model_inventory", None)
         if callable(refresher):
-            return refresher()
+            refreshed = refresher()
+            if self.config.model_residency.enabled:
+                self._last_residency_results = self.fleet.residency.reconcile()
+                status = getattr(self.fabric_session, "status", None)
+                if callable(status):
+                    return status()
+            return refreshed
         status = getattr(self.fabric_session, "status", None)
         if callable(status):
             return status()
         return None
+
+    def _restore_residency_after_attempt(self, attempt: ModelAttempt) -> None:
+        """Return a remote worker to its declared steady state after inference.
+
+        A transient routed model can evict a resident model on constrained
+        hardware.  Re-observe the provider after each completed remote attempt
+        and apply the same bounded residency policy used at startup.  Failures
+        remain operational evidence and never change the inference result.
+        """
+
+        if (
+            not self.config.model_residency.enabled
+            or attempt.session_targets.inference.kind != "fabric-worker"
+        ):
+            return
+        try:
+            self.refresh_fabric_inventory()
+            attempt.metrics["residency_reconciliation"] = [
+                {
+                    key: item.get(key)
+                    for key in (
+                        "worker_id",
+                        "resident_model",
+                        "outcome",
+                        "code",
+                        "loaded",
+                        "detail",
+                    )
+                }
+                for item in self._last_residency_results
+            ]
+        except Exception as exc:
+            attempt.metrics["residency_reconciliation"] = [
+                {
+                    "worker_id": attempt.session_targets.inference.worker_identity,
+                    "outcome": "UNKNOWN",
+                    "code": "RESIDENCY_POST_ATTEMPT_RECONCILE_FAILED",
+                    "detail": str(exc),
+                }
+            ]
 
     def _provider_for_model(self, model, model_selection, targets: SessionTargets) -> object:
         local = LocalOllamaProvider(self.client)
@@ -136,17 +196,33 @@ class LocalAgent:
             return FabricOllamaProvider(
                 self.fabric_session,
                 local,
-                self.config.fabric.fallback_to_local,
+                self.config.fabric.fallback_to_local
+                and self.config.controller.generation_policy != "router-only",
                 inference_worker_id=worker_id,
                 placement_error=placement_error,
                 session_targets=targets,
             )
+        if self.config.controller.generation_policy == "router-only":
+            return DisabledLocalGenerationProvider(
+                "CONTROLLER_GENERATION_DENIED: controller policy is router-only"
+            )
         return local
 
-    def _resolve_model(self, role: str):
+    def _resolve_model(self, role: str, routing_override: RoutingOverride):
         configured_model = self.config.models[role]
         resolver = getattr(self.fabric_session, "resolve_model", None)
         if callable(resolver):
+            try:
+                parameters = inspect.signature(resolver).parameters.values()
+                supports_override = any(
+                    parameter.name == "routing_override"
+                    or parameter.kind == inspect.Parameter.VAR_KEYWORD
+                    for parameter in parameters
+                )
+            except (TypeError, ValueError):
+                supports_override = False
+            if supports_override:
+                return resolver(role, configured_model, routing_override=routing_override)
             return resolver(role, configured_model)
         # Preserve the existing public/testing session seam. Inventory-aware
         # resolution is additive rather than a new requirement on custom sessions.
@@ -215,8 +291,9 @@ class LocalAgent:
         interactive_approval: bool | None,
         previous: ModelAttempt | None,
         cumulative_modified: list[Path],
+        routing_override: RoutingOverride,
     ) -> ModelAttempt:
-        model, model_selection = self._resolve_model(role)
+        model, model_selection = self._resolve_model(role, routing_override)
         interactive = (
             sys.stdin.isatty() if interactive_approval is None else interactive_approval
         )
@@ -272,6 +349,10 @@ class LocalAgent:
                             "model_selection_source": "worker-inventory",
                             "model_inventory_status": model_selection.inventory_status,
                             "model_worker": model_selection.worker_id,
+                            "model_loaded": model_selection.loaded,
+                            "model_resident": model_selection.resident,
+                            "routing_mode": model_selection.route_mode,
+                            "routing_fallback_allowed": routing_override.allow_fallback,
                         }
                     )
                 message = dict(last_response.get("message", {}))
@@ -319,6 +400,10 @@ class LocalAgent:
                         "model_selection_source": "worker-inventory",
                         "model_inventory_status": model_selection.inventory_status,
                         "model_worker": model_selection.worker_id,
+                        "model_loaded": model_selection.loaded,
+                        "model_resident": model_selection.resident,
+                        "routing_mode": model_selection.route_mode,
+                        "routing_fallback_allowed": routing_override.allow_fallback,
                     }
                 )
             error = str(exc)
@@ -370,6 +455,7 @@ class LocalAgent:
         workspace: Path,
         images: list[Path] | None = None,
         forced_role: str | None = None,
+        routing_override: RoutingOverride | None = None,
         auto_approve: bool = False,
         interactive_approval: bool | None = None,
     ) -> AgentResult:
@@ -378,7 +464,13 @@ class LocalAgent:
         if self.config.fabric.enabled:
             self.refresh_fabric_inventory()
 
-        route = plan_route(task, self.config, images, forced_role)
+        route = plan_route(
+            task,
+            self.config,
+            images,
+            forced_role,
+            routing_override=routing_override,
+        )
         run_id = self.metrics.begin_run(task, route)
         attempts: list[ModelAttempt] = []
         cumulative_modified: list[Path] = []
@@ -394,8 +486,10 @@ class LocalAgent:
                 interactive_approval,
                 previous,
                 cumulative_modified,
+                route.routing_override,
             )
             attempts.append(attempt)
+            self._restore_residency_after_attempt(attempt)
             self.metrics.record_attempt(
                 run_id,
                 index,

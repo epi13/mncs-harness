@@ -35,10 +35,13 @@ class FabricCompatibilityTests(unittest.TestCase):
             def workers(self):
                 return []
 
-        with patch.dict(sys.modules, {"mncs_fabric": self._module(Client, "0.2.0a12")}):
+            def load_registry(self, path):
+                return {"path": path}
+
+        with patch.dict(sys.modules, {"mncs_fabric": self._module(Client, "0.2.0a13")}):
             result = require_execution_bundle_archive_api()
-        self.assertEqual(result["version"], "0.2.0a12")
-        self.assertEqual(result["required_version"], "0.2.0a12")
+        self.assertEqual(result["version"], "0.2.0a13")
+        self.assertEqual(result["required_version"], "0.2.0a13")
 
     def test_guard_rejects_a9_even_though_signature_exists(self) -> None:
         class Client:
@@ -51,8 +54,11 @@ class FabricCompatibilityTests(unittest.TestCase):
             def workers(self):
                 return []
 
+            def load_registry(self, path):
+                return {"path": path}
+
         with patch.dict(sys.modules, {"mncs_fabric": self._module(Client, "0.2.0a9")}):
-            with self.assertRaisesRegex(RuntimeError, "0.2.0a9.*0.2.0a12"):
+            with self.assertRaisesRegex(RuntimeError, "0.2.0a9.*0.2.0a13"):
                 require_execution_bundle_archive_api()
 
     def test_guard_rejects_stale_editable_fabric(self) -> None:
@@ -61,7 +67,7 @@ class FabricCompatibilityTests(unittest.TestCase):
                 return []
 
         with patch.dict(sys.modules, {"mncs_fabric": self._module(Client, "0.2.0a7")}):
-            with self.assertRaisesRegex(RuntimeError, "0.2.0a7.*0.2.0a12"):
+            with self.assertRaisesRegex(RuntimeError, "0.2.0a7.*0.2.0a13"):
                 require_execution_bundle_archive_api()
 
     def test_guard_rejects_a11_without_capability_api(self) -> None:

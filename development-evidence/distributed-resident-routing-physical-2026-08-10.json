@@ -1,0 +1,105 @@
+{
+  "schema_version": "epi13-local-harness.physical-integration-evidence.v0.2",
+  "captured_at": "2026-08-11T05:33:24Z",
+  "controller_platform": "Fedora",
+  "status": "PASS",
+  "scope": "operator-controlled physical evidence; not independent certification or attestation",
+  "versions": {
+    "epi13_local_harness": "0.6.0",
+    "mncs_commons": "0.5.0.dev1",
+    "mncs_fabric_controller": "0.2.0a13",
+    "mncs_fabric_worker_service": "0.2.0a10"
+  },
+  "registry": {
+    "registered_worker_count": 1,
+    "source": "operator-owned Fabric registry plus matching legacy Harness entry",
+    "lan_scan_used": false,
+    "workers_without_complete_current_endpoint_and_trust_references": [
+      "historical Fedora worker",
+      "historical Raspberry Pi worker"
+    ]
+  },
+  "worker": {
+    "worker_id": "collamore02-windows",
+    "availability": "AVAILABLE",
+    "architecture": "amd64",
+    "cpu_logical_count": 16,
+    "host_memory_total_bytes": 34038341632,
+    "accelerator": "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "accelerator_memory_bytes": 8585740288,
+    "ollama_version": "0.32.6",
+    "installed_model_count": 8,
+    "preferred_resident_model": "gemma4:e4b",
+    "resident_selection_source": "operator-explicit",
+    "loaded_model_names_after_reconciliation": ["gemma4:e4b"],
+    "capability_observation_identity": "sha256:72cbf878bf18fc4b38a796af9bfdd50a06c44efa128c9b3e8f4cf60cd59f4292",
+    "resource_snapshot_identity": "sha256:b52422ce259d11d4a65832a548125d672c0a6249ec784761b2ca2ef254f3977e"
+  },
+  "controller": {
+    "generation_policy": "router-only",
+    "controller_ollama_running_generation_models": [],
+    "semantic_router_backend": "transformers",
+    "semantic_router_role": "routing only"
+  },
+  "routing": {
+    "exact_pair": {
+      "worker": "collamore02-windows",
+      "model": "gemma4:e4b",
+      "fallback": false,
+      "outcome": "PASS",
+      "inference_target": "fabric-worker:collamore02-windows",
+      "workspace_target": "controller",
+      "tool_target": "controller"
+    },
+    "automatic": {
+      "worker": "collamore02-windows",
+      "model": "qwen3:8b",
+      "outcome": "PASS",
+      "post_attempt_resident_restored": true
+    },
+    "role_preview": "PASS",
+    "model_preview": "PASS",
+    "worker_preview": "PASS",
+    "worker_model_preview": "PASS"
+  },
+  "commons": {
+    "profile": "commons.mncs.dev/node/local-agent/v0alpha1",
+    "record_protocol": "commons.mncs.dev/v0alpha1",
+    "exchange_profile": "commons.mncs.dev/exchange/v0alpha1",
+    "content_trust": "UNTRUSTED",
+    "operator_cli_status": "PASS",
+    "operator_cli_work": "PASS",
+    "operator_cli_query": "PASS",
+    "operator_tui_launch": "PASS",
+    "remote_model_tool": "commons_describe",
+    "remote_model_tool_count": 1,
+    "record_count_after_physical_runs": 5,
+    "store_persistent": true
+  },
+  "fabric_execution": {
+    "tool_request_execution_record_identity": "sha256:6892fb810e549f53fad49a0e483b5f84342f659e7b36c2c405cc336e1b486319",
+    "post_tool_execution_record_identity": "sha256:c78490c00121a4d3ca889e78ceab99b89250a58a90118d070a18acde6c461a6f",
+    "tool_request_job_identity": "sha256:cc79865511f035edea1494c4f485c30dee986ecb7de1e9e9e6b099f75e4e77dc",
+    "post_tool_job_identity": "sha256:634cfa8ab34e474fca7664528c08b927fcda751748e83ef490a343cd480036b0",
+    "outcomes": ["PASS", "PASS"]
+  },
+  "evidence_boundary": {
+    "commons_source_outcome": "PASS",
+    "commons_claim_verification_status": "UNKNOWN",
+    "commons_conformance_status": "UNKNOWN",
+    "instructions_are_untrusted": true
+  },
+  "observations": [
+    "The exact remote route requested commons_describe on its first Fabric inference.",
+    "Harness executed Commons through controller-local MCP and returned the result through a second Fabric inference.",
+    "A second exact prompt proved the resident model remained usable across prompts.",
+    "An AUTO route transiently selected qwen3:8b; post-attempt reconciliation restored gemma4:e4b after accelerator eviction.",
+    "The TUI launched with the physical fleet, resident state, routing controls, and controller-owned Commons status visible.",
+    "No LAN scan, SSH runtime, remote Commons store, remote filesystem authority, or controller Ollama generation fallback was used."
+  ],
+  "limitations": [
+    "Only collamore02-windows has complete current endpoint and trust references in operator state; historical Fedora and Pi nodes remain UNKNOWN rather than guessed.",
+    "The worker service remains 0.2.0a10 because no complete current out-of-band commissioning configuration was found for a safe package-only upgrade.",
+    "Physical evidence is operator-controlled and does not establish independent custody, semantic correctness, or attestation."
+  ]
+}

@@ -31,8 +31,10 @@ CHECKS = {
             "-q",
             "tests/test_commons.py",
             "tests/test_distributed_capabilities.py",
+            "tests/test_resident_routing.py",
+            "tests/test_tui_live_models.py",
             "-k",
-            "commons or worker_disappearing",
+            "commons or worker_disappearing or resident or manual or model_inventory",
         ],
     ),
     "Fabric": (
@@ -43,8 +45,9 @@ CHECKS = {
             "pytest",
             "-q",
             "tests/test_transport.py",
+            "tests/test_registry.py",
             "-k",
-            "execution_response or job_timeout",
+            "execution_response or job_timeout or registry",
         ],
     ),
 }
@@ -87,6 +90,10 @@ def main() -> int:
         print("Commons target: controller-local stdio MCP/store")
         print("Fabric evidence: execution record + opaque consumer provenance")
         print("Commons publication: inert Observation; source PASS != verification PASS")
+        print("Fabric registry: multiple known workers remain independently visible")
+        print("resident models: one deterministic controller-selected assignment per worker")
+        print("manual routing: worker/model pins fail closed without explicit fallback")
+        print("Commons operator interface: CLI/TUI facade uses controller MCP semantics")
         return 0
     return 1
 

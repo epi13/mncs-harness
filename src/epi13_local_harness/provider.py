@@ -54,6 +54,30 @@ class LocalOllamaProvider:
         return self.client.chat(model, messages, tools=tools, images=images)
 
 
+class DisabledLocalGenerationProvider:
+    """Fail closed when controller policy forbids generation-model fallback."""
+
+    def __init__(self, reason: str):
+        self.reason = reason
+        self.last_metadata: dict[str, Any] = {
+            "provider": "controller-policy",
+            "backend": "none",
+            "controller_generation_denied": True,
+            "controller_generation_policy": "router-only",
+            **SessionTargets.unresolved_inference().as_metadata(),
+        }
+
+    def chat(
+        self,
+        model: ModelConfig,
+        messages: list[dict[str, Any]],
+        tools: list[dict[str, Any]] | None = None,
+        images: list[Path] | None = None,
+    ) -> dict[str, Any]:
+        del model, messages, tools, images
+        raise ProviderError(self.reason)
+
+
 class FabricOllamaProvider:
     """Invoke worker-local Ollama through a Fabric execution bundle."""
 

@@ -25,6 +25,9 @@ class ModelSelection:
     worker_id: str | None = None
     inventory_status: str = "CURRENT"
     available: bool = True
+    loaded: bool = False
+    resident: bool = False
+    route_mode: str = "AUTO"
 
 
 def _model_name(item: dict[str, Any]) -> str:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import shlex
 import shutil
 import sys
@@ -31,11 +32,11 @@ from textual.worker import get_current_worker
 
 from .agent import LocalAgent
 from .commons import CommonsStatus
+from .commons_operator import CommonsOperatorService
 from .config import default_config_path, load_config
 from .fabric import FabricStatus
 from .metrics import MetricsStore
-from .model_selection import select_installed_model
-from .models import AgentResult, HarnessConfig, RoutePlan
+from .models import AgentResult, HarnessConfig, RoutePlan, RoutingOverride
 from .ollama import OllamaClient, OllamaError
 from .router import plan_route
 from .semantic_router import RouterRuntimeStatus, activate_router, router_status
@@ -47,6 +48,46 @@ def role_options(config: HarnessConfig) -> list[tuple[str, str]]:
     options.extend(
         (f"{role} — {model.name}", role) for role, model in config.models.items()
     )
+    return options
+
+
+def worker_options(status: FabricStatus) -> list[tuple[str, str]]:
+    """Return every known worker, including unavailable registry members."""
+
+    return [
+        (
+            f"{worker.get('worker_id')} — {worker.get('availability', 'UNKNOWN')}",
+            str(worker.get("worker_id")),
+        )
+        for worker in sorted(status.workers, key=lambda item: str(item.get("worker_id")))
+        if worker.get("source") != "local" and worker.get("worker_id")
+    ]
+
+
+def worker_model_options(
+    status: FabricStatus, worker_id: str | None = None
+) -> list[tuple[str, str]]:
+    """Return the union of worker inventories, preserving loaded placement labels."""
+
+    placements: dict[str, list[str]] = {}
+    loaded: set[tuple[str, str]] = set()
+    for worker in status.workers:
+        current_worker = str(worker.get("worker_id") or "")
+        if worker_id and current_worker != worker_id:
+            continue
+        for model in worker.get("model_inventory") or ():
+            if not isinstance(model, dict):
+                continue
+            name = str(model.get("name") or model.get("model") or "")
+            if not name:
+                continue
+            placements.setdefault(name, []).append(current_worker)
+            if model.get("loaded"):
+                loaded.add((current_worker, name))
+    options: list[tuple[str, str]] = []
+    for name, workers in sorted(placements.items()):
+        marker = "●" if any((worker, name) in loaded for worker in workers) else "○"
+        options.append((f"{marker} {name} — {', '.join(sorted(workers))}", name))
     return options
 
 
@@ -70,6 +111,7 @@ def parse_image_paths(raw: str, workspace: Path) -> list[Path]:
 def route_summary(plan: RoutePlan) -> str:
     """Build a concise plain-text route summary for tests and accessibility."""
     parts = [f"route={' -> '.join(plan.all_roles)}"]
+    parts.append(f"mode={plan.routing_override.mode}")
     if plan.lane:
         parts.append(f"lane={plan.lane}")
     if plan.semantic:
@@ -237,6 +279,14 @@ def route_renderable(plan: RoutePlan) -> Panel:
     table.add_column(style="bold cyan", no_wrap=True)
     table.add_column()
     table.add_row("Route", " → ".join(plan.all_roles))
+    table.add_row("Requested mode", plan.routing_override.mode)
+    if plan.routing_override.worker:
+        table.add_row("Requested worker", plan.routing_override.worker)
+    if plan.routing_override.model:
+        table.add_row("Requested model", plan.routing_override.model)
+    table.add_row(
+        "Fallback", "enabled" if plan.routing_override.allow_fallback else "disabled"
+    )
     table.add_row("Lane", plan.lane or "deterministic / fallback")
     if plan.semantic:
         table.add_row("Router", plan.semantic.backend)
@@ -344,20 +394,24 @@ def role_models_table(
     table.add_column("Preferred")
     table.add_column("Resolved")
     table.add_column("State")
-    remote_inventory = _common_fabric_inventory(fabric_status)
     for role, model in config.models.items():
         if model.provider == "fabric":
-            selection = select_installed_model(role, model.name, remote_inventory)
-            if selection is None:
+            placements = [
+                str(worker.get("worker_id"))
+                for worker in fabric_status.workers
+                if worker.get("availability") == "AVAILABLE"
+                and any(
+                    isinstance(item, dict)
+                    and str(item.get("name") or item.get("model") or "") == model.name
+                    for item in worker.get("model_inventory") or ()
+                )
+            ]
+            if not placements:
                 resolved = "—"
                 state = "[yellow]worker inventory unavailable[/yellow]"
             else:
-                resolved = selection.selected_model
-                state = (
-                    "[green]preferred installed[/green]"
-                    if resolved == model.name
-                    else "[yellow]dynamic fallback[/yellow]"
-                )
+                resolved = model.name
+                state = "[green]" + ", ".join(sorted(placements)) + "[/green]"
         else:
             resolved = model.name
             state = (
@@ -379,6 +433,7 @@ def fabric_model_inventory_table(status: FabricStatus) -> Table:
     table.add_column("Family")
     table.add_column("Params")
     table.add_column("Quant")
+    table.add_column("State")
     rows = 0
     for worker in status.workers:
         if worker.get("source") != "remote":
@@ -405,6 +460,7 @@ def fabric_model_inventory_table(status: FabricStatus) -> Table:
                     str(details.get("family") or "—"),
                     str(details.get("parameter_size") or "—"),
                     str(details.get("quantization_level") or "—"),
+                    "● loaded" if item.get("loaded") else "○ installed",
                 )
                 rows += 1
         elif worker.get("model_inventory_error"):
@@ -415,10 +471,47 @@ def fabric_model_inventory_table(status: FabricStatus) -> Table:
                 "—",
                 "—",
                 "—",
+                "—",
             )
             rows += 1
     if rows == 0:
-        table.add_row("—", "No live worker inventory available", "—", "—", "—", "—")
+        table.add_row("—", "No live worker inventory available", "—", "—", "—", "—", "—")
+    return table
+
+
+def residency_table(config: HarnessConfig, status: FabricStatus) -> Table:
+    """Render desired resident assignment separately from provider observations."""
+
+    configured = {item.worker_id: item.model for item in config.model_residency.workers}
+    table = Table(title="Resident model policy", expand=True)
+    table.add_column("Worker", style="cyan")
+    table.add_column("Preferred")
+    table.add_column("Installed")
+    table.add_column("Loaded")
+    for worker in status.workers:
+        worker_id = str(worker.get("worker_id") or "")
+        if not worker_id or worker.get("source") == "local":
+            continue
+        preferred = configured.get(worker_id)
+        inventory = [
+            item for item in worker.get("model_inventory") or () if isinstance(item, dict)
+        ]
+        selected = next(
+            (
+                item
+                for item in inventory
+                if str(item.get("name") or item.get("model") or "") == preferred
+            ),
+            None,
+        )
+        table.add_row(
+            worker_id,
+            preferred or "automatic / unresolved",
+            "yes" if selected is not None else "no" if preferred else "UNKNOWN",
+            "yes" if selected and selected.get("loaded") else "no" if selected else "UNKNOWN",
+        )
+    if not table.rows:
+        table.add_row("—", "No known workers", "UNKNOWN", "UNKNOWN")
     return table
 
 
@@ -503,6 +596,11 @@ class HarnessTui(App[None]):
     Checkbox {
         margin-top: 1;
     }
+
+    #route-active {
+        color: $warning;
+        margin-top: 1;
+    }
     """
 
     def __init__(
@@ -517,6 +615,7 @@ class HarnessTui(App[None]):
         self.initial_workspace = workspace.expanduser().resolve()
         self.config_path = config_path
         self.agent = LocalAgent(config)
+        self.commons = CommonsOperatorService(self.agent.commons_session)
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
@@ -524,12 +623,46 @@ class HarnessTui(App[None]):
             with VerticalScroll(id="sidebar"):
                 yield Label("Workspace", classes="field-label")
                 yield Input(value=str(self.initial_workspace), id="workspace")
-                yield Label("Model role", classes="field-label")
+                yield Label("Routing mode", classes="field-label")
+                yield Select[str](
+                    [
+                        ("Automatic", "AUTO"),
+                        ("Role", "ROLE"),
+                        ("Exact model", "MODEL"),
+                        ("Exact worker", "WORKER"),
+                        ("Worker + model", "WORKER_MODEL"),
+                    ],
+                    value="AUTO",
+                    allow_blank=False,
+                    id="routing-mode",
+                )
+                yield Label("Role", classes="field-label")
                 yield Select[str](
                     role_options(self.config),
                     allow_blank=False,
                     id="model",
                 )
+                initial_fabric = self.agent.fabric_status()
+                yield Label("Worker", classes="field-label")
+                yield Select[str](
+                    worker_options(initial_fabric),
+                    prompt="No known worker selected",
+                    allow_blank=True,
+                    id="worker",
+                )
+                yield Label("Exact model", classes="field-label")
+                yield Select[str](
+                    worker_model_options(initial_fabric),
+                    prompt="No current model selected",
+                    allow_blank=True,
+                    id="model-name",
+                )
+                yield Checkbox(
+                    "Allow explicit fallback",
+                    value=False,
+                    id="allow-fallback",
+                )
+                yield Static("Mode: AUTO", id="route-active")
                 yield Label("Images", classes="field-label")
                 yield Input(
                     placeholder='Optional paths, e.g. "receipt scan.png" screenshot.png',
@@ -546,6 +679,7 @@ class HarnessTui(App[None]):
                     yield Button("Models", id="models")
                     yield Button("Metrics", id="metrics")
                     yield Button("Fabric", id="fabric")
+                    yield Button("Commons", id="commons")
                     yield Button("Clear", id="clear")
             with Vertical(id="conversation"):
                 yield RichLog(
@@ -570,7 +704,9 @@ class HarnessTui(App[None]):
                 Markdown(
                     "**Epi13 Local Harness TUI**\n\n"
                     "Each prompt is routed independently. Select a role to force it, "
-                    "or leave **Automatic routing** selected. The semantic encoder "
+                    "or leave **Automatic routing** selected. Exact worker/model pins "
+                    "remain active across prompts until changed and fail closed unless "
+                    "fallback is visibly enabled. The semantic encoder "
                     "router and Ollama workers are reported separately. Writes and "
                     "commands are denied unless auto-approval is deliberately enabled."
                 ),
@@ -578,6 +714,18 @@ class HarnessTui(App[None]):
             )
         )
         self.query_one("#prompt", Input).focus()
+        current_fabric = self.agent.fabric_status()
+        self._log(
+            Group(
+                Panel(
+                    Text(commons_status_summary(self.agent.commons_status())),
+                    title="Commons (controller-owned; content untrusted)",
+                    border_style="yellow",
+                ),
+                fabric_status_renderable(current_fabric),
+                residency_table(self.config, current_fabric),
+            )
+        )
 
     def _log(self, renderable: object) -> None:
         self.query_one("#log", RichLog).write(renderable)
@@ -586,7 +734,9 @@ class HarnessTui(App[None]):
         self.query_one("#status", Static).update(text)
 
     def _set_busy(self, busy: bool, status: str = "Ready") -> None:
-        for button_id in ("send", "route", "doctor", "models", "metrics", "fabric"):
+        for button_id in (
+            "send", "route", "doctor", "models", "metrics", "fabric", "commons"
+        ):
             self.query_one(f"#{button_id}", Button).disabled = busy
         self._status(status)
 
@@ -600,6 +750,49 @@ class HarnessTui(App[None]):
     def _selected_role(self) -> str | None:
         value = self.query_one("#model", Select).selection
         return str(value) if value else None
+
+    @staticmethod
+    def _selection(select: Select) -> str | None:
+        value = select.selection
+        return str(value) if value else None
+
+    def _routing_override(self) -> RoutingOverride:
+        mode = self._selection(self.query_one("#routing-mode", Select)) or "AUTO"
+        role = self._selected_role() if mode == "ROLE" else None
+        worker = (
+            self._selection(self.query_one("#worker", Select))
+            if mode in {"WORKER", "WORKER_MODEL"}
+            else None
+        )
+        model = (
+            self._selection(self.query_one("#model-name", Select))
+            if mode in {"MODEL", "WORKER_MODEL"}
+            else None
+        )
+        requested = RoutingOverride.from_values(
+            role=role,
+            worker=worker,
+            model=model,
+            allow_fallback=self.query_one("#allow-fallback", Checkbox).value,
+        )
+        if requested.mode != mode:
+            raise ValueError(f"{mode} routing requires its selected fields")
+        return requested
+
+    def _update_routing_label(self) -> None:
+        try:
+            requested = self._routing_override()
+            detail = [f"Mode: {requested.mode}"]
+            if requested.role:
+                detail.append(f"role={requested.role}")
+            if requested.worker:
+                detail.append(f"worker={requested.worker}")
+            if requested.model:
+                detail.append(f"model={requested.model}")
+            detail.append(f"fallback={'enabled' if requested.allow_fallback else 'disabled'}")
+            self.query_one("#route-active", Static).update(" | ".join(detail))
+        except ValueError:
+            self.query_one("#route-active", Static).update("Manual route incomplete")
 
     def _images(self, workspace: Path) -> list[Path]:
         return parse_image_paths(self.query_one("#images", Input).value, workspace)
@@ -628,11 +821,46 @@ class HarnessTui(App[None]):
         try:
             workspace = self._workspace()
             images = self._images(workspace)
-            plan = plan_route(task, self.config, images, self._selected_role())
+            plan = plan_route(
+                task,
+                self.config,
+                images,
+                routing_override=self._routing_override(),
+            )
+            model = self.config.models[plan.primary_role]
+            if model.provider == "fabric":
+                effective, selection = self.agent.fabric_session.resolve_model(
+                    plan.primary_role,
+                    model,
+                    routing_override=plan.routing_override,
+                )
+                resolution = Table.grid(padding=(0, 1))
+                resolution.add_column(style="bold cyan")
+                resolution.add_column()
+                resolution.add_row(
+                    "Resolved worker", selection.worker_id if selection else "unresolved"
+                )
+                resolution.add_row("Resolved model", effective.name)
+                resolution.add_row(
+                    "Available", str(selection.available if selection else False)
+                )
+                resolution.add_row("Loaded", str(selection.loaded if selection else False))
+                resolution.add_row(
+                    "Resident", str(selection.resident if selection else False)
+                )
+                resolution.add_row(
+                    "Reason", selection.reason if selection else "inventory unavailable"
+                )
+                renderable: object = Group(
+                    route_renderable(plan),
+                    Panel(resolution, title="Resolved route", border_style="cyan"),
+                )
+            else:
+                renderable = route_renderable(plan)
         except (OSError, ValueError) as exc:
             self._show_error(exc)
             return
-        self._log(route_renderable(plan))
+        self._log(renderable)
         self._status(route_summary(plan))
 
     def action_doctor(self) -> None:
@@ -651,6 +879,10 @@ class HarnessTui(App[None]):
         self._set_busy(True, "Refreshing Fabric status…")
         self.run_inspection("fabric")
 
+    def action_commons(self) -> None:
+        self._set_busy(True, "Loading controller-local Commons…")
+        self.run_inspection("commons")
+
     def action_send(self) -> None:
         task = self._prompt_text()
         if not task:
@@ -661,12 +893,29 @@ class HarnessTui(App[None]):
         except (OSError, ValueError) as exc:
             self._show_error(exc)
             return
-        role = self._selected_role()
+        try:
+            routing_override = self._routing_override()
+        except ValueError as exc:
+            self._show_error(exc)
+            return
         auto_approve = self.query_one("#auto-approve", Checkbox).value
         self._log(Panel(Text(task), title="You", border_style="blue"))
         self.query_one("#prompt", Input).value = ""
         self._set_busy(True, "Routing and running provider…")
-        self.run_agent_task(task, workspace, images, role, auto_approve)
+        self.run_agent_task(task, workspace, images, routing_override, auto_approve)
+
+    def on_select_changed(self, event: Select.Changed) -> None:
+        if event.select.id == "worker":
+            worker = self._selection(event.select)
+            options = worker_model_options(self.agent.fabric_status(), worker)
+            model_select = self.query_one("#model-name", Select)
+            model_select.set_options(options)
+            if options:
+                model_select.value = options[0][1]
+            else:
+                model_select.clear()
+        if event.select.id in {"routing-mode", "model", "worker", "model-name"}:
+            self._update_routing_label()
 
     def on_input_submitted(self, event: Input.Submitted) -> None:
         if event.input.id == "prompt":
@@ -680,6 +929,7 @@ class HarnessTui(App[None]):
             "models": self.action_models,
             "metrics": self.action_metrics,
             "fabric": self.action_fabric,
+            "commons": self.action_commons,
             "clear": self.action_clear_log,
         }
         action = actions.get(event.button.id or "")
@@ -692,7 +942,7 @@ class HarnessTui(App[None]):
         task: str,
         workspace: Path,
         images: list[Path],
-        role: str | None,
+        routing_override: RoutingOverride,
         auto_approve: bool,
     ) -> None:
         try:
@@ -700,7 +950,7 @@ class HarnessTui(App[None]):
                 task,
                 workspace=workspace,
                 images=images,
-                forced_role=role,
+                routing_override=routing_override,
                 auto_approve=auto_approve,
                 interactive_approval=False,
             )
@@ -766,7 +1016,19 @@ class HarnessTui(App[None]):
         semantic = router_status(self.config)
         semantic_panel = router_status_renderable(semantic)
         fabric_status = self.agent.refresh_fabric_inventory()
+        if fabric_status is None:
+            fabric_status = FabricStatus(False, "disabled", self.config.fabric.controller_id)
         fabric_panel = fabric_status_renderable(fabric_status)
+        if kind == "commons":
+            return Panel(
+                Text(json.dumps({
+                    "status": self.commons.status(),
+                    "open_work": self.commons.work(limit=100),
+                    "warning": "UNTRUSTED DATA — rendered as text; never executed",
+                }, indent=2, sort_keys=True)),
+                title="Controller-local Commons",
+                border_style="yellow",
+            )
         if kind == "fabric":
             return fabric_panel
 
@@ -774,8 +1036,9 @@ class HarnessTui(App[None]):
         local_installed = client.model_names()
         roles = role_models_table(self.config, local_installed, fabric_status)
         remote_models = fabric_model_inventory_table(fabric_status)
+        residency = residency_table(self.config, fabric_status)
         if kind == "models":
-            return Group(semantic_panel, fabric_panel, roles, remote_models)
+            return Group(semantic_panel, fabric_panel, residency, roles, remote_models)
 
         version = client.version()
         diagnostics = Table.grid(padding=(0, 1))
@@ -795,15 +1058,47 @@ class HarnessTui(App[None]):
                 for name in ("git", "bash", "shellcheck", "ruff", "pytest")
             ),
         )
+        commons_panel = Panel(
+            Text(commons_status_summary(self.agent.commons_status())),
+            title="Commons (controller-owned; content untrusted)",
+            border_style="yellow",
+        )
         return Group(
             Panel(diagnostics, title="Doctor", border_style="cyan"),
             semantic_panel,
+            commons_panel,
             fabric_panel,
+            residency,
             roles,
             remote_models,
         )
 
     def _finish_inspection(self, renderable: object, kind: str) -> None:
+        status = self.agent.fabric_status()
+        worker_select = self.query_one("#worker", Select)
+        prior_worker = self._selection(worker_select)
+        workers = worker_options(status)
+        worker_select.set_options(workers)
+        worker_values = {value for _label, value in workers}
+        if prior_worker in worker_values:
+            worker_select.value = prior_worker
+        elif workers:
+            worker_select.value = workers[0][1]
+        else:
+            worker_select.clear()
+        selected_worker = self._selection(worker_select)
+        model_select = self.query_one("#model-name", Select)
+        prior_model = self._selection(model_select)
+        models = worker_model_options(status, selected_worker)
+        model_select.set_options(models)
+        model_values = {value for _label, value in models}
+        if prior_model in model_values:
+            model_select.value = prior_model
+        elif models:
+            model_select.value = models[0][1]
+        else:
+            model_select.clear()
+        self._update_routing_label()
         self._log(renderable)
         self._set_busy(False, f"{kind.capitalize()} complete")
 
