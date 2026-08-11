@@ -9,6 +9,9 @@ from epi13_local_harness.fabric_inventory_session import (
     _execution_succeeded,
     _fresh_request_id,
     _FreshDispatchClient,
+    _inventory_script,
+    _model_capability_entries,
+    _model_from_capability,
 )
 
 
@@ -33,6 +36,18 @@ class _WorkerListClient:
 
 
 class LiveWorkerInventoryTests(unittest.TestCase):
+    def test_inventory_probe_collects_optional_ollama_capabilities(self) -> None:
+        script = _inventory_script()
+        self.assertIn("/api/show", script)
+        self.assertIn('"capabilities"', script)
+
+    def test_ollama_capabilities_survive_fabric_observation_round_trip(self) -> None:
+        entries = _model_capability_entries(
+            ({"name": "granite3.3:2b", "capabilities": ["completion", "tools"]},)
+        )
+        model = _model_from_capability(entries[1])
+        self.assertEqual(model["capabilities"], ["completion", "tools"])
+
     def test_fresh_request_ids_are_bounded_and_unique(self) -> None:
         first = _fresh_request_id("elh-inventory:collamore02-windows")
         second = _fresh_request_id("elh-inventory:collamore02-windows")
