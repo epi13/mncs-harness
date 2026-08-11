@@ -188,6 +188,9 @@ class FabricWorkerConfig:
     trust_state: Path | None = None
     concurrency_limit: int = 1
     timeout_seconds: float = 5.0
+    connect_timeout_seconds: float | None = None
+    control_timeout_seconds: float | None = None
+    execution_timeout_overhead_seconds: float = 5.0
 
 
 @dataclass(frozen=True)
@@ -206,7 +209,21 @@ class FabricConfig:
     )
     provider_ollama_base_url: str = "http://127.0.0.1:11434"
     provider_timeout_seconds: int = 600
+    job_timeout_overhead_seconds: int = 5
     workers: tuple[FabricWorkerConfig, ...] = ()
+
+
+@dataclass(frozen=True)
+class CommonsConfig:
+    enabled: bool = False
+    store_path: Path = Path("~/.local/state/mncs-commons")
+    domain: str = "local"
+    auto_initialize: bool = True
+    allow_model_publication: bool = False
+    publish_fabric_evidence: bool = False
+    startup_timeout_seconds: float = 10.0
+    call_timeout_seconds: float = 30.0
+    max_response_bytes: int = 1_048_576
 
 
 @dataclass(frozen=True)
@@ -234,6 +251,7 @@ class HarnessConfig:
     verification: VerificationConfig
     metrics: MetricsConfig
     fabric: FabricConfig = field(default_factory=FabricConfig)
+    commons: CommonsConfig = field(default_factory=CommonsConfig)
 
 
 @dataclass(frozen=True)

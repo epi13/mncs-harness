@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import sys
 from pathlib import Path
 from typing import Any
 
 from .capability_graph import build_capability_graph
+from .commons import CommonsError, CommonsSession, CommonsStatus
 from .fabric import FabricStatus
 from .fabric_inventory_session import InventoryAwareFabricSession
 from .metrics import MetricsStore
@@ -32,10 +34,15 @@ class LocalAgent:
         self.client = OllamaClient(config.ollama)
         self.fabric_session = InventoryAwareFabricSession(config.fabric)
         self.fabric_session.initialize()
+        self.commons_session = CommonsSession(config.commons)
+        self.commons_session.initialize()
         self.metrics = MetricsStore(config.metrics.path, config.metrics.store_prompt_text)
 
     def fabric_status(self) -> FabricStatus:
         return self.fabric_session.status()
+
+    def commons_status(self) -> CommonsStatus:
+        return self.commons_session.status()
 
     def capability_graph(self, workspace: Path | None = None) -> dict[str, object]:
         return build_capability_graph(
@@ -44,7 +51,58 @@ class LocalAgent:
             controller_tools=tuple(
                 sorted({tool for model in self.config.models.values() for tool in model.tools})
             ),
+            commons_status=self.commons_status(),
         )
+
+    @staticmethod
+    def _provenance_identity(value: object) -> str:
+        encoded = json.dumps(value, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        return "sha256:" + hashlib.sha256(encoded).hexdigest()
+
+    def _configure_fabric_provenance(self, task: str, role: str, model: object) -> None:
+        setter = getattr(self.fabric_session, "set_consumer_context", None)
+        if not callable(setter):
+            return
+        workload = self._provenance_identity(
+            {"source_project": "epi13-local-harness", "task_fingerprint": hashlib.sha256(task.encode("utf-8")).hexdigest()}
+        )
+        setter(
+            workload_identity=workload,
+            provider_identity=self._provenance_identity(
+                {"provider": getattr(model, "provider", "unknown"), "model": getattr(model, "name", "unknown")}
+            ),
+            partition_identity=self._provenance_identity(
+                {"workload": workload, "role": role}
+            ),
+        )
+
+    def _publish_fabric_evidence(self, metadata: dict[str, Any]) -> None:
+        if not self.config.commons.publish_fabric_evidence or not self.commons_session.ready:
+            return
+        record = getattr(self.fabric_session, "last_execution_record", None)
+        if not isinstance(record, dict):
+            return
+        try:
+            result = self.commons_session.publish_fabric_evidence(record)
+            receipt = result.get("receipt") if isinstance(result, dict) else None
+            translated_result = result.get("translated") if isinstance(result, dict) else None
+            translated = (
+                translated_result.get("record")
+                if isinstance(translated_result, dict)
+                else None
+            )
+            metadata["commons_evidence_publication"] = "PUBLISHED"
+            metadata["commons_evidence_receipt"] = (
+                receipt.get("contentDigest") if isinstance(receipt, dict) else None
+            )
+            metadata["commons_evidence_verification_status"] = (
+                translated.get("details", {}).get("claimVerificationStatus")
+                if isinstance(translated, dict)
+                else None
+            )
+        except CommonsError as exc:
+            metadata["commons_evidence_publication"] = exc.code
+            metadata["commons_evidence_error"] = exc.detail
 
     def refresh_fabric_inventory(self) -> FabricStatus | None:
         """Refresh remote worker availability and model inventory on demand.
@@ -167,11 +225,18 @@ class LocalAgent:
             self.config.policy,
             auto_approve=auto_approve,
             interactive=interactive,
+            commons=self.commons_session,
         )
         verifier = Verifier(registry.workspace, self.config.verification)
-        tools = registry.available_schemas(model.tools)
+        enabled_tools = tuple(dict.fromkeys((*model.tools, *self.commons_session.tool_names)))
+        tools = registry.available_schemas(enabled_tools)
         messages: list[dict[str, Any]] = [
-            {"role": "system", "content": system_prompt(role, registry.workspace)},
+            {
+                "role": "system",
+                "content": system_prompt(
+                    role, registry.workspace, commons_available=self.commons_session.ready
+                ),
+            },
             {"role": "user", "content": self._attempt_prompt(task, previous)},
         ]
         executions = []
@@ -187,11 +252,15 @@ class LocalAgent:
         else:
             session_targets = SessionTargets()
         provider = self._provider_for_model(model, model_selection, session_targets)
+        self._configure_fabric_provenance(task, role, model)
 
         try:
             for _step in range(self.config.ollama.max_tool_steps + 1):
                 last_response = provider.chat(model, messages, tools=tools, images=images)
                 provider_metadata = dict(getattr(provider, "last_metadata", {}))
+                if self.commons_session.ready:
+                    provider_metadata["commons_target"] = "controller"
+                self._publish_fabric_evidence(provider_metadata)
                 for key, value in session_targets.as_metadata().items():
                     provider_metadata.setdefault(key, value)
                 if model_selection is not None:
@@ -236,6 +305,9 @@ class LocalAgent:
             # their provider/worker/placement metadata rather than making failed
             # remote attempts look like local Ollama calls in metrics and the TUI.
             provider_metadata = dict(getattr(provider, "last_metadata", {}))
+            if self.commons_session.ready:
+                provider_metadata["commons_target"] = "controller"
+            self._publish_fabric_evidence(provider_metadata)
             for key, value in session_targets.as_metadata().items():
                 provider_metadata.setdefault(key, value)
             if model_selection is not None:

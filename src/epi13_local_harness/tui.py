@@ -30,6 +30,7 @@ from textual.widgets import (
 from textual.worker import get_current_worker
 
 from .agent import LocalAgent
+from .commons import CommonsStatus
 from .config import default_config_path, load_config
 from .fabric import FabricStatus
 from .metrics import MetricsStore
@@ -136,6 +137,21 @@ def fabric_status_summary(status: FabricStatus) -> str:
         f"| worker-models={model_count} "
         f"| offload-capable={status.offload_capable_count}"
     )
+    if status.detail:
+        summary += f" | detail={status.detail}"
+    return summary
+
+
+def commons_status_summary(status: CommonsStatus) -> str:
+    if not status.enabled:
+        return "state=disabled"
+    summary = (
+        f"state={'ready' if status.ready else 'unavailable'} | code={status.code} "
+        f"| profile={status.profile or 'unknown'} "
+        f"| store={'healthy' if status.store_healthy else 'unavailable'}"
+    )
+    if status.record_count is not None:
+        summary += f" | records={status.record_count}"
     if status.detail:
         summary += f" | detail={status.detail}"
     return summary
@@ -771,6 +787,7 @@ class HarnessTui(App[None]):
         diagnostics.add_row("Metrics", str(self.config.metrics.path))
         diagnostics.add_row("Router", router_status_summary(semantic))
         diagnostics.add_row("Fabric", fabric_status_summary(fabric_status))
+        diagnostics.add_row("Commons", commons_status_summary(self.agent.commons_status()))
         diagnostics.add_row(
             "Tools",
             ", ".join(

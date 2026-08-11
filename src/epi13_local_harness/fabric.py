@@ -191,10 +191,25 @@ class FabricSession:
         self._detail: str | None = None
         self._state = "disabled" if not config.enabled else "initializing"
         self.last_inference: dict[str, Any] | None = None
+        self.last_execution_record: dict[str, Any] | None = None
+        self._consumer_context: dict[str, str] | None = None
 
     @property
     def enabled(self) -> bool:
         return self.config.enabled
+
+    def set_consumer_context(
+        self,
+        *,
+        workload_identity: str,
+        provider_identity: str,
+        partition_identity: str,
+    ) -> None:
+        self._consumer_context = {
+            "workload_identity": workload_identity,
+            "provider_identity": provider_identity,
+            "partition_identity": partition_identity,
+        }
 
     def initialize(self) -> None:
         if not self.config.enabled:
@@ -243,6 +258,11 @@ class FabricSession:
                                 worker.trust_state or Path(),
                                 concurrency_limit=worker.concurrency_limit,
                                 timeout=worker.timeout_seconds,
+                                connect_timeout=worker.connect_timeout_seconds,
+                                control_timeout=worker.control_timeout_seconds,
+                                execution_timeout_overhead=(
+                                    worker.execution_timeout_overhead_seconds
+                                ),
                             )
                         )
                     registered += 1
@@ -462,6 +482,7 @@ class FabricSession:
     ) -> tuple[dict[str, Any], dict[str, Any]]:
         if self.client is None or self._state != "available":
             raise FabricUnavailable(self._detail or "Fabric is unavailable")
+        self.last_execution_record = None
         if model.execution_device == "accelerator" or model.accelerator_backend == "cuda":
             failures = self._ensure_cuda_runtime_observations()
             if failures:
@@ -530,7 +551,10 @@ class FabricSession:
                         "artifact_manifest_identity": manifest["manifest_identity"],
                         "argv": ["@python", "invoke.py"],
                         "working_directory": ".",
-                        "timeout_seconds": min(86400, max(1, int(model.resource_max_age_seconds))),
+                        "timeout_seconds": (
+                            self.config.provider_timeout_seconds
+                            + self.config.job_timeout_overhead_seconds
+                        ),
                         "output_limit_bytes": 2 * 1024 * 1024,
                         "environment": {"PYTHONHASHSEED": "0"},
                         "required_capabilities": list(
@@ -542,12 +566,23 @@ class FabricSession:
                 )
                 started = time.perf_counter()
                 try:
+                    consumer_context = None
+                    if self._consumer_context is not None:
+                        from mncs_fabric import ConsumerContext
+
+                        consumer_context = ConsumerContext(
+                            "epi13-local-harness",
+                            self._consumer_context["workload_identity"],
+                            provider_identity=self._consumer_context["provider_identity"],
+                            partition_identity=self._consumer_context["partition_identity"],
+                        )
                     result = self.client.execute(
                         plan,
                         manifest,
                         worker_id=worker_id,
                         placement=self._placement(model),
                         execution_bundle_archive=archive,
+                        consumer_context=consumer_context,
                     )[0]
                 except FabricExecutionError:
                     raise
@@ -559,6 +594,7 @@ class FabricSession:
                     for filename in ("invoke.py", "request.json"):
                         (local_root / filename).unlink(missing_ok=True)
         record = result.get("record") or {}
+        self.last_execution_record = dict(record) if isinstance(record, dict) and record else None
         admission = result.get("placement_admission") or {}
         self.last_inference = {
             "worker": result.get("worker_identity"),
@@ -606,6 +642,10 @@ class FabricSession:
             ),
             "fabric_record_identity": result.get("record_identity"),
             "fabric_receipt_identity": result.get("receipt_identity"),
+            "fabric_consumer_context_identity": result.get("consumer_context_identity"),
+            "fabric_provenance_binding_identity": (
+                result.get("provenance_binding") or {}
+            ).get("binding_identity"),
             "fabric_dispatch_ms": elapsed_ms,
             "request_identity": request_identity,
         }

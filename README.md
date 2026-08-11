@@ -38,6 +38,11 @@ It includes:
 - an evaluation runner for routing experiments;
 - unit tests and GitHub Actions CI.
 
+Version 0.5.0 also supports an optional controller-local MNCS Commons service.
+Fabric-placed models receive approved Commons tool schemas, but every requested
+operation returns to the harness policy layer and executes against the controller
+store. The worker receives only the bounded result on the next Fabric inference.
+
 ## Requirements
 
 - Fedora or another Linux distribution;
@@ -60,6 +65,14 @@ cd epi13-local-harness
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -e .
+```
+
+For the complete distributed development setup from sibling checkouts:
+
+```bash
+python -m pip install -e '../mncs-fabric'
+python -m pip install -e '../MNCS-Commons[mcp]'
+python -m pip install -e '.[distributed]'
 ```
 
 Create a user configuration:

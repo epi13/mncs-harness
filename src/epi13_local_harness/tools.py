@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
 
+from .commons import WRITE_TOOLS, CommonsError, CommonsSession
 from .models import PolicyConfig, PolicyDecision, ToolExecution
 from .policy import (
     CommandPolicy,
@@ -45,12 +46,14 @@ class ToolRegistry:
         *,
         auto_approve: bool = False,
         interactive: bool = True,
+        commons: CommonsSession | None = None,
     ):
         self.guard = WorkspaceGuard(workspace, policy_config.allow_hidden_paths)
         self.policy_config = policy_config
         self.command_policy = CommandPolicy(policy_config, self.guard)
         self.auto_approve = auto_approve
         self.interactive = interactive
+        self.commons = commons
         self.modified_paths: list[Path] = []
         self._tools = self._build_tools()
 
@@ -59,7 +62,7 @@ class ToolRegistry:
         return self.guard.workspace
 
     def _build_tools(self) -> dict[str, ToolDefinition]:
-        return {
+        tools = {
             "read_file": ToolDefinition(
                 "read_file",
                 "Read a UTF-8 text file inside the workspace. Use line ranges for large files.",
@@ -149,6 +152,19 @@ class ToolRegistry:
                 self._system_info,
             ),
         }
+        if self.commons is not None and self.commons.ready:
+            for schema in self.commons.schemas():
+                function = schema["function"]
+                name = str(function["name"])
+                if name in tools:
+                    raise ValueError(f"Commons tool name collides with controller tool: {name}")
+                tools[name] = ToolDefinition(
+                    name,
+                    str(function.get("description", "")),
+                    dict(function["parameters"]),
+                    lambda arguments, tool_name=name: self._commons_call(tool_name, arguments),
+                )
+        return tools
 
     def available_schemas(self, names: tuple[str, ...]) -> list[dict[str, Any]]:
         return [self._tools[name].schema() for name in names if name in self._tools]
@@ -169,6 +185,46 @@ class ToolRegistry:
         if len(text) <= limit:
             return text
         return text[:limit] + f"\n... truncated {len(text) - limit} characters"
+
+    def _commons_call(self, name: str, args: dict[str, Any]) -> ToolExecution:
+        assert self.commons is not None
+        if name in WRITE_TOOLS:
+            decision = PolicyDecision(
+                self.commons.config.allow_model_publication,
+                "medium" if self.commons.config.allow_model_publication else "blocked",
+                (
+                    "Persistent Commons publication requires explicit knowledge-write approval"
+                    if self.commons.config.allow_model_publication
+                    else "Commons model publication is disabled by controller policy"
+                ),
+                requires_approval=True,
+            )
+            if not decision.allowed:
+                return ToolExecution(name, args, "COMMONS_TOOL_DENIED: " + decision.reason, False, decision)
+            if not approval_granted(decision, self.auto_approve, self.interactive):
+                return ToolExecution(
+                    name,
+                    args,
+                    "COMMONS_TOOL_DENIED: publication was not approved",
+                    False,
+                    decision,
+                )
+            allow_write = True
+        else:
+            decision = PolicyDecision(True, "low", "Read-only controller-local Commons access")
+            allow_write = False
+        try:
+            payload, success = self.commons.call(name, args, allow_write=allow_write)
+            return ToolExecution(
+                name,
+                args,
+                self._truncate(json.dumps(payload, sort_keys=True, ensure_ascii=False)),
+                success,
+                decision,
+            )
+        except CommonsError as exc:
+            failure = PolicyDecision(False, "blocked", f"{exc.code}: {exc.detail}")
+            return ToolExecution(name, args, str(exc), False, failure)
 
     def _read_file(self, args: dict[str, Any]) -> ToolExecution:
         path = self.guard.resolve(str(args["path"]), must_exist=True)

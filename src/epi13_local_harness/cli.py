@@ -10,6 +10,7 @@ from typing import Sequence
 
 from . import __version__
 from .agent import LocalAgent
+from .commons import CommonsSession
 from .config import bundled_evals_path, default_config_path, initialize_config, load_config
 from .evals import evaluate_routes, load_cases
 from .metrics import MetricsStore
@@ -199,7 +200,19 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     print(f"Metrics: {config.metrics.path}")
     _print_router_status(config)
 
+    commons_status = CommonsSession(config.commons).initialize()
+    print(
+        "Commons: "
+        + (
+            f"READY profile={commons_status.profile} records={commons_status.record_count}"
+            if commons_status.ready
+            else f"{commons_status.code}: {commons_status.detail}"
+        )
+    )
+
     failures = 0
+    if commons_status.enabled and not commons_status.ready:
+        failures += 1
     router = router_status(config)
     if router.enabled and router.state in {
         "unsupported",

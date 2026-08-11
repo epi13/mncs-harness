@@ -6,7 +6,7 @@ import inspect
 import pathlib
 import re
 
-REQUIRED_FABRIC_VERSION = "0.2.0a11"
+REQUIRED_FABRIC_VERSION = "0.2.0a12"
 _REQUIRED_EXECUTE_PARAMETER = "execution_bundle_archive"
 _REQUIRED_CAPABILITY_METHODS = ("ingest_capability_observation", "workers")
 _VERSION_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)(?:a(\d+))?")

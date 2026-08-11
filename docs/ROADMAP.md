@@ -35,17 +35,30 @@ agent loop useful across MNCS Fabric without turning Fabric into an agent runtim
 - [ ] introduce explicit execution-target routing for policy-approved tools that must run
   on another enrolled worker, without granting the model arbitrary SSH or host shell
   authority;
-- [~] model a capability graph spanning observed models/runtimes/worker capabilities,
-  configured controller tools/workspace, and hardware/resource state; MCP endpoint
-  observations are supported by Fabric but not yet configured by the harness;
+- [x] model a capability graph spanning observed models/runtimes/worker capabilities,
+  configured controller tools/workspace, controller-local Commons MCP, and
+  hardware/resource state;
 - [x] keep model suitability and semantic routing in the harness while Fabric advertises
   provider-neutral facts, placement evidence, identity, transport, and liveness;
 - [~] retain the existing guarded argv-only command execution; dedicated distributed
   Bash/PowerShell script tool families remain future work;
-- [ ] support controller-hosted MNCS MCPs for remote models through tool-schema proxying,
-  reserving worker-local MCPs for resources inherently attached to a worker; and
+- [x] support controller-local MNCS Commons for remote models through validated
+  tool-schema proxying while reserving worker-local MCPs for future resources
+  inherently attached to a worker; and
 - [x] add an in-process evaluation proving remote inference can safely operate on a different
   workspace/execution target and that policy remains authoritative.
+
+The 0.5.0 integration additionally proves a multi-turn Commons WorkRequest-to-
+Observation contribution, opaque Fabric consumer provenance, optional inert Fabric
+evidence publication, and bounded long-running remote inference. General remote MCP
+invocation, worker-local Commons, federation, and automatic scheduling remain future
+work.
+
+An operator-controlled physical run also placed `gemma4:e4b` on
+`collamore02-windows`, mediated `commons_describe` through the Fedora controller, and
+completed the second Fabric turn. Its sanitized evidence is in
+`development-evidence/commons-fabric-collamore02-2026-08-10.json`; this is physical
+integration evidence, not independent assurance.
 
 ## 0.3 — repository intelligence
 

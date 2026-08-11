@@ -42,10 +42,10 @@ quantization, KV cache, and actual layer movement.
 
 ## Configuration
 
-The Fabric-backed inference provider requires MNCS Fabric `0.2.0a11` or newer in
-the `0.2.x` line. That version adds provider-neutral worker capability observations
-and ensures each explicitly supplied request bundle is staged after placement rather
-than reusing an older inventory bundle. Install the optional dependency from a
+The Fabric-backed inference provider requires MNCS Fabric `0.2.0a12` or newer in
+the `0.2.x` line. That version retains provider-neutral worker capability observations,
+ensures each explicitly supplied request bundle is staged after placement, and
+separates short control waits from job-bounded execution responses. Install from a
 released package:
 
 ```bash
@@ -72,6 +72,7 @@ refresh_on_startup = true
 refresh_timeout_seconds = 5.0
 provider_ollama_base_url = "http://127.0.0.1:11434"
 provider_timeout_seconds = 600
+job_timeout_overhead_seconds = 5
 
 [fabric.workers.local]
 kind = "local"
@@ -90,7 +91,16 @@ client_certificate = "/operator/path/client.pem"
 client_key = "/operator/path/client.key"
 trust_state = "/operator/path/trust.jsonl"
 timeout_seconds = 5.0
+connect_timeout_seconds = 5.0
+control_timeout_seconds = 5.0
+execution_timeout_overhead_seconds = 5.0
 ```
+
+The provider timeout bounds worker-local Ollama. The Fabric job adds only
+`job_timeout_overhead_seconds` for process completion. The network transport then
+adds the worker's small execution-response overhead. Connection, refresh, TLS,
+control, and idle waits remain governed by their short bounds; they are not widened
+to the model timeout.
 
 Remote workers must already be enrolled persistent/bounded Fabric services.
 The TUI does not scan the LAN, start SSH sessions, launch arbitrary remote
@@ -147,6 +157,8 @@ access to the local workspace.
 See [DISTRIBUTED_CAPABILITY_FOUNDATION.md](DISTRIBUTED_CAPABILITY_FOUNDATION.md)
 for inventory states, compatibility behavior, the capability graph, and target
 separation.
+See [COMMONS.md](COMMONS.md) for controller-local knowledge tools and evidence
+translation.
 
 ## Tests and live smoke tests
 
