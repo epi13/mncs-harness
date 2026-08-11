@@ -8,11 +8,6 @@ from dataclasses import replace
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from mncs_fabric.api import FabricClient
-from mncs_fabric.capabilities import build_capability_observation
-from mncs_fabric.transport import InProcessTransport
-from mncs_fabric.worker import LocalWorker
-
 from epi13_local_harness.agent import LocalAgent
 from epi13_local_harness.capability_graph import build_capability_graph
 from epi13_local_harness.config import load_config
@@ -44,11 +39,11 @@ def _worker(
     availability: str = "AVAILABLE",
     inventory_status: str = "CURRENT",
 ) -> dict[str, object]:
-    observation = build_capability_observation(
-        worker_identity=worker_id,
-        capabilities=entries,
-        captured_at="2026-08-10T12:00:00Z",
-    )
+    observation = {
+        "worker_identity": worker_id,
+        "availability": "AVAILABLE",
+        "capabilities": entries,
+    }
     return {
         "worker_id": worker_id,
         "source": "remote",
@@ -75,13 +70,13 @@ class _CapabilityClient:
         observation_source,
         status_reason=None,
     ):
-        observation = build_capability_observation(
-            worker_identity=worker_id,
-            capabilities=capabilities,
-            availability=availability,
-            observation_source=observation_source,
-            status_reason=status_reason,
-        )
+        observation = {
+            "worker_identity": worker_id,
+            "availability": availability,
+            "capabilities": capabilities,
+            "observation_source": observation_source,
+            "status_reason": status_reason,
+        }
         self.ingested.append(observation)
         for worker in self._workers:
             if worker["worker_id"] == worker_id:
@@ -285,6 +280,13 @@ class _AgentOllamaFixture(BaseHTTPRequestHandler):
 
 class DistributedSessionIntegrationTests(unittest.TestCase):
     def test_remote_inference_controller_tool_loop_preserves_authority_boundary(self) -> None:
+        try:
+            from mncs_fabric.api import FabricClient
+            from mncs_fabric.transport import InProcessTransport
+            from mncs_fabric.worker import LocalWorker
+        except ImportError:
+            self.skipTest("optional mncs-fabric dependency is not installed")
+
         _AgentOllamaFixture.chat_calls = 0
         _AgentOllamaFixture.received_tool_result = False
         server = ThreadingHTTPServer(("127.0.0.1", 0), _AgentOllamaFixture)
