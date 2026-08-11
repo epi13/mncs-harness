@@ -22,6 +22,9 @@ class ModelSelection:
     selected_model: str
     stored_size_bytes: int
     reason: str
+    worker_id: str | None = None
+    inventory_status: str = "CURRENT"
+    available: bool = True
 
 
 def _model_name(item: dict[str, Any]) -> str:

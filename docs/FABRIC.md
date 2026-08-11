@@ -42,9 +42,11 @@ quantization, KV cache, and actual layer movement.
 
 ## Configuration
 
-The Fabric-backed inference provider requires MNCS Fabric `0.2.0a8` or newer in
-the `0.2.x` line because that release adds request-scoped bundle staging after
-placement admission. Install the optional dependency from a released package:
+The Fabric-backed inference provider requires MNCS Fabric `0.2.0a11` or newer in
+the `0.2.x` line. That version adds provider-neutral worker capability observations
+and ensures each explicitly supplied request bundle is staged after placement rather
+than reusing an older inventory bundle. Install the optional dependency from a
+released package:
 
 ```bash
 python -m pip install -e '.[fabric]'
@@ -126,17 +128,25 @@ reports that Fabric moved model layers.
 Startup constructs the Fabric consumer session, registers explicit workers, and
 performs bounded refreshes when enabled. The TUI's **Fabric** view and **Doctor**
 panel distinguish disabled, unavailable/misconfigured, available-but-no-eligible
-worker, stale/unknown resource observations, and provider-runtime failure.
+worker, stale/unknown capability or resource observations, and provider-runtime
+failure. The bounded `/api/tags` result is normalized into Fabric's generic model and
+runtime entries, ingested through `FabricClient`, and read back through
+`FabricClient.workers()` for routing and status.
 
 Completed attempts show provider, worker, placement mode, precision, and Fabric
-identities. The SQLite migration is additive and does not store prompt text by
-default. Fabric's bounded execution record may retain the invocation output
+identities. They also record independent inference, workspace, and tool-execution
+targets. The SQLite migration is additive and does not store prompt text by default.
+Fabric's bounded execution record may retain the invocation output
 needed for evidence; do not put secrets in model prompts or worker configuration.
 
 When a model requests a tool, the remote model response returns to the local
 harness. The local policy registry validates and executes the tool, and only the
 next inference request may cross Fabric. Remote inference never grants a worker
 access to the local workspace.
+
+See [DISTRIBUTED_CAPABILITY_FOUNDATION.md](DISTRIBUTED_CAPABILITY_FOUNDATION.md)
+for inventory states, compatibility behavior, the capability graph, and target
+separation.
 
 ## Tests and live smoke tests
 

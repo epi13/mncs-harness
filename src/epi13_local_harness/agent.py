@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from .capability_graph import build_capability_graph
 from .fabric import FabricStatus
 from .fabric_inventory_session import InventoryAwareFabricSession
 from .metrics import MetricsStore
@@ -12,6 +13,7 @@ from .models import (
     AgentResult,
     HarnessConfig,
     ModelAttempt,
+    SessionTargets,
     VerificationResult,
 )
 from .ollama import OllamaClient, OllamaError
@@ -35,6 +37,15 @@ class LocalAgent:
     def fabric_status(self) -> FabricStatus:
         return self.fabric_session.status()
 
+    def capability_graph(self, workspace: Path | None = None) -> dict[str, object]:
+        return build_capability_graph(
+            self.fabric_status(),
+            workspace=workspace,
+            controller_tools=tuple(
+                sorted({tool for model in self.config.models.values() for tool in model.tools})
+            ),
+        )
+
     def refresh_fabric_inventory(self) -> FabricStatus | None:
         """Refresh remote worker availability and model inventory on demand.
 
@@ -51,13 +62,26 @@ class LocalAgent:
             return status()
         return None
 
-    def _provider_for_model(self, model) -> object:
+    def _provider_for_model(self, model, model_selection, targets: SessionTargets) -> object:
         local = LocalOllamaProvider(self.client)
         if self.config.fabric.enabled and model.provider == "fabric":
+            worker_id = (
+                model_selection.worker_id
+                if model_selection is not None and model_selection.available
+                else None
+            )
+            placement_error = (
+                model_selection.reason
+                if model_selection is not None and not model_selection.available
+                else None
+            )
             return FabricOllamaProvider(
                 self.fabric_session,
                 local,
                 self.config.fabric.fallback_to_local,
+                inference_worker_id=worker_id,
+                placement_error=placement_error,
+                session_targets=targets,
             )
         return local
 
@@ -156,12 +180,20 @@ class LocalAgent:
         final_thinking = ""
         error: str | None = None
         provider_metadata: dict[str, Any] = {}
-        provider = self._provider_for_model(model)
+        if model_selection is not None and model_selection.worker_id and model_selection.available:
+            session_targets = SessionTargets.remote_inference(model_selection.worker_id)
+        elif self.config.fabric.enabled and model.provider == "fabric":
+            session_targets = SessionTargets.unresolved_inference()
+        else:
+            session_targets = SessionTargets()
+        provider = self._provider_for_model(model, model_selection, session_targets)
 
         try:
             for _step in range(self.config.ollama.max_tool_steps + 1):
                 last_response = provider.chat(model, messages, tools=tools, images=images)
                 provider_metadata = dict(getattr(provider, "last_metadata", {}))
+                for key, value in session_targets.as_metadata().items():
+                    provider_metadata.setdefault(key, value)
                 if model_selection is not None:
                     provider_metadata.update(
                         {
@@ -169,6 +201,8 @@ class LocalAgent:
                             "selected_model": model_selection.selected_model,
                             "model_selection_reason": model_selection.reason,
                             "model_selection_source": "worker-inventory",
+                            "model_inventory_status": model_selection.inventory_status,
+                            "model_worker": model_selection.worker_id,
                         }
                     )
                 message = dict(last_response.get("message", {}))
@@ -202,6 +236,8 @@ class LocalAgent:
             # their provider/worker/placement metadata rather than making failed
             # remote attempts look like local Ollama calls in metrics and the TUI.
             provider_metadata = dict(getattr(provider, "last_metadata", {}))
+            for key, value in session_targets.as_metadata().items():
+                provider_metadata.setdefault(key, value)
             if model_selection is not None:
                 provider_metadata.update(
                     {
@@ -209,6 +245,8 @@ class LocalAgent:
                         "selected_model": model_selection.selected_model,
                         "model_selection_reason": model_selection.reason,
                         "model_selection_source": "worker-inventory",
+                        "model_inventory_status": model_selection.inventory_status,
+                        "model_worker": model_selection.worker_id,
                     }
                 )
             error = str(exc)
@@ -236,6 +274,11 @@ class LocalAgent:
                 failures=tuple(dict.fromkeys(failures)),
             )
 
+        effective_targets = (
+            SessionTargets()
+            if provider_metadata.get("inference_target") == "controller"
+            else session_targets
+        )
         return ModelAttempt(
             role=role,
             model=model.name,
@@ -245,6 +288,7 @@ class LocalAgent:
             tool_executions=executions,
             verification=verification,
             error=error,
+            session_targets=effective_targets,
         )
 
     def run(

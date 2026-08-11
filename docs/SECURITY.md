@@ -65,6 +65,15 @@ arbitrary hosts.
 Fabric placement evidence is resource admission evidence, not semantic
 correctness, CUDA proof by itself, attestation, or permission to run tools.
 `UNKNOWN` is preserved for stale or missing resource/runtime observations.
+Capability inventory is likewise an identity-bound observation, not authorization or
+attestation. Only `CURRENT` inventory may inform model placement; stale, unknown,
+unavailable, failed, and wrong-worker observations fail closed. Model names remain
+JSON data passed to the provider and never become shell commands or filesystem paths.
+
+Each attempt defaults workspace and tool execution to the controller even when its
+inference target is remote. An absent or unresolved inference target cannot cause the
+tool target to default remotely. Fabric inventory never grants SSH, shell, workspace,
+filesystem, MCP, or tool authority.
 
 ## Known limitations
 

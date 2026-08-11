@@ -266,6 +266,7 @@ See [docs/SECURITY.md](docs/SECURITY.md) before widening the tool surface.
 - [Security model](docs/SECURITY.md)
 - [Terminal UI](docs/TUI.md)
 - [MNCS Fabric integration](docs/FABRIC.md)
+- [Distributed capability/session foundation](docs/DISTRIBUTED_CAPABILITY_FOUNDATION.md)
 - [Roadmap](docs/ROADMAP.md)
 
 ## Development

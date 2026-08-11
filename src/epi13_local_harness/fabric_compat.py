@@ -6,8 +6,9 @@ import inspect
 import pathlib
 import re
 
-REQUIRED_FABRIC_VERSION = "0.2.0a10"
+REQUIRED_FABRIC_VERSION = "0.2.0a11"
 _REQUIRED_EXECUTE_PARAMETER = "execution_bundle_archive"
+_REQUIRED_CAPABILITY_METHODS = ("ingest_capability_observation", "workers")
 _VERSION_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)(?:a(\d+))?")
 
 
@@ -45,17 +46,22 @@ def require_execution_bundle_archive_api() -> dict[str, object]:
     version_too_old = (
         loaded_key is None or required_key is None or loaded_key < required_key
     )
-    if _REQUIRED_EXECUTE_PARAMETER not in parameters or version_too_old:
+    missing_methods = [
+        name for name in _REQUIRED_CAPABILITY_METHODS if not callable(getattr(FabricClient, name, None))
+    ]
+    if _REQUIRED_EXECUTE_PARAMETER not in parameters or missing_methods or version_too_old:
         raise RuntimeError(
             "incompatible mncs-fabric consumer runtime: "
             f"loaded version {version} from {module_path}; Local Harness requires "
-            f"mncs-fabric >= {REQUIRED_FABRIC_VERSION} with canonical transferred-bundle dispatch "
-            "binding, published-cache content verification/recovery, and "
-            f"FabricClient.execute(..., {_REQUIRED_EXECUTE_PARAMETER}=...)"
+            f"mncs-fabric >= {REQUIRED_FABRIC_VERSION} with worker capability observations, "
+            "canonical transferred-bundle dispatch binding, published-cache recovery, and "
+            f"FabricClient.execute(..., {_REQUIRED_EXECUTE_PARAMETER}=...) and "
+            f"capability methods {', '.join(_REQUIRED_CAPABILITY_METHODS)}"
         )
     return {
         "version": version,
         "module_path": str(module_path),
         "required_version": REQUIRED_FABRIC_VERSION,
         "required_execute_parameter": _REQUIRED_EXECUTE_PARAMETER,
+        "required_capability_methods": _REQUIRED_CAPABILITY_METHODS,
     }

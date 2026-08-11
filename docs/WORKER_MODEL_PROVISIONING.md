@@ -75,9 +75,12 @@ Fabric package exposes:
 
 ```text
 FabricClient.execute(..., execution_bundle_archive=...)
+FabricClient.ingest_capability_observation(...)
+FabricClient.workers(... capability observation fields ...)
 ```
 
-This is the consumer API required by the runtime-probe bundle path and is available in
-MNCS Fabric `0.2.0a8` and newer supported `0.2.x` builds. An older imported checkout now
+This is the consumer API required by the capability-backed runtime-probe path and is
+available in MNCS Fabric `0.2.0a11` and newer supported `0.2.x` builds. An older
+imported checkout now
 fails immediately with the loaded version and module path instead of commissioning a
 worker that can only fail later during the CUDA probe.

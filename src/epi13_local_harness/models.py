@@ -5,6 +5,61 @@ from pathlib import Path
 from typing import Any, Literal
 
 Risk = Literal["low", "medium", "high", "blocked"]
+TargetKind = Literal["controller", "fabric-worker", "unresolved"]
+
+
+@dataclass(frozen=True)
+class SessionTarget:
+    kind: TargetKind
+    worker_identity: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.kind not in {"controller", "fabric-worker", "unresolved"}:
+            raise ValueError("session target kind is invalid")
+        if self.kind == "fabric-worker":
+            worker = self.worker_identity
+            if (
+                not isinstance(worker, str)
+                or not worker
+                or len(worker) > 256
+                or any(
+                    ord(character) < 32 or 127 <= ord(character) <= 159
+                    for character in worker
+                )
+            ):
+                raise ValueError("Fabric worker targets require a bounded worker identity")
+        elif self.worker_identity is not None:
+            raise ValueError("controller and unresolved targets cannot carry a worker identity")
+
+    @property
+    def label(self) -> str:
+        if self.kind == "fabric-worker":
+            return f"fabric-worker:{self.worker_identity}"
+        return self.kind
+
+
+@dataclass(frozen=True)
+class SessionTargets:
+    """Independent inference placement, workspace authority, and tool target."""
+
+    inference: SessionTarget = field(default_factory=lambda: SessionTarget("controller"))
+    workspace: SessionTarget = field(default_factory=lambda: SessionTarget("controller"))
+    tools: SessionTarget = field(default_factory=lambda: SessionTarget("controller"))
+
+    @classmethod
+    def remote_inference(cls, worker_identity: str) -> "SessionTargets":
+        return cls(inference=SessionTarget("fabric-worker", worker_identity))
+
+    @classmethod
+    def unresolved_inference(cls) -> "SessionTargets":
+        return cls(inference=SessionTarget("unresolved"))
+
+    def as_metadata(self) -> dict[str, str]:
+        return {
+            "inference_target": self.inference.label,
+            "workspace_target": self.workspace.label,
+            "tool_execution_target": self.tools.label,
+        }
 
 
 @dataclass(frozen=True)
@@ -245,6 +300,7 @@ class ModelAttempt:
     tool_executions: list[ToolExecution]
     verification: VerificationResult
     error: str | None = None
+    session_targets: SessionTargets = field(default_factory=SessionTargets)
 
 
 @dataclass

@@ -26,7 +26,7 @@ elh-tui --workspace .
 - **Preview route:** inspect the role chain and semantic-routing details without
   invoking a worker model.
 - **Doctor, Models, Metrics, Fabric:** inspect the local installation and optional
-  Fabric worker/resource state from inside the TUI.
+  Fabric worker/resource/capability freshness state from inside the TUI.
 
 Keyboard shortcuts:
 

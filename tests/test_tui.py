@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+from io import StringIO
 from pathlib import Path
+
+from rich.console import Console
 
 from epi13_local_harness.config import load_config
 from epi13_local_harness.fabric import FabricStatus
@@ -10,6 +13,7 @@ from epi13_local_harness.models import RoutePlan, TaskProfile
 from epi13_local_harness.semantic_router import RouterRuntimeStatus
 from epi13_local_harness.tui import (
     HarnessTui,
+    fabric_status_renderable,
     fabric_status_summary,
     parse_image_paths,
     role_options,
@@ -86,6 +90,33 @@ class TuiHelperTests(unittest.TestCase):
             FabricStatus(False, "disabled", "fixture-controller")
         )
         self.assertEqual(summary, "state=disabled")
+
+    def test_fabric_status_displays_capability_freshness_and_kind_counts(self) -> None:
+        status = FabricStatus(
+            True,
+            "available",
+            "fixture-controller",
+            workers=(
+                {
+                    "worker_id": "worker-a",
+                    "availability": "AVAILABLE",
+                    "source": "remote",
+                    "capability_inventory_status": "CURRENT",
+                    "capability_observation": {
+                        "capabilities": [
+                            {"kind": "runtime"},
+                            {"kind": "model"},
+                            {"kind": "model"},
+                        ]
+                    },
+                },
+            ),
+        )
+        console = Console(file=StringIO(), record=True, width=140)
+        console.print(fabric_status_renderable(status))
+        rendered = console.export_text()
+        self.assertIn("Capabilities", rendered)
+        self.assertIn("CURRENT model:2, runtime:1", rendered)
 
 
 class TuiAppTests(unittest.IsolatedAsyncioTestCase):

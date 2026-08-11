@@ -90,6 +90,11 @@ state. Fabric advertises and transports facts; the harness remains responsible f
 semantic task decomposition, model suitability, tool permissions, verification,
 reduction, and escalation.
 
+The implemented `SessionTargets` value records these three locations independently on
+every attempt. `capability_graph.py` assembles a deterministic inspection view from
+current Fabric observations plus configured controller facts. The current tool target
+remains controller-local; remote targeted tools are deliberately future work.
+
 Controller-hosted MNCS MCPs should normally be exposed to remote models by tool
 schema and proxied invocation through the harness. Worker-local MCPs are reserved for
 capabilities inherently attached to that worker, such as local hardware or an
@@ -131,9 +136,10 @@ owns the tool loop, workspace, policy, verification, and escalation. See
 [FABRIC.md](FABRIC.md) for configuration and the security boundary.
 
 The distributed capability/session layer extends this boundary without changing its
-authority model: Fabric placement chooses where inference can run from authenticated
-resource evidence, while the harness separately resolves the workspace and approved
-tool execution target.
+authority model. The bounded worker-local model probe publishes generic entries into
+Fabric's identity-bound capability observation API. The harness accepts only current
+observations, selects a model and exact reporting worker, and separately records the
+controller workspace and controller tool target.
 
 ### `agent.py`
 
@@ -155,8 +161,8 @@ Implements narrow filesystem, search, Git-diff, system-information, write, and
 command tools. The registry records every decision and modified path for metrics and
 verification.
 
-A future target-aware tool request should identify its execution target explicitly.
-Controller-local tools remain the default. Remote targets must correspond to enrolled
+Tool requests carry an attempt-level target that is controller-local by default.
+Remote target dispatch is not implemented; when added, it must correspond to enrolled
 Fabric capabilities and still pass the same policy and approval checks.
 
 ### `policy.py`
@@ -186,9 +192,9 @@ Stores task fingerprints, route decisions, attempt metadata, Ollama timing/token
 counters, tool outcomes, and verification status. Prompt text is disabled by
 default.
 
-Distributed attempts should eventually record inference worker, workspace authority,
-tool execution target, provider/runtime identity, and Fabric evidence separately so
-performance and correctness can be analyzed without conflating them.
+Distributed attempts record inference worker, workspace authority, and tool execution
+target separately in attempt metadata and SQLite metrics. Provider/runtime and Fabric
+evidence remain separate fields so performance and correctness are not conflated.
 
 ## Model residency
 

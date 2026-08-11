@@ -457,6 +457,8 @@ class FabricSession:
         messages: list[dict[str, Any]],
         tools: list[dict[str, Any]] | None = None,
         images: list[Path] | None = None,
+        *,
+        worker_id: str | None = None,
     ) -> tuple[dict[str, Any], dict[str, Any]]:
         if self.client is None or self._state != "available":
             raise FabricUnavailable(self._detail or "Fabric is unavailable")
@@ -543,6 +545,7 @@ class FabricSession:
                     result = self.client.execute(
                         plan,
                         manifest,
+                        worker_id=worker_id,
                         placement=self._placement(model),
                         execution_bundle_archive=archive,
                     )[0]

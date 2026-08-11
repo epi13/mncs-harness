@@ -26,24 +26,25 @@
 Pull forward the minimum network-facing abstractions needed to make the existing
 agent loop useful across MNCS Fabric without turning Fabric into an agent runtime.
 
-- inventory worker-local models and provider/runtime capabilities from authenticated
+- [x] inventory worker-local models and provider/runtime capabilities from authenticated
   Fabric worker observations;
-- represent inference location, workspace location, and tool-execution location as
+- [x] represent inference location, workspace location, and tool-execution location as
   separate task properties rather than assuming they are the same host;
-- allow a model placed on a remote worker to request controller-owned tools against
+- [x] allow a model placed on a remote worker to request controller-owned tools against
   the controller workspace through the existing policy/approval boundary;
-- introduce explicit execution-target routing for policy-approved tools that must run
+- [ ] introduce explicit execution-target routing for policy-approved tools that must run
   on another enrolled worker, without granting the model arbitrary SSH or host shell
   authority;
-- model a capability graph spanning models, tools, MCP endpoints, hardware,
-  workspaces, and current resource state;
-- keep model suitability and semantic routing in the harness while Fabric advertises
+- [~] model a capability graph spanning observed models/runtimes/worker capabilities,
+  configured controller tools/workspace, and hardware/resource state; MCP endpoint
+  observations are supported by Fabric but not yet configured by the harness;
+- [x] keep model suitability and semantic routing in the harness while Fabric advertises
   provider-neutral facts, placement evidence, identity, transport, and liveness;
-- treat shell/Bash/PowerShell as guarded tool families: argv-only command execution by
-  default, with script execution subject to policy inspection and explicit approval;
-- support controller-hosted MNCS MCPs for remote models through tool-schema proxying,
+- [~] retain the existing guarded argv-only command execution; dedicated distributed
+  Bash/PowerShell script tool families remain future work;
+- [ ] support controller-hosted MNCS MCPs for remote models through tool-schema proxying,
   reserving worker-local MCPs for resources inherently attached to a worker; and
-- add evaluation cases proving remote inference can safely operate on a different
+- [x] add an in-process evaluation proving remote inference can safely operate on a different
   workspace/execution target and that policy remains authoritative.
 
 ## 0.3 — repository intelligence
