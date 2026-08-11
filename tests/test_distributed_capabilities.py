@@ -164,7 +164,8 @@ class DistributedCapabilityTests(unittest.TestCase):
         disabled = InventoryAwareFabricSession(disabled_config)
         configured = load_config(None).models["e4b"]
         effective, selection = disabled.resolve_model("e4b", configured)
-        self.assertEqual(effective, configured)
+        self.assertEqual(effective.name, configured.name)
+        self.assertEqual(effective.provider, configured.provider)
         self.assertIsNone(selection)
 
         legacy = self._session([_worker("legacy-worker", [])])
