@@ -7,12 +7,14 @@ from pathlib import Path
 
 from rich.console import Console
 
+from epi13_local_harness.commons import CommonsStatus
 from epi13_local_harness.config import load_config
 from epi13_local_harness.fabric import FabricStatus
 from epi13_local_harness.models import RoutePlan, TaskProfile
 from epi13_local_harness.semantic_router import RouterRuntimeStatus
 from epi13_local_harness.tui import (
     HarnessTui,
+    commons_status_summary,
     fabric_status_renderable,
     fabric_status_summary,
     parse_image_paths,
@@ -90,6 +92,23 @@ class TuiHelperTests(unittest.TestCase):
             FabricStatus(False, "disabled", "fixture-controller")
         )
         self.assertEqual(summary, "state=disabled")
+
+    def test_commons_summary_keeps_controller_profile_and_health_explicit(self) -> None:
+        summary = commons_status_summary(
+            CommonsStatus(
+                True,
+                True,
+                "COMMONS_READY",
+                "controller-local Commons MCP is ready",
+                profile="commons.mncs.dev/node/local-agent/v0alpha1",
+                protocol="commons.mncs.dev/v0alpha1",
+                store_healthy=True,
+                record_count=3,
+            )
+        )
+        self.assertIn("state=ready", summary)
+        self.assertIn("store=healthy", summary)
+        self.assertIn("records=3", summary)
 
     def test_fabric_status_displays_capability_freshness_and_kind_counts(self) -> None:
         status = FabricStatus(

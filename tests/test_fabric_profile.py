@@ -56,6 +56,8 @@ class FabricProfileTests(unittest.TestCase):
             self.assertTrue(config.fabric.fallback_to_local)
             self.assertTrue(config.fabric.runtime_probe_on_refresh)
             self.assertEqual(config.fabric.runtime_probe_timeout_seconds, 45.0)
+            self.assertEqual(config.fabric.provider_timeout_seconds, 600)
+            self.assertEqual(config.fabric.job_timeout_overhead_seconds, 5)
             self.assertEqual(config.fabric.runtime_probe_max_age_seconds, 1800.0)
             self.assertEqual(config.fabric.workers[0].worker_id, "gpu-worker")
             self.assertEqual(config.fabric.workers[0].host, "192.0.2.10")

@@ -13,6 +13,7 @@ def build_capability_graph(
     *,
     workspace: Path | None = None,
     controller_tools: Iterable[str] = (),
+    commons_status: object | None = None,
 ) -> dict[str, object]:
     controller: dict[str, object] = {}
     if workspace is not None:
@@ -20,6 +21,20 @@ def build_capability_graph(
     tools = sorted(set(str(name) for name in controller_tools if str(name)))
     if tools:
         controller["tools"] = tools
+    if commons_status is not None and getattr(commons_status, "ready", False):
+        controller["mcp"] = {
+            "mncs-commons": {
+                "ownership": "controller",
+                "profile": getattr(commons_status, "profile", None),
+                "protocol": getattr(commons_status, "protocol", None),
+                "operations": [
+                    "query",
+                    "publish",
+                    "work-list",
+                    "evidence-trace",
+                ],
+            }
+        }
 
     workers: list[dict[str, object]] = []
     for source in sorted(status.workers, key=lambda item: str(item.get("worker_id", ""))):

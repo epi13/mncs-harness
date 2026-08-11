@@ -101,6 +101,15 @@ capabilities inherently attached to that worker, such as local hardware or an
 application instance. A remote model does not need a duplicate installation of every
 controller MCP merely to call it.
 
+MNCS Commons is the first implemented controller MCP. `CommonsSession` launches the
+fixed `mncs_commons.mcp_server` module with the operator-configured controller store,
+validates the exact local-agent descriptor and tool set, and then registers those
+schemas with `ToolRegistry`. Read operations remain low-risk reads. Persistent
+publication has a dedicated opt-in policy and still requires ordinary approval.
+Fabric evidence publication is a separate controller action and is conservative by
+default. The capability graph therefore places Commons under `controller.mcp`; it is
+never copied into a Fabric worker observation.
+
 Shell access follows the same authority boundary. The preferred primitive remains a
 guarded executable plus argv. Bash or PowerShell script tools may be added where they
 provide real value, but script content must pass policy inspection and approval before

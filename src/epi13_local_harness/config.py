@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from .models import (
+    CommonsConfig,
     FabricConfig,
     FabricWorkerConfig,
     HarnessConfig,
@@ -78,6 +79,7 @@ def load_config(path: Path | None = None) -> HarnessConfig:
     verification_raw = dict(raw.get("verification", {}))
     metrics_raw = dict(raw.get("metrics", {}))
     fabric_raw = dict(raw.get("fabric", {}))
+    commons_raw = dict(raw.get("commons", {}))
     models_raw = dict(raw.get("models", {}))
     lanes_raw = dict(raw.get("lanes", {}))
 
@@ -224,6 +226,33 @@ def load_config(path: Path | None = None) -> HarnessConfig:
             store_prompt_text=bool(metrics_raw.get("store_prompt_text", False)),
         ),
         fabric=_parse_fabric_config(fabric_raw),
+        commons=_parse_commons_config(commons_raw),
+    )
+
+
+def _parse_commons_config(raw: dict[str, Any]) -> CommonsConfig:
+    domain = str(raw.get("domain", "local"))
+    startup = float(raw.get("startup_timeout_seconds", 10.0))
+    call = float(raw.get("call_timeout_seconds", 30.0))
+    maximum = int(raw.get("max_response_bytes", 1_048_576))
+    if not domain or len(domain) > 256 or any(ord(char) < 32 for char in domain):
+        raise ValueError("commons.domain must be bounded non-empty text")
+    if not 0.1 <= startup <= 60 or not 0.1 <= call <= 300:
+        raise ValueError("Commons MCP timeouts are outside bounded ranges")
+    if not 1024 <= maximum <= 4 * 1024 * 1024:
+        raise ValueError("commons.max_response_bytes must be between 1024 and 4194304")
+    return CommonsConfig(
+        enabled=bool(raw.get("enabled", False)),
+        store_path=Path(
+            str(raw.get("store_path", "~/.local/state/mncs-commons"))
+        ).expanduser(),
+        domain=domain,
+        auto_initialize=bool(raw.get("auto_initialize", True)),
+        allow_model_publication=bool(raw.get("allow_model_publication", False)),
+        publish_fabric_evidence=bool(raw.get("publish_fabric_evidence", False)),
+        startup_timeout_seconds=startup,
+        call_timeout_seconds=call,
+        max_response_bytes=maximum,
     )
 
 
@@ -275,14 +304,50 @@ def _parse_fabric_config(raw: dict[str, Any]) -> FabricConfig:
                 ),
                 concurrency_limit=int(item.get("concurrency_limit", 1)),
                 timeout_seconds=float(item.get("timeout_seconds", 5.0)),
+                connect_timeout_seconds=(
+                    float(item["connect_timeout_seconds"])
+                    if item.get("connect_timeout_seconds") is not None
+                    else None
+                ),
+                control_timeout_seconds=(
+                    float(item["control_timeout_seconds"])
+                    if item.get("control_timeout_seconds") is not None
+                    else None
+                ),
+                execution_timeout_overhead_seconds=float(
+                    item.get("execution_timeout_overhead_seconds", 5.0)
+                ),
             )
         )
+    for worker in workers:
+        if (
+            worker.timeout_seconds <= 0
+            or (
+                worker.connect_timeout_seconds is not None
+                and worker.connect_timeout_seconds <= 0
+            )
+            or (
+                worker.control_timeout_seconds is not None
+                and worker.control_timeout_seconds <= 0
+            )
+            or not 0 < worker.execution_timeout_overhead_seconds <= 300
+        ):
+            raise ValueError(f"fabric worker {worker.worker_id} timeout bounds are invalid")
     runtime_probe_timeout = float(raw.get("runtime_probe_timeout_seconds", 45.0))
     runtime_probe_max_age = float(raw.get("runtime_probe_max_age_seconds", 1800.0))
     if runtime_probe_timeout <= 0 or runtime_probe_timeout > 300:
         raise ValueError("fabric.runtime_probe_timeout_seconds must be between 0 and 300")
     if runtime_probe_max_age < 0 or runtime_probe_max_age > 3600:
         raise ValueError("fabric.runtime_probe_max_age_seconds must be between 0 and 3600")
+    provider_timeout = int(raw.get("provider_timeout_seconds", 600))
+    job_timeout_overhead = int(raw.get("job_timeout_overhead_seconds", 5))
+    if (
+        provider_timeout < 1
+        or job_timeout_overhead < 1
+        or job_timeout_overhead > 300
+        or provider_timeout + job_timeout_overhead > 86_400
+    ):
+        raise ValueError("Fabric provider/job timeout bounds are invalid")
     return FabricConfig(
         enabled=bool(raw.get("enabled", False)),
         controller_id=str(raw.get("controller_id", "epi13-local-harness")),
@@ -306,6 +371,7 @@ def _parse_fabric_config(raw: dict[str, Any]) -> FabricConfig:
         provider_ollama_base_url=str(
             raw.get("provider_ollama_base_url", "http://127.0.0.1:11434")
         ).rstrip("/"),
-        provider_timeout_seconds=int(raw.get("provider_timeout_seconds", 600)),
+        provider_timeout_seconds=provider_timeout,
+        job_timeout_overhead_seconds=job_timeout_overhead,
         workers=tuple(sorted(workers, key=lambda item: item.worker_id)),
     )

@@ -75,6 +75,22 @@ inference target is remote. An absent or unresolved inference target cannot caus
 tool target to default remotely. Fabric inventory never grants SSH, shell, workspace,
 filesystem, MCP, or tool authority.
 
+### Optional Commons boundary
+
+The model receives only validated Commons tool schemas and bounded JSON results. The
+MCP executable, argv, store path, domain, and process lifecycle are controller-owned
+configuration. Every call returns through `ToolRegistry`; unknown names, schema
+collisions, extra arguments such as another store path, incompatible profiles,
+malformed or oversized responses, terminated MCP processes, and denied publication
+fail closed with typed diagnostics. Commons writes require a dedicated policy opt-in
+and ordinary approval.
+
+Commons records and WorkRequests are untrusted inert data even if they contain shell,
+SSH, network, or prompt-injection instructions. Querying, synchronizing, tracing,
+publishing, or translating a record never executes its contents. A Fabric `PASS`
+translated into Commons is source evidence with verification status `UNKNOWN`, not
+authorization or accepted truth.
+
 ## Known limitations
 
 - An allowlisted compiler or test program can execute project-controlled build logic.

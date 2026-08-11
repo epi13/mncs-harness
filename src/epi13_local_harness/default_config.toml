@@ -126,6 +126,17 @@ use_shellcheck_when_available = true
 path = "~/.local/state/epi13-local-harness/metrics.sqlite3"
 store_prompt_text = false
 
+[commons]
+enabled = false
+store_path = "~/.local/state/mncs-commons"
+domain = "local"
+auto_initialize = true
+allow_model_publication = false
+publish_fabric_evidence = false
+startup_timeout_seconds = 10.0
+call_timeout_seconds = 30.0
+max_response_bytes = 1048576
+
 [fabric]
 enabled = false
 controller_id = "epi13-local-harness"
@@ -139,6 +150,7 @@ runtime_probe_max_age_seconds = 1800.0
 worker_bundle_root = "~/.local/state/epi13-local-harness/fabric-worker-bundle"
 provider_ollama_base_url = "http://127.0.0.1:11434"
 provider_timeout_seconds = 600
+job_timeout_overhead_seconds = 5
 
 # Add explicit [fabric.workers.<id>] tables for enrolled workers. Remote
 # certificate/key/trust paths are intentionally operator-provided and are not
