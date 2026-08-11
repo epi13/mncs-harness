@@ -15,6 +15,9 @@
 
 - Distributed DAG scheduling, model migration, worker-local Commons, remote MCP,
   federation, and automatic multi-agent reduction remain out of scope.
+- Adaptive multi-model working sets, provider-session affinity, eviction-aware route
+  cost, speculative warming, and alternate provider experiments are staged future
+  work; see [Adaptive residency, locality, and session affinity](ADAPTIVE_RESIDENCY.md).
 
 ## 0.1 — functional local alpha
 
@@ -85,13 +88,49 @@ integration evidence, not independent assurance.
 - Git worktree sessions for isolated changes;
 - benchmark corpus drawn from real local tasks.
 
+## 0.35 — adaptive residency and session affinity
+
+Treat model loading as a bounded working-set problem while preserving semantic routing
+above placement. The current one-preferred-model policy remains the safe baseline until
+telemetry proves more complicated behavior is valuable.
+
+- record model cold-start duration, displacement, restoration, reuse, eviction, and
+  memory-pressure observations without changing routing behavior;
+- add explicit route-cost metrics for load, network, eviction, restore, tool-locality,
+  and session-state-loss costs while preserving UNKNOWN rather than treating missing
+  values as zero;
+- introduce an opaque Harness-owned session placement so multi-turn agent inference can
+  remain sticky to a useful worker/model/provider session while workspace and tools stay
+  independently authorized;
+- record why session affinity is retained or broken and prove affinity grants no new
+  filesystem, shell, MCP, or workspace authority;
+- evolve from one preferred resident model to a bounded ranked working set only after
+  deterministic replay fixtures and measured cache-thrash behavior exist;
+- keep explicit operator pins fail-closed and make warm state an optimization signal,
+  never semantic proof;
+- add confidence- and resource-gated speculative warming only behind an experimental
+  flag, with useful-versus-wasted warm metrics and automatic suppression after negative
+  value or eviction thrash;
+- evaluate alternate provider runtimes, including a narrowly declared Picchio/GPT-OSS
+  adapter, behind the existing provider boundary rather than embedding model-runtime
+  logic in Harness or Fabric; and
+- keep transformer expert/layer movement, KV implementation, quantization, and GPU/CPU
+  split inside provider runtimes.
+
+See [Adaptive residency, locality, and session affinity](ADAPTIVE_RESIDENCY.md) for the
+reference analogy, non-goals, staged implementation, and evidence rules.
+
 ## 0.4 — adaptive routing
 
 - use observed latency, token rate, verifier pass rate, and escalation frequency;
-- per-task-family routing thresholds;
+- incorporate measured cold-start, resident reuse, eviction/restoration, session-affinity,
+  and memory-pressure costs after the 0.35 telemetry baseline is trustworthy;
+- per-task-family routing thresholds and per-task-family reuse statistics;
 - bandit-style exploration with strict safety overrides;
+- replay adaptive choices against deterministic routing and no-prefetch baselines;
 - independent reviewer sampling for uncertain changes;
-- prevent model self-confidence from becoming the acceptance criterion.
+- prevent model self-confidence, warm state, or provider telemetry from becoming the
+  acceptance criterion.
 
 ## 0.5 — distributed agent scheduling
 
@@ -99,8 +138,8 @@ Build on the 0.25 capability/session boundary rather than coupling orchestration
 physical worker placement.
 
 - discover and refresh trusted Fabric workers and their model/runtime inventories;
-- route by model capability, RAM, CPU, accelerator, current load, tool needs, and
-  execution target;
+- route by model capability, RAM, CPU, accelerator, current load, tool needs, execution
+  target, bounded residency cost, and usable session affinity;
 - content-addressed task bundles and explicit remote workspace/session references;
 - signed or Fabric-bound verifier evidence;
 - heterogeneous slow/fast cluster testing;
@@ -109,10 +148,12 @@ physical worker placement.
   different workers;
 - represent task dependencies as an explicit DAG before attempting general-purpose
   autonomous splitting;
+- coalesce or parallelize independent work only when the expected placement/load cost is
+  better than sequential reuse of an already useful resident model/session;
 - combine sub-results through a reducer/reviewer stage and verify the observable
   result independently; and
-- keep semantic decomposition, model choice, reduction, verification, and escalation
-  in the harness while Fabric executes and records bounded work.
+- keep semantic decomposition, model choice, residency policy, reduction, verification,
+  and escalation in the harness while Fabric executes and records bounded work.
 
 ## Relationship to MNCS and Forge
 
