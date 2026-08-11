@@ -149,6 +149,7 @@ def fabric_status_renderable(status: FabricStatus) -> Panel:
     table.add_column("CPU/RAM")
     table.add_column("Accelerators")
     table.add_column("Models")
+    table.add_column("Capabilities")
     for worker in status.workers:
         snapshot = worker.get("resource_snapshot") or {}
         cpu = snapshot.get("cpu_logical_count")
@@ -158,12 +159,27 @@ def fabric_status_renderable(status: FabricStatus) -> Panel:
         accelerator_text = str(len(accelerators))
         if any(item.get("execution_probe") == "PASS" for item in accelerators):
             accelerator_text += " (probe PASS)"
+        inventory_status = str(worker.get("model_inventory_status") or "UNKNOWN")
         if worker.get("model_inventory_error"):
             model_text = "scan failed"
         elif "model_names" in worker:
             model_text = str(worker.get("model_count") or len(worker.get("model_names") or ()))
         else:
-            model_text = "UNKNOWN"
+            model_text = inventory_status
+        observation = worker.get("capability_observation")
+        capability_entries = (
+            observation.get("capabilities", []) if isinstance(observation, dict) else []
+        )
+        capability_text = str(worker.get("capability_inventory_status") or "UNKNOWN")
+        if capability_entries:
+            kinds: dict[str, int] = {}
+            for capability in capability_entries:
+                if isinstance(capability, dict):
+                    kind = str(capability.get("kind") or "other")
+                    kinds[kind] = kinds.get(kind, 0) + 1
+            capability_text += " " + ", ".join(
+                f"{kind}:{count}" for kind, count in sorted(kinds.items())
+            )
         table.add_row(
             str(worker.get("worker_id", "unknown")),
             str(worker.get("availability", worker.get("state", "UNKNOWN"))),
@@ -171,9 +187,10 @@ def fabric_status_renderable(status: FabricStatus) -> Panel:
             f"{cpu or 'UNKNOWN'} / {ram_text}",
             accelerator_text,
             model_text,
+            capability_text,
         )
     if not status.workers:
-        table.add_row("—", "—", "—", "—", "—", "—")
+        table.add_row("—", "—", "—", "—", "—", "—", "—")
     if status.detail:
         table.caption = status.detail
     if status.last_inference:

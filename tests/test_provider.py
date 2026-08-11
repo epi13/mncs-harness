@@ -77,6 +77,16 @@ class ProviderTests(unittest.TestCase):
         self.assertFalse(provider.last_metadata["fabric_fallback"])
         self.assertIn("INTEGRITY_FAILURE", provider.last_metadata["fabric_failure_reason"])
 
+    def test_local_fallback_reports_controller_inference_and_tool_targets(self) -> None:
+        provider = FabricOllamaProvider(_FailingSession(), _SizedLocalProvider(), True)
+        model = replace(load_config(None).models["coder"], model_storage_bytes=1)
+        response = provider.chat(model, [{"role": "user", "content": "hello"}])
+        self.assertEqual(response["message"]["content"], "local")
+        self.assertTrue(provider.last_metadata["fabric_fallback"])
+        self.assertEqual(provider.last_metadata["inference_target"], "controller")
+        self.assertEqual(provider.last_metadata["workspace_target"], "controller")
+        self.assertEqual(provider.last_metadata["tool_execution_target"], "controller")
+
 
 if __name__ == "__main__":
     unittest.main()

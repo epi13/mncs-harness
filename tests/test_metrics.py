@@ -10,6 +10,7 @@ from epi13_local_harness.models import (
     ModelAttempt,
     RoutePlan,
     SemanticRouteResult,
+    SessionTargets,
     TaskProfile,
     VerificationResult,
 )
@@ -96,6 +97,9 @@ class MetricsTests(unittest.TestCase):
             self.assertIn("fabric_worker", attempt_columns)
             self.assertIn("placement_mode", attempt_columns)
             self.assertIn("tokens_per_second", attempt_columns)
+            self.assertIn("inference_target", attempt_columns)
+            self.assertIn("workspace_target", attempt_columns)
+            self.assertIn("tool_execution_target", attempt_columns)
 
             run_id = store.begin_run("hello", self._simple_plan())
             store.record_attempt(
@@ -141,12 +145,16 @@ class MetricsTests(unittest.TestCase):
                     },
                     tool_executions=[],
                     verification=VerificationResult(True, (), ()),
+                    session_targets=SessionTargets.remote_inference("gpu-fixture"),
                 ),
                 None,
             )
             row = store.recent(1)[0]
             self.assertEqual(row["fabric_worker"], "gpu-fixture")
             self.assertEqual(row["placement_mode"], "full-accelerator")
+            self.assertEqual(row["inference_target"], "fabric-worker:gpu-fixture")
+            self.assertEqual(row["workspace_target"], "controller")
+            self.assertEqual(row["tool_execution_target"], "controller")
 
     def test_begin_run_records_semantic_router_metadata(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

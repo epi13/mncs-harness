@@ -111,6 +111,71 @@ def _supports_request_id(client: Any) -> bool:
     )
 
 
+def _model_capability_entries(models: tuple[dict[str, Any], ...]) -> list[dict[str, Any]]:
+    entries: list[dict[str, Any]] = [
+        {
+            "kind": "runtime",
+            "namespace": "ollama",
+            "name": "ollama",
+            "attributes": {"interface": "loopback-http-api"},
+        }
+    ]
+    for model in models:
+        name = str(model.get("name") or model.get("model") or "").strip()
+        if not name:
+            continue
+        details = model.get("details") if isinstance(model.get("details"), dict) else {}
+        attributes: dict[str, Any] = {}
+        size = model.get("size")
+        if isinstance(size, int) and not isinstance(size, bool) and size >= 0:
+            attributes["size_bytes"] = size
+        factual_fields = {
+            "modified_at": model.get("modified_at"),
+            "format": details.get("format"),
+            "family": details.get("family"),
+            "parameter_size": details.get("parameter_size"),
+            "quantization": details.get("quantization_level"),
+        }
+        attributes.update(
+            {key: value for key, value in factual_fields.items() if isinstance(value, str) and value}
+        )
+        digest = model.get("digest")
+        entries.append(
+            {
+                "kind": "model",
+                "namespace": "ollama",
+                "name": name,
+                "subject_identity": digest if isinstance(digest, str) and digest else None,
+                "attributes": attributes,
+            }
+        )
+    return entries
+
+
+def _model_from_capability(entry: dict[str, Any]) -> dict[str, Any]:
+    attributes = entry.get("attributes") if isinstance(entry.get("attributes"), dict) else {}
+    details = {
+        key: attributes[source]
+        for key, source in (
+            ("format", "format"),
+            ("family", "family"),
+            ("parameter_size", "parameter_size"),
+            ("quantization_level", "quantization"),
+        )
+        if source in attributes
+    }
+    model: dict[str, Any] = {"name": entry.get("name")}
+    if isinstance(attributes.get("size_bytes"), int):
+        model["size"] = attributes["size_bytes"]
+    if entry.get("subject_identity") is not None:
+        model["digest"] = entry["subject_identity"]
+    if attributes.get("modified_at") is not None:
+        model["modified_at"] = attributes["modified_at"]
+    if details:
+        model["details"] = details
+    return model
+
+
 class InventoryAwareFabricSession(FabricSession):
     """Fabric session that tracks the live model inventory of remote workers."""
 
@@ -118,12 +183,16 @@ class InventoryAwareFabricSession(FabricSession):
         super().__init__(config, **kwargs)
         self.model_inventories: dict[str, tuple[dict[str, Any], ...]] = {}
         self.model_inventory_errors: dict[str, str] = {}
+        self.capability_api_available = False
 
     def initialize(self) -> None:
         super().initialize()
         if self.enabled and self.client is not None:
             if _supports_request_id(self.client) and not isinstance(self.client, _FreshDispatchClient):
                 self.client = _FreshDispatchClient(self.client)
+            self.capability_api_available = callable(
+                getattr(self.client, "ingest_capability_observation", None)
+            )
             self._refresh_model_inventories()
 
     def refresh(self) -> FabricStatus:
@@ -221,12 +290,35 @@ class InventoryAwareFabricSession(FabricSession):
             ):
                 continue
             try:
-                self.model_inventories[worker_id] = self._probe_model_inventory(worker_id)
+                inventory = self._probe_model_inventory(worker_id)
+                if self.capability_api_available:
+                    self.client.ingest_capability_observation(
+                        worker_id,
+                        _model_capability_entries(inventory),
+                        observation_source="epi13-local-harness:bounded-worker-loopback-probe",
+                    )
+                    self.model_inventories.pop(worker_id, None)
+                else:
+                    self.model_inventories[worker_id] = inventory
                 self.model_inventory_errors.pop(worker_id, None)
             except Exception as exc:
                 # Do not route from a stale inventory after a failed fresh scan.
                 self.model_inventories.pop(worker_id, None)
-                self.model_inventory_errors[worker_id] = str(exc)
+                error = str(exc)
+                if self.capability_api_available:
+                    try:
+                        self.client.ingest_capability_observation(
+                            worker_id,
+                            [],
+                            availability="UNAVAILABLE",
+                            observation_source=(
+                                "epi13-local-harness:bounded-worker-loopback-probe"
+                            ),
+                            status_reason=(" ".join(error.split())[:512] or "probe failed"),
+                        )
+                    except Exception as ingest_exc:
+                        error = f"{error}; failed to publish unavailable observation: {ingest_exc}"
+                self.model_inventory_errors[worker_id] = error
         for worker_id in tuple(self.model_inventories):
             if worker_id not in observed_remote_ids:
                 self.model_inventories.pop(worker_id, None)
@@ -234,30 +326,42 @@ class InventoryAwareFabricSession(FabricSession):
             if worker_id != "*" and worker_id not in observed_remote_ids:
                 self.model_inventory_errors.pop(worker_id, None)
 
-    def _common_remote_inventory(self) -> tuple[dict[str, Any], ...]:
-        base = super().status()
-        available_remote = [
-            str(worker.get("worker_id"))
-            for worker in base.workers
-            if worker.get("source") == "remote" and worker.get("availability") == "AVAILABLE"
-        ]
-        if not available_remote or any(worker_id not in self.model_inventories for worker_id in available_remote):
+    def _worker_inventory(self, worker: dict[str, Any]) -> tuple[dict[str, Any], ...]:
+        worker_id = str(worker.get("worker_id") or "")
+        if worker_id in self.model_inventory_errors:
             return ()
-        common_names: set[str] | None = None
-        metadata: dict[str, dict[str, Any]] = {}
-        for worker_id in available_remote:
-            inventory = self.model_inventories[worker_id]
-            names = {
-                str(item.get("name") or item.get("model") or "")
-                for item in inventory
-                if item.get("name") or item.get("model")
-            }
-            common_names = names if common_names is None else common_names & names
-            for item in inventory:
-                name = str(item.get("name") or item.get("model") or "")
-                if name and name not in metadata:
-                    metadata[name] = dict(item)
-        return tuple(metadata[name] for name in sorted(common_names or ()))
+        if self.capability_api_available:
+            if worker.get("capability_inventory_status") != "CURRENT":
+                return ()
+            observation = worker.get("capability_observation")
+            if not isinstance(observation, dict) or observation.get("availability") != "AVAILABLE":
+                return ()
+            capabilities = observation.get("capabilities")
+            if not isinstance(capabilities, list):
+                return ()
+            return tuple(
+                _model_from_capability(entry)
+                for entry in capabilities
+                if isinstance(entry, dict) and entry.get("kind") == "model"
+            )
+        return self.model_inventories.get(worker_id, ())
+
+    @staticmethod
+    def _unavailable_status(workers: list[dict[str, Any]], fabric_state: str) -> str:
+        remote = [worker for worker in workers if worker.get("source") == "remote"]
+        if fabric_state != "available":
+            return "FABRIC_UNAVAILABLE"
+        if not remote:
+            return "UNKNOWN"
+        available = [worker for worker in remote if worker.get("availability") == "AVAILABLE"]
+        if not available:
+            return "WORKER_UNAVAILABLE"
+        statuses = {str(worker.get("capability_inventory_status") or "UNKNOWN") for worker in available}
+        if "STALE" in statuses:
+            return "STALE"
+        if statuses == {"CURRENT"}:
+            return "MODEL_NOT_INSTALLED"
+        return "UNKNOWN"
 
     def resolve_model(
         self,
@@ -273,7 +377,56 @@ class InventoryAwareFabricSession(FabricSession):
 
         if model.provider != "fabric":
             return model, None
-        selection = select_installed_model(role, model.name, self._common_remote_inventory())
+        status = self.status()
+        workers = [dict(worker) for worker in status.workers]
+        candidates = [
+            (str(worker.get("worker_id")), self._worker_inventory(worker))
+            for worker in workers
+            if worker.get("source") == "remote" and worker.get("availability") == "AVAILABLE"
+        ]
+        candidates = [(worker_id, inventory) for worker_id, inventory in candidates if inventory]
+        selection: ModelSelection | None = None
+        for worker_id, inventory in sorted(candidates):
+            exact = select_installed_model(role, model.name, inventory)
+            if exact is not None and exact.selected_model == model.name:
+                selection = replace(exact, worker_id=worker_id)
+                break
+        if selection is None and candidates:
+            combined = [item for _worker_id, inventory in candidates for item in inventory]
+            fallback = select_installed_model(role, model.name, combined)
+            if fallback is not None:
+                eligible = sorted(
+                    worker_id
+                    for worker_id, inventory in candidates
+                    if any(
+                        str(item.get("name") or item.get("model") or "")
+                        == fallback.selected_model
+                        for item in inventory
+                    )
+                )
+                if eligible:
+                    selection = replace(fallback, worker_id=eligible[0])
+        if selection is None and (
+            self.capability_api_available or (self.enabled and status.state != "available")
+        ):
+            inventory_status = self._unavailable_status(workers, status.state)
+            reason = {
+                "FABRIC_UNAVAILABLE": "Fabric is unavailable; no current model placement is known",
+                "WORKER_UNAVAILABLE": "all enrolled inference workers are unavailable",
+                "STALE": "worker model capability inventory is stale",
+                "MODEL_NOT_INSTALLED": "configured model is not installed and no compatible fallback is available",
+                "UNKNOWN": "worker model capability inventory is unknown",
+            }[inventory_status]
+            selection = ModelSelection(
+                role=role,
+                configured_model=model.name,
+                selected_model=model.name,
+                stored_size_bytes=model.model_storage_bytes,
+                reason=reason,
+                worker_id=None,
+                inventory_status=inventory_status,
+                available=False,
+            )
         selected_name = selection.selected_model if selection is not None else model.name
         selected_size = (
             selection.stored_size_bytes
@@ -306,8 +459,18 @@ class InventoryAwareFabricSession(FabricSession):
         for worker in base.workers:
             item = dict(worker)
             worker_id = str(item.get("worker_id") or "")
-            inventory = self.model_inventories.get(worker_id)
-            if inventory is not None:
+            inventory = self._worker_inventory(item)
+            if self.capability_api_available:
+                item["model_inventory_status"] = item.get(
+                    "capability_inventory_status", "UNKNOWN"
+                )
+            elif inventory:
+                item["model_inventory_status"] = "CURRENT"
+            inventory_known = (
+                self.capability_api_available
+                and item.get("model_inventory_status") == "CURRENT"
+            ) or (not self.capability_api_available and worker_id in self.model_inventories)
+            if inventory_known and worker_id not in self.model_inventory_errors:
                 item["model_inventory"] = [dict(model) for model in inventory]
                 item["model_names"] = sorted(
                     {
@@ -319,6 +482,7 @@ class InventoryAwareFabricSession(FabricSession):
                 item["model_count"] = len(item["model_names"])
             if worker_id in self.model_inventory_errors:
                 item["model_inventory_error"] = self.model_inventory_errors[worker_id]
+                item["model_inventory_status"] = "UNAVAILABLE"
             workers.append(item)
         details = [base.detail] if base.detail else []
         for worker_id, error in sorted(self.model_inventory_errors.items()):

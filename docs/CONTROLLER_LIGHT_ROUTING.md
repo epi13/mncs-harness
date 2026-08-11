@@ -48,7 +48,11 @@ At Fabric session startup, the harness sends a bounded Python execution bundle t
 http://127.0.0.1:11434/api/tags
 ```
 
-The returned inventory is attached to `elh-fabric status` as `model_names` and `model_inventory`. Status also reports `ollama_inventory_ready_count` so model availability can be distinguished from Python CUDA evidence.
+The returned inventory is normalized into provider-neutral model/runtime entries,
+ingested as a Fabric worker capability observation, and then exposed by
+`FabricClient.workers()` as `model_names` and `model_inventory`. Status also reports
+`ollama_inventory_ready_count` so current model availability can be distinguished
+from Python CUDA evidence.
 
 This runtime inventory path uses Fabric mTLS. It does not require SSH credentials and it does not expose Ollama on the LAN.
 
@@ -67,8 +71,13 @@ This is availability-aware routing, not a capability proof. Model presence does 
 
 ## Multiple workers
 
-Until Fabric carries model availability as a first-class scheduling capability, automatic inventory fallback uses only models present on every currently available remote worker. This avoids selecting a model and then allowing Fabric to schedule the request onto a worker that does not have that model installed.
+The harness evaluates only `CURRENT` inventories, resolves an exact or configured
+compatible fallback model, and targets a specific available worker that actually
+reported that model. Stale, unknown, unavailable, or failed observations are never
+promoted to presence.
 
 ## Fabric version
 
-This feature requires `mncs-fabric >= 0.2.0a9`. Fabric `0.2.0a8` exposes the execution-bundle archive API but has a transferred-bundle dispatch-binding bug that can prevent runtime probes and provider-call bundles from executing correctly.
+This feature requires `mncs-fabric >= 0.2.0a11`, which supplies the public capability
+observation API and request-scoped bundle-cache correction. Custom/legacy mock clients
+without that API retain the old session-local inventory behavior for compatibility.

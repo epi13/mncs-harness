@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import inspect
 from dataclasses import replace
 from pathlib import Path
 from typing import Any, Protocol
 
 from .fabric import FabricExecutionError, FabricSession, FabricUnavailable
-from .models import ModelConfig
+from .models import ModelConfig, SessionTargets
 from .ollama import OllamaClient
 
 
@@ -37,6 +38,7 @@ class LocalOllamaProvider:
             "backend": "ollama",
             "fabric_enabled": False,
             "execution_source": "local",
+            **SessionTargets().as_metadata(),
         }
 
     def model_size(self, name: str) -> int | None:
@@ -60,11 +62,30 @@ class FabricOllamaProvider:
         session: FabricSession,
         local_provider: InferenceProvider,
         fallback_to_local: bool,
+        inference_worker_id: str | None = None,
+        placement_error: str | None = None,
+        session_targets: SessionTargets | None = None,
     ):
         self.session = session
         self.local_provider = local_provider
         self.fallback_to_local = fallback_to_local
+        self.inference_worker_id = inference_worker_id
+        self.placement_error = placement_error
+        self.session_targets = session_targets or SessionTargets.unresolved_inference()
         self.last_metadata: dict[str, Any] = {}
+
+    def _session_supports_worker_id(self) -> bool:
+        chat = getattr(self.session, "chat", None)
+        if not callable(chat):
+            return False
+        try:
+            parameters = inspect.signature(chat).parameters.values()
+        except (TypeError, ValueError):
+            return False
+        return any(
+            parameter.name == "worker_id" or parameter.kind == inspect.Parameter.VAR_KEYWORD
+            for parameter in parameters
+        )
 
     def _effective_model(self, model: ModelConfig) -> tuple[ModelConfig, str]:
         if model.model_storage_bytes > 0:
@@ -116,6 +137,7 @@ class FabricOllamaProvider:
             "fabric_request_identity": last.get("request_identity"),
             "model_storage_bytes": model_storage_bytes,
             "model_storage_source": model_storage_source,
+            **self.session_targets.as_metadata(),
         }
 
     def chat(
@@ -127,15 +149,16 @@ class FabricOllamaProvider:
     ) -> dict[str, Any]:
         effective_model, size_source = self._effective_model(model)
         try:
-            response, metadata = self.session.chat(
-                effective_model,
-                messages,
-                tools=tools,
-                images=images,
-            )
+            if self.placement_error:
+                raise FabricUnavailable(self.placement_error)
+            arguments = {"tools": tools, "images": images}
+            if self.inference_worker_id is not None and self._session_supports_worker_id():
+                arguments["worker_id"] = self.inference_worker_id
+            response, metadata = self.session.chat(effective_model, messages, **arguments)
             metadata = dict(metadata)
             metadata["model_storage_bytes"] = effective_model.model_storage_bytes
             metadata["model_storage_source"] = size_source
+            metadata.update(self.session_targets.as_metadata())
             self.last_metadata = metadata
             return response
         except (FabricExecutionError, FabricUnavailable, ImportError, OSError, ValueError) as exc:
@@ -150,6 +173,7 @@ class FabricOllamaProvider:
                 raise ProviderError(f"Fabric provider failed: {reason}") from exc
             response = self.local_provider.chat(model, messages, tools=tools, images=images)
             local_metadata = dict(getattr(self.local_provider, "last_metadata", {}))
+            local_metadata.update(SessionTargets().as_metadata())
             local_metadata.update(
                 {
                     "fabric_enabled": True,

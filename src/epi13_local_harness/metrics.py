@@ -78,6 +78,9 @@ class MetricsStore:
                     backend TEXT,
                     fabric_enabled INTEGER,
                     execution_source TEXT,
+                    inference_target TEXT,
+                    workspace_target TEXT,
+                    tool_execution_target TEXT,
                     fabric_worker TEXT,
                     placement_mode TEXT,
                     accelerator_backend TEXT,
@@ -116,6 +119,9 @@ class MetricsStore:
                 ("backend", "TEXT"),
                 ("fabric_enabled", "INTEGER"),
                 ("execution_source", "TEXT"),
+                ("inference_target", "TEXT"),
+                ("workspace_target", "TEXT"),
+                ("tool_execution_target", "TEXT"),
                 ("fabric_worker", "TEXT"),
                 ("placement_mode", "TEXT"),
                 ("accelerator_backend", "TEXT"),
@@ -182,6 +188,7 @@ class MetricsStore:
                     prompt_eval_duration_ns, eval_count, eval_duration_ns,
                     tool_call_count, verification_failures, provider, backend,
                     fabric_enabled, execution_source, fabric_worker, placement_mode,
+                    inference_target, workspace_target, tool_execution_target,
                     accelerator_backend, precision, placement_reason,
                     placement_reason_code, fabric_request_identity,
                     resource_snapshot_identity, fabric_record_identity,
@@ -189,7 +196,7 @@ class MetricsStore:
                     tokens_per_second
                 ) VALUES (
                     ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
                 )
                 """,
                 (
@@ -214,6 +221,9 @@ class MetricsStore:
                     metrics.get("execution_source"),
                     metrics.get("fabric_worker"),
                     metrics.get("placement_mode"),
+                    attempt.session_targets.inference.label,
+                    attempt.session_targets.workspace.label,
+                    attempt.session_targets.tools.label,
                     metrics.get("accelerator_backend"),
                     metrics.get("precision"),
                     metrics.get("placement_reason"),
@@ -255,6 +265,7 @@ class MetricsStore:
                        a.attempt_index, a.role, a.model, a.passed,
                        a.tool_call_count, a.eval_count, a.eval_duration_ns, a.error,
                        a.provider, a.backend, a.fabric_enabled, a.execution_source,
+                       a.inference_target, a.workspace_target, a.tool_execution_target,
                        a.fabric_worker, a.placement_mode, a.accelerator_backend,
                        a.precision, a.placement_reason, a.placement_reason_code,
                        a.fabric_request_identity, a.resource_snapshot_identity,
