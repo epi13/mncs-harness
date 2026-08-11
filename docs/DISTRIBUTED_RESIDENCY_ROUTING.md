@@ -32,6 +32,15 @@ loaded-state observation; `/api/generate` with an empty prompt and configured
 `keep_alive` is the provider-specific warm operation. Fabric merely transports
 the bounded loopback probe/job and records evidence.
 
+Inventory refresh also asks Ollama `/api/show` for each installed model's
+capabilities. Those capabilities are identity-bound worker observations, not
+attestation or a semantic quality guarantee. They are used to avoid sending
+unsupported request options to a pinned model: for example, a role configured
+with `think = true` is sent with thinking disabled when the selected model does
+not advertise the `thinking` capability. Unknown capability data preserves the
+configured option, while an exact worker/model pin still fails closed if the
+worker or model is unavailable.
+
 Harness also re-observes and reconciles residency after a completed remote
 attempt. This matters on constrained accelerators where a semantically selected
 transient model can evict the preferred resident model; the node is returned to

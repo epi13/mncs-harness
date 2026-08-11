@@ -75,6 +75,26 @@ installed = values["installed"].get("models", [])
 running = values["running"].get("models", [])
 if not isinstance(installed, list) or not isinstance(running, list):
     raise SystemExit("worker-local Ollama inventory returned a non-list models field")
+for index, item in enumerate(installed):
+    if not isinstance(item, dict):
+        continue
+    name = item.get("name") or item.get("model")
+    if not isinstance(name, str) or not name:
+        continue
+    try:
+        show_request = urllib.request.Request(
+            "http://127.0.0.1:11434/api/show",
+            data=json.dumps({"model": name}).encode("utf-8"),
+            method="POST",
+            headers={"Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(show_request, timeout=10) as response:
+            shown = json.loads(response.read().decode("utf-8"))
+    except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError, json.JSONDecodeError):
+        continue
+    capabilities = shown.get("capabilities") if isinstance(shown, dict) else None
+    if isinstance(capabilities, list) and all(isinstance(value, str) for value in capabilities):
+        installed[index] = dict(item, capabilities=capabilities)
 print("ELH_FABRIC_MODEL_INVENTORY " + json.dumps({
     "installed": installed,
     "running": running,
@@ -204,6 +224,11 @@ def _model_capability_entries(models: tuple[dict[str, Any], ...]) -> list[dict[s
         attributes.update(
             {key: value for key, value in factual_fields.items() if isinstance(value, str) and value}
         )
+        capabilities = model.get("capabilities")
+        if isinstance(capabilities, list) and all(
+            isinstance(value, str) for value in capabilities
+        ):
+            attributes["ollama_capabilities"] = list(capabilities)
         digest = model.get("digest")
         entries.append(
             {
@@ -240,6 +265,9 @@ def _model_from_capability(entry: dict[str, Any]) -> dict[str, Any]:
     for key in ("size_vram", "context_length", "expires_at", "provider_version"):
         if attributes.get(key) is not None:
             model[key] = attributes[key]
+    capabilities = attributes.get("ollama_capabilities")
+    if isinstance(capabilities, list) and all(isinstance(value, str) for value in capabilities):
+        model["capabilities"] = list(capabilities)
     if details:
         model["details"] = details
     return model
@@ -851,10 +879,42 @@ class InventoryAwareFabricSession(FabricSession):
             if selection is not None and selection.stored_size_bytes > 0
             else model.model_storage_bytes
         )
+        selected_capabilities: list[str] | None = None
+        if selection is not None and selection.worker_id:
+            selected_inventory = next(
+                (
+                    inventory
+                    for worker_id, inventory in candidates
+                    if worker_id == selection.worker_id
+                ),
+                (),
+            )
+            selected_item = named(selected_inventory, selected_name)
+            capabilities = selected_item.get("capabilities") if selected_item else None
+            if isinstance(capabilities, list) and all(
+                isinstance(value, str) for value in capabilities
+            ):
+                selected_capabilities = capabilities
+        effective_think = model.think
+        if (
+            model.think
+            and selected_capabilities is not None
+            and "thinking" not in selected_capabilities
+        ):
+            effective_think = False
+            if selection is not None:
+                selection = replace(
+                    selection,
+                    reason=(
+                        selection.reason
+                        + "; selected Ollama model does not advertise thinking; disabled"
+                    ),
+                )
         effective = replace(
             model,
             name=selected_name,
             model_storage_bytes=selected_size,
+            think=effective_think,
             execution_device="cpu",
             accelerator_backend=None,
         )

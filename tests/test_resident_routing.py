@@ -144,6 +144,29 @@ class ResidentRoutingTests(unittest.TestCase):
         self.assertEqual(fallback.worker_id, "gpu")
         self.assertIn("explicit manual fallback enabled", fallback.reason)
 
+    def test_selected_model_capabilities_disable_unsupported_thinking(self) -> None:
+        self.workers = (
+            _worker(
+                "granite-worker",
+                [
+                    {
+                        "name": "granite3.3:2b",
+                        "size": 1_500_000_000,
+                        "capabilities": ["completion", "tools"],
+                    }
+                ],
+            ),
+        )
+        self.status = FabricStatus(True, "available", "controller", workers=self.workers)
+        session = self._inventory_session()
+        effective, selection = session.resolve_model(
+            "e4b",
+            self.config.models["e4b"],
+            RoutingOverride.from_values(worker="granite-worker", model="granite3.3:2b"),
+        )
+        self.assertFalse(effective.think)
+        self.assertIn("does not advertise thinking", selection.reason)
+
     def test_pinned_worker_unavailable_or_stale_is_not_replaced(self) -> None:
         self.workers = (
             _worker(
