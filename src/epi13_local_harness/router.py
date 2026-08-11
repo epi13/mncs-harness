@@ -1,9 +1,16 @@
 from __future__ import annotations
 
 import re
+from dataclasses import replace
 from pathlib import Path
 
-from .models import HarnessConfig, RoutePlan, SemanticRouteResult, TaskProfile
+from .models import (
+    HarnessConfig,
+    RoutePlan,
+    RoutingOverride,
+    SemanticRouteResult,
+    TaskProfile,
+)
 from .semantic_router import route_with_backend
 
 CODE_TERMS = {
@@ -224,8 +231,15 @@ def plan_route(
     config: HarnessConfig,
     images: list[Path] | None = None,
     forced_role: str | None = None,
+    routing_override: RoutingOverride | None = None,
 ) -> RoutePlan:
     profile = profile_task(text, config, images)
+
+    if forced_role is not None and routing_override is not None:
+        raise ValueError("legacy forced_role cannot be combined with routing_override")
+    requested = routing_override or RoutingOverride.from_values(role=forced_role)
+    if requested.mode == "ROLE":
+        forced_role = requested.role
 
     if forced_role:
         if forced_role not in config.models:
@@ -237,6 +251,7 @@ def plan_route(
             escalation_roles=(),
             reasons=(f"model role forced to {forced_role}",),
             profile=profile,
+            routing_override=requested,
         )
 
     plan = _deterministic_route(profile, config)
@@ -280,6 +295,7 @@ def plan_route(
                 profile=plan.profile,
                 lane=semantic.selected_lane,
                 semantic=semantic,
+                routing_override=requested,
             )
 
     if reasons != list(plan.reasons):
@@ -288,5 +304,6 @@ def plan_route(
             escalation_roles=plan.escalation_roles,
             reasons=tuple(dict.fromkeys(reasons)),
             profile=plan.profile,
+            routing_override=requested,
         )
-    return plan
+    return replace(plan, routing_override=requested)

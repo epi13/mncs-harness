@@ -137,9 +137,22 @@ startup_timeout_seconds = 10.0
 call_timeout_seconds = 30.0
 max_response_bytes = 1048576
 
+[controller]
+generation_policy = "local-generation-allowed"
+
+[model_residency]
+enabled = false
+warm_on_startup = false
+prefer_resident_for_auto_routing = true
+keep_alive = -1
+warm_timeout_seconds = 300.0
+maximum_model_memory_fraction = 0.5
+role_preference = ["e4b", "e2b", "coder", "reviewer"]
+
 [fabric]
 enabled = false
 controller_id = "epi13-local-harness"
+# registry_path = "~/.local/state/mncs-fabric/workers.json"
 state_path = "~/.local/state/epi13-local-harness/fabric.jsonl"
 fallback_to_local = true
 refresh_on_startup = true

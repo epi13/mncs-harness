@@ -1,5 +1,14 @@
 # epi13-local-harness
 
+Version 0.6 adds normal multi-node operation: an operator-owned Fabric registry,
+per-worker installed/loaded model state, a bounded resident-model policy, exact
+worker/model routing overrides, and direct Commons CLI/TUI access. See
+[`docs/DISTRIBUTED_RESIDENCY_ROUTING.md`](docs/DISTRIBUTED_RESIDENCY_ROUTING.md).
+
+The authority boundary remains unchanged: remote inference receives schemas and
+tool results, while workspace tools and controller-local Commons execution remain
+owned by Local Harness.
+
 A local, policy-aware AI harness for routing work across multiple local models,
 executing narrowly scoped tools, and escalating only when deterministic checks say
 that a smaller model was not enough.

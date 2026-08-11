@@ -6,6 +6,64 @@ from typing import Any, Literal
 
 Risk = Literal["low", "medium", "high", "blocked"]
 TargetKind = Literal["controller", "fabric-worker", "unresolved"]
+RoutingMode = Literal["AUTO", "ROLE", "MODEL", "WORKER", "WORKER_MODEL"]
+
+
+@dataclass(frozen=True)
+class RoutingOverride:
+    """Typed operator route request; exact pins fail closed by default."""
+
+    mode: RoutingMode = "AUTO"
+    role: str | None = None
+    worker: str | None = None
+    model: str | None = None
+    allow_fallback: bool = False
+
+    def __post_init__(self) -> None:
+        expected = {
+            "AUTO": (False, False, False),
+            "ROLE": (True, False, False),
+            "MODEL": (False, False, True),
+            "WORKER": (False, True, False),
+            "WORKER_MODEL": (False, True, True),
+        }
+        if self.mode not in expected:
+            raise ValueError("routing override mode is invalid")
+        actual = (self.role is not None, self.worker is not None, self.model is not None)
+        if actual != expected[self.mode]:
+            raise ValueError(f"routing override fields do not match {self.mode} mode")
+        for field_name in ("role", "worker", "model"):
+            value = getattr(self, field_name)
+            if value is not None and (
+                not value
+                or len(value) > 256
+                or any(ord(character) < 32 or 127 <= ord(character) <= 159 for character in value)
+            ):
+                raise ValueError(f"routing override {field_name} is invalid")
+
+    @classmethod
+    def from_values(
+        cls,
+        *,
+        role: str | None = None,
+        worker: str | None = None,
+        model: str | None = None,
+        allow_fallback: bool = False,
+    ) -> "RoutingOverride":
+        if role is not None and (worker is not None or model is not None):
+            raise ValueError("role cannot be combined with exact worker/model routing")
+        if role is not None:
+            return cls("ROLE", role=role, allow_fallback=allow_fallback)
+        if worker is not None and model is not None:
+            return cls(
+                "WORKER_MODEL", worker=worker, model=model,
+                allow_fallback=allow_fallback,
+            )
+        if worker is not None:
+            return cls("WORKER", worker=worker, allow_fallback=allow_fallback)
+        if model is not None:
+            return cls("MODEL", model=model, allow_fallback=allow_fallback)
+        return cls("AUTO")
 
 
 @dataclass(frozen=True)
@@ -210,7 +268,50 @@ class FabricConfig:
     provider_ollama_base_url: str = "http://127.0.0.1:11434"
     provider_timeout_seconds: int = 600
     job_timeout_overhead_seconds: int = 5
+    registry_path: Path | None = None
     workers: tuple[FabricWorkerConfig, ...] = ()
+
+
+@dataclass(frozen=True)
+class ResidentWorkerConfig:
+    worker_id: str
+    model: str | None = None
+
+    def __post_init__(self) -> None:
+        for field_name in ("worker_id", "model"):
+            value = getattr(self, field_name)
+            if value is not None and (
+                not value
+                or len(value) > 256
+                or any(ord(character) < 32 for character in value)
+            ):
+                raise ValueError(f"resident worker {field_name} is invalid")
+
+
+@dataclass(frozen=True)
+class ModelResidencyConfig:
+    enabled: bool = False
+    warm_on_startup: bool = False
+    prefer_resident_for_auto_routing: bool = True
+    keep_alive: str | int = -1
+    warm_timeout_seconds: float = 300.0
+    maximum_model_memory_fraction: float = 0.5
+    role_preference: tuple[str, ...] = ("e4b", "e2b", "coder", "reviewer")
+    workers: tuple[ResidentWorkerConfig, ...] = ()
+
+    def __post_init__(self) -> None:
+        worker_ids = [item.worker_id for item in self.workers]
+        if len(set(worker_ids)) != len(worker_ids):
+            raise ValueError("resident model worker assignments must be unique")
+
+
+@dataclass(frozen=True)
+class ControllerConfig:
+    generation_policy: str = "local-generation-allowed"
+
+    def __post_init__(self) -> None:
+        if self.generation_policy not in {"router-only", "local-generation-allowed"}:
+            raise ValueError("controller generation policy is invalid")
 
 
 @dataclass(frozen=True)
@@ -252,6 +353,8 @@ class HarnessConfig:
     metrics: MetricsConfig
     fabric: FabricConfig = field(default_factory=FabricConfig)
     commons: CommonsConfig = field(default_factory=CommonsConfig)
+    model_residency: ModelResidencyConfig = field(default_factory=ModelResidencyConfig)
+    controller: ControllerConfig = field(default_factory=ControllerConfig)
 
 
 @dataclass(frozen=True)
@@ -277,6 +380,7 @@ class RoutePlan:
     profile: TaskProfile
     lane: str | None = None
     semantic: SemanticRouteResult | None = None
+    routing_override: RoutingOverride = field(default_factory=RoutingOverride)
 
     @property
     def all_roles(self) -> tuple[str, ...]:

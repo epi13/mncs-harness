@@ -20,9 +20,10 @@ from typing import Any
 
 from .fabric import FabricExecutionError, FabricSession, FabricStatus
 from .model_selection import ModelSelection, select_installed_model
-from .models import FabricConfig, ModelConfig
+from .models import FabricConfig, ModelConfig, ModelResidencyConfig, RoutingOverride
 
 _INVENTORY_PREFIX = "ELH_FABRIC_MODEL_INVENTORY "
+_RESIDENCY_PREFIX = "ELH_FABRIC_RESIDENCY "
 _SUCCESS_DISPOSITIONS = {"EXECUTED", "DUPLICATE_IDEMPOTENT"}
 
 
@@ -63,16 +64,63 @@ import json
 import urllib.error
 import urllib.request
 
-url = "http://127.0.0.1:11434/api/tags"
 try:
-    with urllib.request.urlopen(url, timeout=10) as response:
-        value = json.loads(response.read().decode("utf-8"))
+    values = {}
+    for name, endpoint in (("installed", "tags"), ("running", "ps"), ("version", "version")):
+        with urllib.request.urlopen("http://127.0.0.1:11434/api/" + endpoint, timeout=10) as response:
+            values[name] = json.loads(response.read().decode("utf-8"))
 except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
     raise SystemExit("worker-local Ollama inventory failed: " + str(exc)) from exc
-models = value.get("models", [])
-if not isinstance(models, list):
+installed = values["installed"].get("models", [])
+running = values["running"].get("models", [])
+if not isinstance(installed, list) or not isinstance(running, list):
     raise SystemExit("worker-local Ollama inventory returned a non-list models field")
-print("ELH_FABRIC_MODEL_INVENTORY " + json.dumps(models, separators=(",", ":"), ensure_ascii=True))
+print("ELH_FABRIC_MODEL_INVENTORY " + json.dumps({
+    "installed": installed,
+    "running": running,
+    "version": values["version"].get("version"),
+}, separators=(",", ":"), ensure_ascii=True))
+'''
+
+
+def _residency_script() -> str:
+    return '''from __future__ import annotations
+
+import json
+from pathlib import Path
+import urllib.error
+import urllib.request
+
+request = json.loads(Path("request.json").read_text(encoding="utf-8"))
+payload = json.dumps({
+    "model": request["model"],
+    "prompt": "",
+    "stream": False,
+    "keep_alive": request["keep_alive"],
+}).encode("utf-8")
+try:
+    warm = urllib.request.Request(
+        "http://127.0.0.1:11434/api/generate",
+        data=payload,
+        method="POST",
+        headers={"Content-Type": "application/json"},
+    )
+    with urllib.request.urlopen(warm, timeout=request["timeout_seconds"]) as response:
+        json.loads(response.read().decode("utf-8"))
+    with urllib.request.urlopen("http://127.0.0.1:11434/api/ps", timeout=10) as response:
+        running = json.loads(response.read().decode("utf-8")).get("models", [])
+except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
+    raise SystemExit("worker-local Ollama residency failed: " + str(exc)) from exc
+if not isinstance(running, list):
+    raise SystemExit("worker-local Ollama residency returned malformed running state")
+selected = next((item for item in running if isinstance(item, dict) and (
+    item.get("name") == request["model"] or item.get("model") == request["model"]
+)), None)
+print("ELH_FABRIC_RESIDENCY " + json.dumps({
+    "model": request["model"],
+    "loaded": selected is not None,
+    "running": selected,
+}, separators=(",", ":"), ensure_ascii=True))
 '''
 
 
@@ -112,12 +160,22 @@ def _supports_request_id(client: Any) -> bool:
 
 
 def _model_capability_entries(models: tuple[dict[str, Any], ...]) -> list[dict[str, Any]]:
+    provider_versions = sorted(
+        {
+            str(model["provider_version"])
+            for model in models
+            if isinstance(model.get("provider_version"), str)
+        }
+    )
     entries: list[dict[str, Any]] = [
         {
             "kind": "runtime",
             "namespace": "ollama",
             "name": "ollama",
-            "attributes": {"interface": "loopback-http-api"},
+            "attributes": {
+                "interface": "loopback-http-api",
+                **({"version": provider_versions[0]} if len(provider_versions) == 1 else {}),
+            },
         }
     ]
     for model in models:
@@ -129,12 +187,19 @@ def _model_capability_entries(models: tuple[dict[str, Any], ...]) -> list[dict[s
         size = model.get("size")
         if isinstance(size, int) and not isinstance(size, bool) and size >= 0:
             attributes["size_bytes"] = size
+        attributes["loaded"] = bool(model.get("loaded", False))
+        for key in ("size_vram", "context_length"):
+            value = model.get(key)
+            if isinstance(value, int) and not isinstance(value, bool) and value >= 0:
+                attributes[key] = value
         factual_fields = {
             "modified_at": model.get("modified_at"),
             "format": details.get("format"),
             "family": details.get("family"),
             "parameter_size": details.get("parameter_size"),
             "quantization": details.get("quantization_level"),
+            "expires_at": model.get("expires_at"),
+            "provider_version": model.get("provider_version"),
         }
         attributes.update(
             {key: value for key, value in factual_fields.items() if isinstance(value, str) and value}
@@ -171,6 +236,10 @@ def _model_from_capability(entry: dict[str, Any]) -> dict[str, Any]:
         model["digest"] = entry["subject_identity"]
     if attributes.get("modified_at") is not None:
         model["modified_at"] = attributes["modified_at"]
+    model["loaded"] = bool(attributes.get("loaded", False))
+    for key in ("size_vram", "context_length", "expires_at", "provider_version"):
+        if attributes.get(key) is not None:
+            model[key] = attributes[key]
     if details:
         model["details"] = details
     return model
@@ -179,8 +248,15 @@ def _model_from_capability(entry: dict[str, Any]) -> dict[str, Any]:
 class InventoryAwareFabricSession(FabricSession):
     """Fabric session that tracks the live model inventory of remote workers."""
 
-    def __init__(self, config: FabricConfig, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        config: FabricConfig,
+        *,
+        residency_config: ModelResidencyConfig | None = None,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(config, **kwargs)
+        self.residency_config = residency_config or ModelResidencyConfig()
         self.model_inventories: dict[str, tuple[dict[str, Any], ...]] = {}
         self.model_inventory_errors: dict[str, str] = {}
         self.capability_api_available = False
@@ -266,9 +342,164 @@ class InventoryAwareFabricSession(FabricSession):
             raise FabricExecutionError(
                 f"model inventory returned invalid JSON on {worker_id}"
             ) from exc
-        if not isinstance(payload, list):
-            raise FabricExecutionError(f"model inventory returned a non-list on {worker_id}")
-        return tuple(dict(item) for item in payload if isinstance(item, dict))
+        if not isinstance(payload, dict):
+            raise FabricExecutionError(f"model inventory returned a non-object on {worker_id}")
+        installed = payload.get("installed")
+        running = payload.get("running")
+        version = payload.get("version")
+        if not isinstance(installed, list) or not isinstance(running, list):
+            raise FabricExecutionError(
+                f"model inventory returned malformed installed/running lists on {worker_id}"
+            )
+        running_by_name = {
+            str(item.get("name") or item.get("model")): item
+            for item in running
+            if isinstance(item, dict) and (item.get("name") or item.get("model"))
+        }
+        models: list[dict[str, Any]] = []
+        for item in installed:
+            if not isinstance(item, dict):
+                continue
+            model = dict(item)
+            name = str(model.get("name") or model.get("model") or "")
+            loaded = running_by_name.get(name)
+            model["loaded"] = loaded is not None
+            if loaded is not None:
+                for key in ("size_vram", "context_length", "expires_at"):
+                    if loaded.get(key) is not None:
+                        model[key] = loaded[key]
+            if isinstance(version, str) and version:
+                model["provider_version"] = version
+            models.append(model)
+        return tuple(models)
+
+    def warm_model(
+        self,
+        worker_id: str,
+        model_name: str,
+        *,
+        keep_alive: str | int = -1,
+        timeout_seconds: float = 300.0,
+    ) -> dict[str, Any]:
+        """Warm one installed model through a bounded exact-worker Fabric job."""
+
+        if (
+            not model_name
+            or len(model_name) > 256
+            or any(ord(character) < 32 for character in model_name)
+        ):
+            raise FabricExecutionError("RESIDENCY_MODEL_INVALID: model name is invalid")
+        if not 1 <= timeout_seconds <= 3600:
+            raise FabricExecutionError("RESIDENCY_TIMEOUT_INVALID: warm timeout is out of bounds")
+        status = self.status()
+        worker = next(
+            (item for item in status.workers if item.get("worker_id") == worker_id),
+            None,
+        )
+        if worker is None:
+            raise FabricExecutionError(f"RESIDENCY_WORKER_UNKNOWN: {worker_id}")
+        if worker.get("availability") != "AVAILABLE":
+            raise FabricExecutionError(f"RESIDENCY_WORKER_UNAVAILABLE: {worker_id}")
+        if worker.get("model_inventory_status") != "CURRENT":
+            raise FabricExecutionError(f"RESIDENCY_INVENTORY_NOT_CURRENT: {worker_id}")
+        inventory = worker.get("model_inventory") or []
+        if not any(
+            str(item.get("name") or item.get("model") or "") == model_name
+            for item in inventory
+            if isinstance(item, dict)
+        ):
+            raise FabricExecutionError(
+                f"RESIDENCY_MODEL_NOT_INSTALLED: {model_name} on {worker_id}"
+            )
+        if self.client is None:
+            raise FabricExecutionError("Fabric client is unavailable")
+        request = {
+            "model": model_name,
+            "keep_alive": keep_alive,
+            "timeout_seconds": timeout_seconds,
+        }
+        self.config.state_path.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(
+            prefix="elh-fabric-residency-", dir=self.config.state_path.parent
+        ) as directory:
+            source_root = Path(directory)
+            (source_root / "residency.py").write_text(
+                _residency_script(), encoding="utf-8"
+            )
+            (source_root / "request.json").write_text(
+                json.dumps(request, ensure_ascii=True, separators=(",", ":")),
+                encoding="utf-8",
+            )
+            from mncs_fabric.artifacts import build_manifest
+            from mncs_fabric.bundles import build_bundle_archive
+            from mncs_fabric.models import validate_job_plan
+
+            manifest = build_manifest(source_root)
+            archive = source_root / "execution-bundle.zip"
+            build_bundle_archive(source_root, archive)
+            plan = validate_job_plan(
+                {
+                    "schema_version": "mncs-fabric.job-plan.v0.1",
+                    "job_id": "elh-worker-model-residency",
+                    "candidate_identity": _identity(
+                        {"worker_id": worker_id, "residency": request}
+                    ),
+                    "evaluator_identity": None,
+                    "artifact_manifest_identity": manifest["manifest_identity"],
+                    "argv": ["@python", "residency.py"],
+                    "working_directory": ".",
+                    "timeout_seconds": timeout_seconds + 5.0,
+                    "output_limit_bytes": 256 * 1024,
+                    "environment": {"PYTHONHASHSEED": "0"},
+                    "required_capabilities": ["python"],
+                    "result_paths": [],
+                    "network_policy": "UNRESTRICTED",
+                }
+            )
+            result = self.client.execute(
+                plan,
+                manifest,
+                worker_id=worker_id,
+                execution_bundle_archive=archive,
+                request_id=_fresh_request_id(f"elh-residency:{worker_id}"),
+            )[0]
+        record = result.get("record") or {}
+        if not _execution_succeeded(result, record):
+            reason = _execution_failure(result, record, "residency warm failed")
+            raise FabricExecutionError(
+                f"RESIDENCY_WARM_FAILED: {worker_id}/{model_name}: {reason}"
+            )
+        response_line = next(
+            (
+                line
+                for line in ((record.get("stdout") or {}).get("captured_utf8") or "").splitlines()
+                if line.startswith(_RESIDENCY_PREFIX)
+            ),
+            None,
+        )
+        if response_line is None:
+            raise FabricExecutionError("RESIDENCY_RESPONSE_MALFORMED: no residency result")
+        try:
+            provider = json.loads(response_line.removeprefix(_RESIDENCY_PREFIX))
+        except json.JSONDecodeError as exc:
+            raise FabricExecutionError(
+                "RESIDENCY_RESPONSE_MALFORMED: invalid JSON"
+            ) from exc
+        if not isinstance(provider, dict) or provider.get("loaded") is not True:
+            raise FabricExecutionError(
+                f"RESIDENCY_NOT_LOADED: provider did not report {model_name} loaded"
+            )
+        self._refresh_model_inventories()
+        return {
+            "outcome": "PASS",
+            "worker_id": worker_id,
+            "model": model_name,
+            "loaded": True,
+            "provider_observation": provider,
+            "fabric_request_identity": result.get("request_identity"),
+            "fabric_record_identity": result.get("record_identity"),
+            "fabric_receipt_identity": result.get("receipt_identity"),
+        }
 
     def _refresh_model_inventories(self) -> None:
         if self.client is None:
@@ -367,6 +598,7 @@ class InventoryAwareFabricSession(FabricSession):
         self,
         role: str,
         model: ModelConfig,
+        routing_override: RoutingOverride | None = None,
     ) -> tuple[ModelConfig, ModelSelection | None]:
         """Select a worker-installed model for one Fabric-backed role.
 
@@ -377,38 +609,223 @@ class InventoryAwareFabricSession(FabricSession):
 
         if model.provider != "fabric":
             return model, None
+        requested = routing_override or RoutingOverride()
         status = self.status()
         workers = [dict(worker) for worker in status.workers]
-        candidates = [
+        current_candidates = [
             (str(worker.get("worker_id")), self._worker_inventory(worker))
             for worker in workers
-            if worker.get("source") == "remote" and worker.get("availability") == "AVAILABLE"
+            if worker.get("source") in {"remote", "registry"}
+            and worker.get("availability") == "AVAILABLE"
+            and worker.get("model_inventory_status") == "CURRENT"
         ]
-        candidates = [(worker_id, inventory) for worker_id, inventory in candidates if inventory]
+        candidates = [
+            (worker_id, inventory)
+            for worker_id, inventory in current_candidates
+            if inventory
+        ]
+        explicit_resident = {
+            item.worker_id: item.model
+            for item in self.residency_config.workers
+            if item.model is not None
+        }
+
+        def named(inventory: tuple[dict[str, Any], ...], name: str) -> dict[str, Any] | None:
+            return next(
+                (
+                    item
+                    for item in inventory
+                    if str(item.get("name") or item.get("model") or "") == name
+                ),
+                None,
+            )
+
+        def selected(
+            worker_id: str,
+            selected_model: str,
+            inventory: tuple[dict[str, Any], ...],
+            reason: str,
+        ) -> ModelSelection:
+            item = named(inventory, selected_model) or {}
+            size = item.get("size")
+            return ModelSelection(
+                role=role,
+                configured_model=model.name,
+                selected_model=selected_model,
+                stored_size_bytes=(
+                    size if isinstance(size, int) and not isinstance(size, bool) else 0
+                ),
+                reason=reason,
+                worker_id=worker_id,
+                loaded=bool(item.get("loaded", False)),
+                resident=explicit_resident.get(worker_id) == selected_model,
+                route_mode=requested.mode,
+            )
+
+        def unavailable(
+            code: str,
+            reason: str,
+            *,
+            worker_id: str | None = None,
+            selected_model: str | None = None,
+        ) -> ModelSelection:
+            return ModelSelection(
+                role=role,
+                configured_model=model.name,
+                selected_model=selected_model or model.name,
+                stored_size_bytes=model.model_storage_bytes,
+                reason=f"{code}: {reason}",
+                worker_id=worker_id,
+                inventory_status=code,
+                available=False,
+                route_mode=requested.mode,
+            )
+
         selection: ModelSelection | None = None
-        for worker_id, inventory in sorted(candidates):
-            exact = select_installed_model(role, model.name, inventory)
-            if exact is not None and exact.selected_model == model.name:
-                selection = replace(exact, worker_id=worker_id)
-                break
-        if selection is None and candidates:
+
+        if requested.mode in {"WORKER", "WORKER_MODEL"}:
+            target = next(
+                (worker for worker in workers if worker.get("worker_id") == requested.worker),
+                None,
+            )
+            failure: ModelSelection | None = None
+            if target is None or target.get("availability") != "AVAILABLE":
+                failure = unavailable(
+                    "PINNED_WORKER_UNAVAILABLE",
+                    f"selected worker {requested.worker} is unavailable or unknown",
+                    worker_id=requested.worker,
+                    selected_model=requested.model,
+                )
+            elif target.get("model_inventory_status") != "CURRENT":
+                failure = unavailable(
+                    "PINNED_INVENTORY_NOT_CURRENT",
+                    f"selected worker {requested.worker} has no current model inventory",
+                    worker_id=requested.worker,
+                    selected_model=requested.model,
+                )
+            else:
+                inventory = self._worker_inventory(target)
+                if requested.mode == "WORKER_MODEL":
+                    if named(inventory, str(requested.model)) is None:
+                        failure = unavailable(
+                            "PINNED_MODEL_MISSING",
+                            f"model {requested.model} is not reported on {requested.worker}",
+                            worker_id=requested.worker,
+                            selected_model=requested.model,
+                        )
+                    else:
+                        selection = selected(
+                            str(requested.worker),
+                            str(requested.model),
+                            inventory,
+                            "operator pinned the exact Fabric worker/model pair",
+                        )
+                else:
+                    resolved = select_installed_model(role, model.name, inventory)
+                    if resolved is None:
+                        failure = unavailable(
+                            "PINNED_WORKER_HAS_NO_ELIGIBLE_MODEL",
+                            f"selected worker {requested.worker} has no eligible installed model",
+                            worker_id=requested.worker,
+                        )
+                    else:
+                        selection = selected(
+                            str(requested.worker),
+                            resolved.selected_model,
+                            inventory,
+                            "operator pinned the Fabric worker; " + resolved.reason,
+                        )
+            if selection is None and failure is not None and not requested.allow_fallback:
+                selection = failure
+
+        if selection is None and requested.mode == "MODEL":
+            eligible = [
+                (worker_id, inventory)
+                for worker_id, inventory in candidates
+                if named(inventory, str(requested.model)) is not None
+            ]
+            if eligible:
+                eligible.sort(
+                    key=lambda item: (
+                        not bool(named(item[1], str(requested.model)).get("loaded", False)),
+                        explicit_resident.get(item[0]) != requested.model,
+                        item[0],
+                    )
+                )
+                worker_id, inventory = eligible[0]
+                selection = selected(
+                    worker_id,
+                    str(requested.model),
+                    inventory,
+                    "operator selected the exact model; worker resolved from current inventory",
+                )
+            elif not requested.allow_fallback:
+                selection = unavailable(
+                    "PINNED_MODEL_UNAVAILABLE",
+                    f"model {requested.model} is not currently reported by an available worker",
+                    selected_model=requested.model,
+                )
+
+        manual_failed_open = (
+            requested.mode != "AUTO"
+            and requested.mode != "ROLE"
+            and selection is None
+            and requested.allow_fallback
+        )
+        auto_allowed = requested.mode in {"AUTO", "ROLE"} or manual_failed_open
+        if auto_allowed:
+            exact_candidates = [
+                (worker_id, inventory)
+                for worker_id, inventory in candidates
+                if named(inventory, model.name) is not None
+            ]
+            if exact_candidates:
+                exact_candidates.sort(
+                    key=lambda item: (
+                        not bool(named(item[1], model.name).get("loaded", False))
+                        if self.residency_config.prefer_resident_for_auto_routing
+                        else False,
+                        explicit_resident.get(item[0]) != model.name,
+                        item[0],
+                    )
+                )
+                worker_id, inventory = exact_candidates[0]
+                reason = "configured model is installed on the Fabric worker inventory"
+                if named(inventory, model.name).get("loaded"):
+                    reason += "; preferred an already loaded eligible instance"
+                if manual_failed_open:
+                    reason = "explicit manual fallback enabled; " + reason
+                selection = selected(worker_id, model.name, inventory, reason)
+
+        if selection is None and auto_allowed and candidates:
             combined = [item for _worker_id, inventory in candidates for item in inventory]
             fallback = select_installed_model(role, model.name, combined)
             if fallback is not None:
-                eligible = sorted(
-                    worker_id
+                eligible = [
+                    (worker_id, inventory)
                     for worker_id, inventory in candidates
-                    if any(
-                        str(item.get("name") or item.get("model") or "")
-                        == fallback.selected_model
-                        for item in inventory
-                    )
-                )
+                    if named(inventory, fallback.selected_model) is not None
+                ]
                 if eligible:
-                    selection = replace(fallback, worker_id=eligible[0])
-        if selection is None and (
-            self.capability_api_available or (self.enabled and status.state != "available")
-        ):
+                    eligible.sort(
+                        key=lambda item: (
+                            not bool(
+                                named(item[1], fallback.selected_model).get("loaded", False)
+                            )
+                            if self.residency_config.prefer_resident_for_auto_routing
+                            else False,
+                            explicit_resident.get(item[0]) != fallback.selected_model,
+                            item[0],
+                        )
+                    )
+                    worker_id, inventory = eligible[0]
+                    reason = fallback.reason
+                    if manual_failed_open:
+                        reason = "explicit manual fallback enabled; " + reason
+                    selection = selected(
+                        worker_id, fallback.selected_model, inventory, reason
+                    )
+        if selection is None and auto_allowed and self.enabled:
             inventory_status = self._unavailable_status(workers, status.state)
             reason = {
                 "FABRIC_UNAVAILABLE": "Fabric is unavailable; no current model placement is known",
@@ -426,6 +843,7 @@ class InventoryAwareFabricSession(FabricSession):
                 worker_id=None,
                 inventory_status=inventory_status,
                 available=False,
+                route_mode=requested.mode,
             )
         selected_name = selection.selected_model if selection is not None else model.name
         selected_size = (
@@ -480,6 +898,15 @@ class InventoryAwareFabricSession(FabricSession):
                     }
                 )
                 item["model_count"] = len(item["model_names"])
+                item["loaded_model_names"] = sorted(
+                    {
+                        str(model.get("name") or model.get("model"))
+                        for model in inventory
+                        if model.get("loaded")
+                        and (model.get("name") or model.get("model"))
+                    }
+                )
+                item["loaded_model_count"] = len(item["loaded_model_names"])
             if worker_id in self.model_inventory_errors:
                 item["model_inventory_error"] = self.model_inventory_errors[worker_id]
                 item["model_inventory_status"] = "UNAVAILABLE"

@@ -1,5 +1,21 @@
 # Roadmap
 
+## Completed in 0.6.0
+
+- Fabric-owned persistent worker registry consumption with explicit table
+  compatibility and fail-closed duplicate precedence.
+- Per-worker installed/loaded model observations and one bounded Harness-owned
+  resident generation-model assignment per capable worker.
+- Controller generation policy, warm-aware automatic routing, and typed role,
+  model, worker, and exact worker/model operator overrides.
+- Unified fleet view for runtime routing, CLI, Doctor, Models, and TUI.
+- Direct Commons CLI and TUI browsing over the existing controller-local MCP seam.
+
+## Still future
+
+- Distributed DAG scheduling, model migration, worker-local Commons, remote MCP,
+  federation, and automatic multi-agent reduction remain out of scope.
+
 ## 0.1 — functional local alpha
 
 - deterministic model routing;

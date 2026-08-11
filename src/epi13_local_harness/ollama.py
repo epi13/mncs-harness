@@ -58,6 +58,13 @@ class OllamaClient:
     def tags(self) -> list[dict[str, Any]]:
         return list(self._request("GET", "/api/tags").get("models", []))
 
+    def running(self) -> list[dict[str, Any]]:
+        value = self._request("GET", "/api/ps")
+        models = value.get("models", [])
+        if not isinstance(models, list):
+            raise OllamaError("Ollama returned a malformed running-model inventory")
+        return [dict(model) for model in models if isinstance(model, dict)]
+
     def model_names(self) -> set[str]:
         names: set[str] = set()
         for model in self.tags():
@@ -78,6 +85,15 @@ class OllamaClient:
                 return size
             return None
         return None
+
+    def set_residency(self, name: str, keep_alive: str | int) -> dict[str, Any]:
+        if not name or len(name) > 256 or any(ord(character) < 32 for character in name):
+            raise OllamaError("Ollama model name is invalid")
+        return self._request(
+            "POST",
+            "/api/generate",
+            {"model": name, "prompt": "", "stream": False, "keep_alive": keep_alive},
+        )
 
     @staticmethod
     def encode_images(paths: list[Path] | None) -> list[str]:

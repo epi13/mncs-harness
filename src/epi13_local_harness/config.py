@@ -9,14 +9,17 @@ from typing import Any
 
 from .models import (
     CommonsConfig,
+    ControllerConfig,
     FabricConfig,
     FabricWorkerConfig,
     HarnessConfig,
     LaneConfig,
     MetricsConfig,
     ModelConfig,
+    ModelResidencyConfig,
     OllamaConfig,
     PolicyConfig,
+    ResidentWorkerConfig,
     RouterConfig,
     RoutingConfig,
     VerificationConfig,
@@ -80,6 +83,8 @@ def load_config(path: Path | None = None) -> HarnessConfig:
     metrics_raw = dict(raw.get("metrics", {}))
     fabric_raw = dict(raw.get("fabric", {}))
     commons_raw = dict(raw.get("commons", {}))
+    residency_raw = dict(raw.get("model_residency", {}))
+    controller_raw = dict(raw.get("controller", {}))
     models_raw = dict(raw.get("models", {}))
     lanes_raw = dict(raw.get("lanes", {}))
 
@@ -227,6 +232,8 @@ def load_config(path: Path | None = None) -> HarnessConfig:
         ),
         fabric=_parse_fabric_config(fabric_raw),
         commons=_parse_commons_config(commons_raw),
+        model_residency=_parse_model_residency_config(residency_raw),
+        controller=_parse_controller_config(controller_raw),
     )
 
 
@@ -373,5 +380,65 @@ def _parse_fabric_config(raw: dict[str, Any]) -> FabricConfig:
         ).rstrip("/"),
         provider_timeout_seconds=provider_timeout,
         job_timeout_overhead_seconds=job_timeout_overhead,
+        registry_path=(
+            Path(str(raw["registry_path"])).expanduser()
+            if raw.get("registry_path") is not None
+            else None
+        ),
         workers=tuple(sorted(workers, key=lambda item: item.worker_id)),
     )
+
+
+def _parse_model_residency_config(raw: dict[str, Any]) -> ModelResidencyConfig:
+    workers_raw = raw.get("workers", {})
+    if not isinstance(workers_raw, dict):
+        raise ValueError("model_residency.workers must be a TOML table")
+    workers: list[ResidentWorkerConfig] = []
+    for worker_id, item in workers_raw.items():
+        if not isinstance(item, dict):
+            raise ValueError(f"model_residency.workers.{worker_id} must be a TOML table")
+        model = item.get("model")
+        workers.append(
+            ResidentWorkerConfig(
+                worker_id=str(worker_id),
+                model=str(model) if model is not None else None,
+            )
+        )
+    keep_alive = raw.get("keep_alive", -1)
+    if not isinstance(keep_alive, (str, int)) or isinstance(keep_alive, bool):
+        raise ValueError("model_residency.keep_alive must be a duration or integer")
+    warm_timeout = float(raw.get("warm_timeout_seconds", 300.0))
+    memory_fraction = float(raw.get("maximum_model_memory_fraction", 0.5))
+    role_preference = tuple(
+        str(value)
+        for value in raw.get(
+            "role_preference", ["e4b", "e2b", "coder", "reviewer"]
+        )
+    )
+    if not 1 <= warm_timeout <= 3600:
+        raise ValueError("model_residency.warm_timeout_seconds must be between 1 and 3600")
+    if not 0.05 <= memory_fraction <= 0.9:
+        raise ValueError(
+            "model_residency.maximum_model_memory_fraction must be between 0.05 and 0.9"
+        )
+    if not role_preference or len(set(role_preference)) != len(role_preference):
+        raise ValueError("model_residency.role_preference must be unique and non-empty")
+    return ModelResidencyConfig(
+        enabled=bool(raw.get("enabled", False)),
+        warm_on_startup=bool(raw.get("warm_on_startup", False)),
+        prefer_resident_for_auto_routing=bool(
+            raw.get("prefer_resident_for_auto_routing", True)
+        ),
+        keep_alive=keep_alive,
+        warm_timeout_seconds=warm_timeout,
+        maximum_model_memory_fraction=memory_fraction,
+        role_preference=role_preference,
+        workers=tuple(sorted(workers, key=lambda item: item.worker_id)),
+    )
+
+
+def _parse_controller_config(raw: dict[str, Any]) -> ControllerConfig:
+    policy = str(raw.get("generation_policy", "local-generation-allowed"))
+    if policy not in {"router-only", "local-generation-allowed"}:
+        raise ValueError("controller.generation_policy is invalid")
+    return ControllerConfig(generation_policy=policy)

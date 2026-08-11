@@ -227,6 +227,9 @@ class FabricSession:
 
             registered = 0
             errors: list[str] = []
+            # Explicit worker tables are backward-compatible operator overrides.
+            # Registry entries with the same identity must retain the same
+            # endpoint; FabricClient rejects contradictory duplicates.
             for worker in self.config.workers:
                 try:
                     if worker.kind == "local":
@@ -268,6 +271,18 @@ class FabricSession:
                     registered += 1
                 except Exception as exc:  # configuration is reported, not hidden
                     errors.append(f"{worker.worker_id}: {exc}")
+            if self.config.registry_path is not None:
+                try:
+                    report = self.client.load_registry(self.config.registry_path)
+                    registered = len(getattr(self.client, "remote_configs", {})) + len(
+                        getattr(getattr(self.client, "local", None), "workers", {})
+                    )
+                    errors.extend(
+                        f"{worker_id}: {detail}"
+                        for worker_id, detail in report.get("errors", {}).items()
+                    )
+                except Exception as exc:
+                    errors.append(f"registry: {exc}")
             if self.config.refresh_on_startup and registered:
                 self._refresh_remote_workers()
                 errors.extend(self._ensure_cuda_runtime_observations())
@@ -290,7 +305,14 @@ class FabricSession:
     def _refresh_remote_workers(self) -> None:
         if self.client is None:
             return
-        remote_ids = [worker.worker_id for worker in self.config.workers if worker.kind == "remote"]
+        remote_ids = sorted(
+            getattr(self.client, "remote_configs", {})
+            or [
+                worker.worker_id
+                for worker in self.config.workers
+                if worker.kind == "remote"
+            ]
+        )
         if not remote_ids:
             return
         failures: list[str] = []

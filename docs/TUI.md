@@ -1,5 +1,16 @@
 # Terminal user interface
 
+The sidebar carries a session-persistent typed routing override: Automatic, Role,
+Exact model, Exact worker, or Worker + model. Worker choices include known
+unavailable registry members; model choices are the union of current per-worker
+inventories and mark loaded (`●`) versus installed (`○`) state. Exact pins fail
+closed unless the visible fallback checkbox is enabled.
+
+The initial screen shows Fabric nodes, resident policy state, and controller-local
+Commons status before a prompt is entered. The Commons control browses status and
+open WorkRequests through the existing MCP session and renders all content as
+untrusted text.
+
 The Textual-based terminal UI exposes the existing policy-aware harness without
 implementing a second agent. Routing, Ollama calls, tools, workspace confinement,
 verification, escalation, and metrics all remain in the Python harness.

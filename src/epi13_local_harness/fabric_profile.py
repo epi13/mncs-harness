@@ -143,19 +143,23 @@ def configure_remote(args: argparse.Namespace) -> int:
     _ensure_user_config(path)
     backup = _backup_once(path)
     text = path.read_text(encoding="utf-8")
+    fabric_values: dict[str, object] = {
+        "enabled": True,
+        "controller_id": args.controller_id,
+        "fallback_to_local": args.fallback_to_local,
+        "refresh_on_startup": True,
+        "refresh_timeout_seconds": 5.0,
+        "runtime_probe_on_refresh": True,
+        "runtime_probe_timeout_seconds": 45.0,
+        "runtime_probe_max_age_seconds": 1800.0,
+    }
+    registry_path = getattr(args, "registry_path", None)
+    if registry_path is not None:
+        fabric_values["registry_path"] = str(registry_path.expanduser())
     text = upsert_toml_section(
         text,
         "fabric",
-        {
-            "enabled": True,
-            "controller_id": args.controller_id,
-            "fallback_to_local": args.fallback_to_local,
-            "refresh_on_startup": True,
-            "refresh_timeout_seconds": 5.0,
-            "runtime_probe_on_refresh": True,
-            "runtime_probe_timeout_seconds": 45.0,
-            "runtime_probe_max_age_seconds": 1800.0,
-        },
+        fabric_values,
     )
     text = upsert_toml_section(
         text,
@@ -244,6 +248,9 @@ def show_fabric(args: argparse.Namespace) -> int:
         "config": str(path),
         "enabled": config.fabric.enabled,
         "controller_id": config.fabric.controller_id,
+        "registry_path": (
+            str(config.fabric.registry_path) if config.fabric.registry_path else None
+        ),
         "fallback_to_local": config.fabric.fallback_to_local,
         "runtime_probe_on_refresh": config.fabric.runtime_probe_on_refresh,
         "runtime_probe_timeout_seconds": config.fabric.runtime_probe_timeout_seconds,
@@ -298,6 +305,11 @@ def build_parser() -> argparse.ArgumentParser:
     configure.add_argument("--client-certificate", type=Path, required=True)
     configure.add_argument("--client-key", type=Path, required=True)
     configure.add_argument("--trust-state", type=Path, required=True)
+    configure.add_argument(
+        "--registry-path",
+        type=Path,
+        help="Point Harness at an operator-owned Fabric worker registry",
+    )
     configure.add_argument("--capability", action="append")
     configure.add_argument(
         "--accelerator-role",
