@@ -143,6 +143,11 @@ class CommonsIntegrationTests(unittest.TestCase):
             self.assertFalse((root / "escaped").exists())
 
     def test_mcp_termination_mismatch_and_tool_collision_fail_closed(self) -> None:
+        try:
+            import mcp  # noqa: F401
+            import mncs_commons  # noqa: F401
+        except ImportError:
+            self.skipTest("Commons MCP optional dependencies are unavailable")
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
 

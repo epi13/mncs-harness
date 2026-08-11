@@ -447,6 +447,11 @@ class DistributedSessionIntegrationTests(unittest.TestCase):
     def test_worker_disappearing_between_commons_tool_turns_fails_without_authority_fallback(
         self,
     ) -> None:
+        try:
+            import mcp  # noqa: F401
+            import mncs_commons  # noqa: F401
+        except ImportError:
+            self.skipTest("Commons MCP optional dependencies are unavailable")
         class DisappearingSession:
             def __init__(self) -> None:
                 self.calls = 0
