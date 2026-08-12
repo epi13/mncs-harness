@@ -76,6 +76,7 @@ class FabricTests(unittest.TestCase):
             root = Path(directory)
             config = FabricConfig(
                 enabled=True,
+                controller_mode="embedded",
                 state_path=root / "fabric.jsonl",
                 workers=(
                     FabricWorkerConfig(
@@ -176,7 +177,7 @@ class FabricTests(unittest.TestCase):
             base = load_config(Path("/missing/config.toml"))
             config = replace(
                 base,
-                fabric=FabricConfig(enabled=True),
+                fabric=FabricConfig(enabled=True, controller_mode="embedded"),
                 metrics=MetricsConfig(root / "metrics.sqlite3", False),
             )
             agent = LocalAgent(config)
@@ -206,6 +207,7 @@ class FabricTests(unittest.TestCase):
                 model = replace(base.models["e2b"], provider="fabric", execution_device="cpu")
                 config = FabricConfig(
                     enabled=True,
+                    controller_mode="embedded",
                     state_path=root / "fabric.jsonl",
                     provider_ollama_base_url=f"http://127.0.0.1:{server.server_port}",
                     workers=(

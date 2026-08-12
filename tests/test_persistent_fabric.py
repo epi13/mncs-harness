@@ -9,7 +9,7 @@ from pathlib import Path
 
 from epi13_local_harness.config import load_config
 from epi13_local_harness.fabric import FabricExecutionError, FabricSession
-from epi13_local_harness.models import FabricConfig
+from epi13_local_harness.models import FabricConfig, FabricWorkerConfig
 
 
 @unittest.skipUnless(importlib.util.find_spec("mncs_fabric"), "mncs-fabric is not installed")
@@ -124,6 +124,14 @@ class PersistentFabricTests(unittest.TestCase):
 
 
 class PersistentFabricConfigTests(unittest.TestCase):
+    def test_direct_and_toml_defaults_are_service_without_worker_ownership(self) -> None:
+        direct = FabricConfig()
+        loaded = load_config(Path("/definitely/not/a/real/config.toml")).fabric
+        self.assertEqual(direct.controller_mode, "service")
+        self.assertEqual(loaded.controller_mode, direct.controller_mode)
+        self.assertEqual(direct.workers, ())
+        self.assertIsNone(direct.registry_path)
+
     def test_bundled_config_defaults_to_service_without_worker_ownership(self) -> None:
         config = load_config(Path("/definitely/not/a/real/config.toml"))
         self.assertEqual(config.fabric.controller_mode, "service")
@@ -144,6 +152,20 @@ registry_path = "workers.json"
             )
             with self.assertRaisesRegex(ValueError, "controller_mode=service"):
                 load_config(path)
+
+    def test_direct_service_config_rejects_legacy_worker_ownership(self) -> None:
+        with self.assertRaisesRegex(ValueError, "controller_mode=service"):
+            FabricConfig(
+                controller_mode="service",
+                registry_path=Path("workers.json"),
+                workers=(
+                    FabricWorkerConfig(
+                        worker_id="legacy",
+                        kind="remote",
+                        state_path=Path("worker.jsonl"),
+                    ),
+                ),
+            )
 
 
 if __name__ == "__main__":
