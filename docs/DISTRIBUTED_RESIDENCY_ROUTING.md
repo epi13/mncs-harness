@@ -1,6 +1,6 @@
 # Distributed residency and manual routing
 
-Local Harness 0.6 consumes the Fabric operator registry, observes each worker's
+Local Harness 0.6 consumes the persistent Fabric fleet, observes each worker's
 installed and loaded Ollama models, selects at most one preferred resident
 generation model per worker, and keeps semantic selection and operator policy
 above Fabric.
@@ -11,7 +11,8 @@ generation_policy = "router-only"
 
 [fabric]
 enabled = true
-registry_path = "~/.local/state/mncs-fabric/workers.json"
+controller_mode = "service"
+service_socket = "~/.local/state/mncs-fabric/controller.sock"
 
 [model_residency]
 enabled = true
@@ -29,6 +30,11 @@ An explicit assignment wins. Otherwise Harness chooses only among its configured
 role preferences that a current worker inventory actually reports and requires
 bounded model-size and host-memory facts before warming. Ollama `/api/ps` is the
 loaded-state observation; `/api/generate` with an empty prompt and configured
+In service mode, current Fabric 0.2.0a15 cannot run these probes over the
+consumer socket. Use `controller_mode = "transitional"` only for the explicit
+embedded-direct compatibility path; otherwise inventory and warming remain
+unsupported until Fabric adds persistent execution dispatch.
+
 `keep_alive` is the provider-specific warm operation. Fabric merely transports
 the bounded loopback probe/job and records evidence.
 
@@ -89,6 +95,10 @@ The TUI exposes the same per-worker inventory, resident state, route override,
 and Commons browser. Commons content is always labelled untrusted and rendered as
 data; it is never converted into a tool invocation.
 
-Compatibility floor: `mncs-fabric>=0.2.0a13,<0.3` and
+Compatibility floor: `mncs-fabric>=0.2.0a15,<0.3` for service mode. Embedded
+compatibility may remain on older supported Fabric releases. Persistent service
+mode currently cannot run the bounded inventory/warm probes because execution
+dispatch and capability ingestion are not implemented over the consumer socket.
+Use explicit transitional mode for that compatibility path.
 `mncs-commons[mcp]>=0.5.0.dev1,<0.6`. These package versions are separate from
 Fabric's wire protocol and Commons' record, exchange, and node profiles.

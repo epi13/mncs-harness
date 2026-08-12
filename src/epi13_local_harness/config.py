@@ -264,6 +264,9 @@ def _parse_commons_config(raw: dict[str, Any]) -> CommonsConfig:
 
 
 def _parse_fabric_config(raw: dict[str, Any]) -> FabricConfig:
+    controller_mode = str(raw.get("controller_mode", "service"))
+    if controller_mode not in {"service", "embedded", "transitional"}:
+        raise ValueError("fabric.controller_mode must be service, embedded, or transitional")
     workers_raw = raw.get("workers", {})
     if not isinstance(workers_raw, dict):
         raise ValueError("fabric.workers must be a TOML table")
@@ -340,6 +343,22 @@ def _parse_fabric_config(raw: dict[str, Any]) -> FabricConfig:
             or not 0 < worker.execution_timeout_overhead_seconds <= 300
         ):
             raise ValueError(f"fabric worker {worker.worker_id} timeout bounds are invalid")
+    registry_value = (
+        Path(str(raw["registry_path"])).expanduser()
+        if raw.get("registry_path") is not None
+        else None
+    )
+    if controller_mode == "service" and (workers or registry_value is not None):
+        raise ValueError(
+            "fabric.controller_mode=service cannot contain fabric.workers or registry_path; "
+            "use controller_mode=embedded or transitional for explicit compatibility"
+        )
+    service_timeout = float(raw.get("service_timeout_seconds", 5.0))
+    if not 0.1 <= service_timeout <= 30:
+        raise ValueError("fabric.service_timeout_seconds must be between 0.1 and 30")
+    consumer_identity = str(raw.get("consumer_identity", "epi13-local-harness"))
+    if not consumer_identity or len(consumer_identity) > 128 or "\x00" in consumer_identity:
+        raise ValueError("fabric.consumer_identity must be bounded non-empty text")
     runtime_probe_timeout = float(raw.get("runtime_probe_timeout_seconds", 45.0))
     runtime_probe_max_age = float(raw.get("runtime_probe_max_age_seconds", 1800.0))
     if runtime_probe_timeout <= 0 or runtime_probe_timeout > 300:
@@ -357,7 +376,13 @@ def _parse_fabric_config(raw: dict[str, Any]) -> FabricConfig:
         raise ValueError("Fabric provider/job timeout bounds are invalid")
     return FabricConfig(
         enabled=bool(raw.get("enabled", False)),
+        controller_mode=controller_mode,
         controller_id=str(raw.get("controller_id", "epi13-local-harness")),
+        service_socket=Path(
+            str(raw.get("service_socket", "~/.local/state/mncs-fabric/controller.sock"))
+        ).expanduser(),
+        service_timeout_seconds=service_timeout,
+        consumer_identity=consumer_identity,
         state_path=Path(
             str(raw.get("state_path", "~/.local/state/epi13-local-harness/fabric.jsonl"))
         ).expanduser(),
@@ -380,11 +405,7 @@ def _parse_fabric_config(raw: dict[str, Any]) -> FabricConfig:
         ).rstrip("/"),
         provider_timeout_seconds=provider_timeout,
         job_timeout_overhead_seconds=job_timeout_overhead,
-        registry_path=(
-            Path(str(raw["registry_path"])).expanduser()
-            if raw.get("registry_path") is not None
-            else None
-        ),
+        registry_path=registry_value,
         workers=tuple(sorted(workers, key=lambda item: item.worker_id)),
     )
 

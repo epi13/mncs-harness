@@ -81,7 +81,9 @@ class LiveWorkerInventoryTests(unittest.TestCase):
 
     def test_failed_fresh_scan_drops_stale_inventory(self) -> None:
         base = load_config(None).fabric
-        session = InventoryAwareFabricSession(replace(base, enabled=True))
+        session = InventoryAwareFabricSession(
+            replace(base, enabled=True, controller_mode="embedded")
+        )
         session.client = _WorkerListClient()
         session._state = "available"
         calls = 0

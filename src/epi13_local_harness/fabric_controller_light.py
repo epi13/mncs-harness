@@ -1,4 +1,4 @@
-"""Controller-light Fabric profile and inventory-aware status command."""
+"""Router-only Fabric profile and inventory-aware status command."""
 
 from __future__ import annotations
 
@@ -11,7 +11,8 @@ from typing import Sequence
 from . import fabric_profile as _profile
 from . import fabric_profile_inventory as _base
 
-_CONTROLLER_LIGHT = "controller-light"
+_ROUTER_ONLY = "router-only"
+_CONTROLLER_LIGHT = "controller-light"  # compatibility alias
 _STATUS = "status"
 
 
@@ -89,7 +90,7 @@ def _apply_controller_light(config_path: Path | None) -> int:
         "outcome": "PASS",
         "config": str(path),
         "backup": str(backup),
-        "controller_mode": "light-router-only",
+        "controller_mode": "fabric-consumer-router",
         "semantic_router_enabled": effective.router.enable_semantic_routing,
         "semantic_router_state": router.state,
         "semantic_router_model": router.model,
@@ -152,10 +153,10 @@ def _target_parser(command: str) -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="elh-fabric")
     parser.add_argument("--config", type=Path, help="Harness TOML configuration path")
     subparsers = parser.add_subparsers(dest="command", required=True)
-    if command == _CONTROLLER_LIGHT:
+    if command in {_ROUTER_ONLY, _CONTROLLER_LIGHT}:
         action = subparsers.add_parser(
-            _CONTROLLER_LIGHT,
-            help="Keep only the lightweight semantic router local and route generation through Fabric",
+            command,
+            help="Keep semantic routing local while consuming Fabric for generation",
         )
         action.set_defaults(func=lambda args: _apply_controller_light(args.config))
     else:
@@ -166,7 +167,7 @@ def _target_parser(command: str) -> argparse.ArgumentParser:
 
 def main(argv: Sequence[str] | None = None) -> int:
     raw = list(argv if argv is not None else sys.argv[1:])
-    command = next((item for item in raw if item in {_CONTROLLER_LIGHT, _STATUS}), None)
+    command = next((item for item in raw if item in {_ROUTER_ONLY, _CONTROLLER_LIGHT, _STATUS}), None)
     if command is None:
         return _base.main(raw)
     parser = _target_parser(command)

@@ -125,3 +125,16 @@ preferably with:
 - explicit bind mounts for compiler caches;
 - immutable verifier binaries or remotely attested verifier nodes;
 - signed audit records for tool decisions and results.
+# Fabric security boundary
+
+Local Harness uses only ordinary `FabricClient` consumer access in persistent
+service mode. It never imports `FabricAdminClient`, opens the admin socket,
+creates enrollment tokens, approves/denies enrollment, revokes workers, or
+handles Fabric worker trust material. Worker endpoint and trust configuration
+belongs to Fabric; legacy worker fields are accepted only in explicit embedded
+or transitional compatibility modes.
+
+The Harness client closes its socket without writing worker-disconnected state.
+There is no SSH or remote-shell fallback. Current persistent service execution
+limitations are surfaced as UNKNOWN/unavailable diagnostics rather than hidden
+by a mode change.

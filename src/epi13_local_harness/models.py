@@ -254,7 +254,13 @@ class FabricWorkerConfig:
 @dataclass(frozen=True)
 class FabricConfig:
     enabled: bool = False
+    # Direct Python construction remains embedded for API compatibility;
+    # TOML configuration defaults to service mode explicitly in config.py.
+    controller_mode: str = "embedded"
     controller_id: str = "epi13-local-harness"
+    service_socket: Path = Path("~/.local/state/mncs-fabric/controller.sock")
+    service_timeout_seconds: float = 5.0
+    consumer_identity: str = "epi13-local-harness"
     state_path: Path = Path("~/.local/state/epi13-local-harness/fabric.jsonl")
     fallback_to_local: bool = True
     refresh_on_startup: bool = True
@@ -270,6 +276,14 @@ class FabricConfig:
     job_timeout_overhead_seconds: int = 5
     registry_path: Path | None = None
     workers: tuple[FabricWorkerConfig, ...] = ()
+
+    def __post_init__(self) -> None:
+        if self.controller_mode not in {"service", "embedded", "transitional"}:
+            raise ValueError("fabric.controller_mode must be service, embedded, or transitional")
+        if not 0.1 <= self.service_timeout_seconds <= 30:
+            raise ValueError("fabric.service_timeout_seconds must be between 0.1 and 30")
+        if not self.consumer_identity or len(self.consumer_identity) > 128:
+            raise ValueError("fabric.consumer_identity must be bounded non-empty text")
 
 
 @dataclass(frozen=True)

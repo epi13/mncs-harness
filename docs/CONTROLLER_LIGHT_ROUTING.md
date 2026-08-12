@@ -1,9 +1,11 @@
-# Controller-light routing
+# Router-only routing
 
-`controller-light` keeps orchestration on the controller and response-generation inference on Fabric workers.
+`router-only` keeps semantic orchestration on the controller while consuming
+Fabric-owned worker state. The historical `controller-light` command remains a
+compatibility alias.
 
 ```bash
-elh-fabric controller-light
+elh-fabric router-only
 ```
 
 The profile makes four deliberate changes to the active harness configuration:
@@ -30,7 +32,7 @@ prompt
   -> provider-selected GPU/CPU execution
 ```
 
-The semantic router does not generate the answer. It chooses a lane/role. A generation model still performs the task, but under the controller-light profile that model is invoked through the remote worker rather than being loaded on the controller.
+The semantic router does not generate the answer. It chooses a lane/role. A generation model still performs the task, but under the router-only profile that model is invoked through the remote worker rather than being loaded on the controller.
 
 ## Fabric placement versus provider placement
 
@@ -42,7 +44,9 @@ Controller-light therefore requests CPU placement for the provider-call bundle. 
 
 ## Live worker inventory
 
-At Fabric session startup, the harness sends a bounded Python execution bundle to each available remote worker. That bundle queries only the worker-local Ollama endpoint:
+In embedded compatibility mode, the harness sends a bounded Python execution
+bundle to each available remote worker. That bundle queries only the worker-local
+Ollama endpoint:
 
 ```text
 http://127.0.0.1:11434/api/tags
@@ -55,6 +59,12 @@ ingested as a Fabric worker capability observation, and then exposed by
 from Python CUDA evidence.
 
 This runtime inventory path uses Fabric mTLS. It does not require SSH credentials and it does not expose Ollama on the LAN.
+
+That probe is available only through the explicit embedded compatibility path in
+current Fabric `0.2.0a15`. Persistent service mode can read the controller/fleet
+state but cannot yet dispatch this probe or ingest its observation; it therefore
+reports capability inventory as unavailable until Fabric publishes those service
+features.
 
 ## Model selection
 
@@ -78,6 +88,6 @@ promoted to presence.
 
 ## Fabric version
 
-This feature requires `mncs-fabric >= 0.2.0a11`, which supplies the public capability
+This feature requires `mncs-fabric >= 0.2.0a15`, which supplies the public capability
 observation API and request-scoped bundle-cache correction. Custom/legacy mock clients
 without that API retain the old session-local inventory behavior for compatibility.

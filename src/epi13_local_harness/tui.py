@@ -174,7 +174,9 @@ def fabric_status_summary(status: FabricStatus) -> str:
         if worker.get("source") == "remote"
     )
     summary = (
-        f"state={status.state} | workers={status.available_workers}/{len(status.workers)} "
+        f"mode={status.controller_mode} | controller={status.controller_state} "
+        f"fleet={status.fleet_state} | execution={status.execution_transport} "
+        f"workers={status.available_workers}/{len(status.workers)} "
         f"| accelerators={status.accelerator_count} "
         f"| worker-models={model_count} "
         f"| offload-capable={status.offload_capable_count}"

@@ -132,10 +132,11 @@ class _CapabilityClient:
 
 class DistributedCapabilityTests(unittest.TestCase):
     def _session(self, workers: list[dict[str, object]]) -> InventoryAwareFabricSession:
-        config = replace(load_config(None).fabric, enabled=True)
+        config = replace(load_config(None).fabric, enabled=True, controller_mode="embedded")
         session = InventoryAwareFabricSession(config)
         session.client = _CapabilityClient(workers)
         session._state = "available"
+        session._execution_transport = "embedded-direct"
         session.capability_api_available = True
         return session
 
@@ -385,6 +386,7 @@ class DistributedSessionIntegrationTests(unittest.TestCase):
 
                 fabric = FabricConfig(
                     enabled=True,
+                    controller_mode="embedded",
                     state_path=root / "session.jsonl",
                     fallback_to_local=False,
                     provider_ollama_base_url=f"http://127.0.0.1:{server.server_port}",
@@ -393,6 +395,7 @@ class DistributedSessionIntegrationTests(unittest.TestCase):
                 session = InventoryAwareFabricSession(fabric)
                 session.client = _FreshDispatchClient(client)
                 session._state = "available"
+                session._execution_transport = "embedded-direct"
                 session.capability_api_available = True
                 session._probe_model_inventory = lambda _worker_id: (  # type: ignore[method-assign]
                     {
@@ -593,6 +596,7 @@ class DistributedSessionIntegrationTests(unittest.TestCase):
 
                 fabric = FabricConfig(
                     enabled=True,
+                    controller_mode="embedded",
                     state_path=root / "session.jsonl",
                     fallback_to_local=False,
                     provider_ollama_base_url=f"http://127.0.0.1:{server.server_port}",
@@ -601,6 +605,7 @@ class DistributedSessionIntegrationTests(unittest.TestCase):
                 session = InventoryAwareFabricSession(fabric)
                 session.client = _FreshDispatchClient(client)
                 session._state = "available"
+                session._execution_transport = "embedded-direct"
                 session.capability_api_available = True
                 session._probe_model_inventory = lambda _worker_id: (  # type: ignore[method-assign]
                     {
@@ -773,6 +778,7 @@ class DistributedSessionIntegrationTests(unittest.TestCase):
                 client.refresh_worker("fabric-worker")
                 fabric = FabricConfig(
                     enabled=True,
+                    controller_mode="embedded",
                     state_path=root / "session.jsonl",
                     fallback_to_local=False,
                     provider_ollama_base_url=f"http://127.0.0.1:{server.server_port}",
@@ -781,6 +787,7 @@ class DistributedSessionIntegrationTests(unittest.TestCase):
                 session = InventoryAwareFabricSession(fabric)
                 session.client = _FreshDispatchClient(client)
                 session._state = "available"
+                session._execution_transport = "embedded-direct"
                 session.capability_api_available = True
                 session._probe_model_inventory = lambda _worker_id: (  # type: ignore[method-assign]
                     {"name": "gemma4:e4b", "size": 4, "digest": "sha256:" + "a" * 64},

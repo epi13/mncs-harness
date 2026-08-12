@@ -145,6 +145,8 @@ def configure_remote(args: argparse.Namespace) -> int:
     text = path.read_text(encoding="utf-8")
     fabric_values: dict[str, object] = {
         "enabled": True,
+        # This command configures the explicit direct-worker compatibility path.
+        "controller_mode": "embedded",
         "controller_id": args.controller_id,
         "fallback_to_local": args.fallback_to_local,
         "refresh_on_startup": True,
@@ -217,6 +219,11 @@ def _status_payload(config: Any, status: Any) -> dict[str, Any]:
         "enabled": status.enabled,
         "state": status.state,
         "controller_id": status.controller_id,
+        "controller_mode": status.controller_mode,
+        "controller_state": status.controller_state,
+        "fleet_state": status.fleet_state,
+        "execution_transport": status.execution_transport,
+        "capability_inventory": status.capability_inventory,
         "detail": status.detail,
         "available_workers": status.available_workers,
         "accelerator_count": status.accelerator_count,
@@ -248,6 +255,8 @@ def show_fabric(args: argparse.Namespace) -> int:
         "config": str(path),
         "enabled": config.fabric.enabled,
         "controller_id": config.fabric.controller_id,
+        "controller_mode": config.fabric.controller_mode,
+        "service_socket": str(config.fabric.service_socket),
         "registry_path": (
             str(config.fabric.registry_path) if config.fabric.registry_path else None
         ),
