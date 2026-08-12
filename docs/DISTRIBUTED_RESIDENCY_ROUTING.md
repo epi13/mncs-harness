@@ -30,10 +30,12 @@ An explicit assignment wins. Otherwise Harness chooses only among its configured
 role preferences that a current worker inventory actually reports and requires
 bounded model-size and host-memory facts before warming. Ollama `/api/ps` is the
 loaded-state observation; `/api/generate` with an empty prompt and configured
-In service mode, current Fabric 0.2.0a15 cannot run these probes over the
-consumer socket. Use `controller_mode = "transitional"` only for the explicit
-embedded-direct compatibility path; otherwise inventory and warming remain
-unsupported until Fabric adds persistent execution dispatch.
+In service mode, these probes are attempted only when the connected Fabric
+controller advertises persistent execution and capability-observation
+ingestion. Otherwise use `controller_mode = "transitional"` only for the
+explicit embedded-direct compatibility path; inventory and warming remain
+unsupported rather than triggering an implicit fallback. Worker-initiated
+rendezvous is not inferred from this execution support.
 
 `keep_alive` is the provider-specific warm operation. Fabric merely transports
 the bounded loopback probe/job and records evidence.

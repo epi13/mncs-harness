@@ -18,14 +18,16 @@ the semantically best model. The harness owns deterministic exact/fallback selec
 and chooses only a specific currently available worker that reported the selected
 model.
 
-The current persistent Fabric consumer service exposes fleet/controller reads but not
-execution dispatch or capability-observation ingestion. Consequently, service mode
-reports capability inventory as unavailable and does not run worker-local probes.
+The persistent Fabric consumer service negotiates execution and capability
+observation support from the connected controller's public status projection.
+When those features are advertised, service mode dispatches the bounded probe
+through `FabricClient.connect()` and ingests the resulting observation through
+the same consumer boundary. If they are not advertised, service mode reports
+capability inventory as unavailable and does not run worker-local probes.
 Explicit `embedded` mode retains the complete compatibility path; explicit
-`transitional` mode keeps persistent Fabric as fleet authority while using embedded
-execution compatibility. A future public Fabric contract feature for persistent
-execution and capability ingestion can move these operations to the service client
-without changing Harness routing or residency policy.
+`transitional` mode keeps persistent Fabric as fleet authority while using
+embedded execution compatibility. Worker-initiated rendezvous remains a
+separate planned Fabric feature.
 
 Inventory states are fail-closed. `CURRENT` may be routed; `STALE`, `UNKNOWN`, and
 `UNAVAILABLE` may be displayed with retained evidence but are not treated as model
