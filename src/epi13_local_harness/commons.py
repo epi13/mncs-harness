@@ -6,6 +6,7 @@ import json
 import sys
 import tempfile
 from dataclasses import dataclass
+from datetime import timedelta
 from pathlib import Path
 from typing import Any, Callable
 
@@ -254,7 +255,9 @@ class CommonsSession:
                     async with ClientSession(
                         read_stream,
                         write_stream,
-                        read_timeout_seconds=float(self.config.call_timeout_seconds),
+                        read_timeout_seconds=timedelta(
+                            seconds=float(self.config.call_timeout_seconds)
+                        ),
                     ) as session:
                         with anyio.fail_after(float(self.config.startup_timeout_seconds)):
                             initialized = await session.initialize()
@@ -269,8 +272,8 @@ class CommonsSession:
                                 else await session.call_tool(
                                     name,
                                     arguments,
-                                    read_timeout_seconds=float(
-                                        self.config.call_timeout_seconds
+                                    read_timeout_seconds=timedelta(
+                                        seconds=float(self.config.call_timeout_seconds)
                                     ),
                                 )
                             )
@@ -280,17 +283,28 @@ class CommonsSession:
                                 "function": {
                                     "name": tool.name,
                                     "description": tool.description or "",
-                                    "parameters": dict(tool.input_schema),
+                                    "parameters": dict(
+                                        getattr(tool, "inputSchema", None)
+                                        or getattr(tool, "input_schema", {})
+                                    ),
                                 },
                             }
                             for tool in listed.tools
                         )
                         return CommonsExchange(
-                            server_name=str(initialized.server_info.name),
+                            server_name=str(
+                                (
+                                    getattr(initialized, "serverInfo", None)
+                                    or getattr(initialized, "server_info", None)
+                                ).name
+                            ),
                             schemas=schemas,
                             descriptor=self._tool_payload(descriptor_result),
                             result=self._tool_payload(requested),
-                            is_error=bool(requested.is_error),
+                            is_error=bool(
+                                getattr(requested, "isError", False)
+                                or getattr(requested, "is_error", False)
+                            ),
                         )
 
         with tempfile.TemporaryFile(mode="w+", encoding="utf-8") as stderr:
