@@ -26,6 +26,97 @@ class FabricExecutionError(RuntimeError):
     """Fabric ran or admitted a request but the bounded invocation failed."""
 
 
+class HarnessFabricConnection:
+    """Own the selected Fabric consumer backend without leaking it to routing."""
+
+    def __init__(self, client: Any, *, service_client: Any | None = None, compatibility_client: Any | None = None) -> None:
+        self.client = client
+        self.service_client = service_client
+        self.compatibility_client = compatibility_client
+
+    @classmethod
+    def open(
+        cls,
+        config: FabricConfig,
+        *,
+        client_factory: Callable[[str, Path], Any] | None = None,
+    ) -> "HarnessFabricConnection":
+        from mncs_fabric.api import FabricClient
+
+        if config.controller_mode == "service":
+            return cls(
+                FabricClient.connect(
+                    config.service_socket,
+                    client_identity=config.consumer_identity,
+                    timeout=config.service_timeout_seconds,
+                )
+            )
+        factory = client_factory or FabricClient
+        compatibility = factory(config.controller_id, config.state_path)
+        if config.controller_mode == "embedded":
+            return cls(compatibility, compatibility_client=compatibility)
+        service = FabricClient.connect(
+            config.service_socket,
+            client_identity=config.consumer_identity,
+            timeout=config.service_timeout_seconds,
+        )
+        return cls(
+            _TransitionalFabricClient(service, compatibility),
+            service_client=service,
+            compatibility_client=compatibility,
+        )
+
+    def close(self) -> None:
+        closed: set[int] = set()
+        for client in (self.client, self.service_client, self.compatibility_client):
+            if client is None or id(client) in closed:
+                continue
+            closed.add(id(client))
+            close = getattr(client, "close", None)
+            if callable(close):
+                close()
+
+
+class _TransitionalFabricClient:
+    """Read fleet authority from service and dispatch only through compatibility Fabric."""
+
+    def __init__(self, service_client: Any, compatibility_client: Any) -> None:
+        self._service_client = service_client
+        self._compatibility_client = compatibility_client
+
+    def __getattr__(self, name: str) -> Any:
+        if name in {
+            "execute",
+            "register_local_worker",
+            "register_remote_worker",
+            "load_registry",
+            "refresh_worker",
+            "refresh_workers",
+            "runtime_profile",
+            "ingest_runtime_observation",
+            "ingest_runtime_capability_observation",
+            "ingest_capability_observation",
+        }:
+            return getattr(self._compatibility_client, name)
+        return getattr(self._service_client, name)
+
+
+def _persistent_features(fabric: Any) -> dict[str, bool]:
+    """Read only public contract metadata; absent future features remain unsupported."""
+
+    try:
+        contract = fabric.FabricClient.contract()
+        features = contract.get("features", {}) if isinstance(contract, dict) else {}
+        return {
+            "execution": bool(features.get("persistent_service_execution", False)),
+            "capability_ingestion": bool(
+                features.get("persistent_service_capability_ingestion", False)
+            ),
+        }
+    except Exception:
+        return {"execution": False, "capability_ingestion": False}
+
+
 @dataclass(frozen=True)
 class FabricStatus:
     enabled: bool
@@ -34,6 +125,11 @@ class FabricStatus:
     workers: tuple[dict[str, Any], ...] = ()
     detail: str | None = None
     last_inference: dict[str, Any] | None = None
+    controller_mode: str = "embedded"
+    controller_state: str = "unknown"
+    fleet_state: str = "unknown"
+    execution_transport: str = "unsupported"
+    capability_inventory: str = "unavailable"
 
     @property
     def available_workers(self) -> int:
@@ -193,6 +289,11 @@ class FabricSession:
         self.last_inference: dict[str, Any] | None = None
         self.last_execution_record: dict[str, Any] | None = None
         self._consumer_context: dict[str, str] | None = None
+        self._connection: HarnessFabricConnection | None = None
+        self._controller_state = "disabled" if not config.enabled else "unavailable"
+        self._fleet_state = "unavailable" if config.enabled else "disabled"
+        self._execution_transport = "unsupported"
+        self._capability_inventory = "unavailable"
 
     @property
     def enabled(self) -> bool:
@@ -214,15 +315,43 @@ class FabricSession:
     def initialize(self) -> None:
         if not self.config.enabled:
             self._state = "disabled"
+            self._controller_state = "disabled"
+            self._fleet_state = "disabled"
             return
         try:
-            if self._client_factory is None:
-                from mncs_fabric.api import FabricClient
+            import mncs_fabric as fabric
 
-                factory = FabricClient
+            version = str(getattr(fabric, "__version__", ""))
+            if self.config.controller_mode in {"service", "transitional"} and version < "0.2.0a15":
+                raise FabricUnavailable(
+                    "FABRIC_API_INCOMPATIBLE: service and transitional modes require mncs-fabric>=0.2.0a15"
+                )
+            self._connection = HarnessFabricConnection.open(
+                self.config, client_factory=self._client_factory
+            )
+            self.client = self._connection.client
+            features = _persistent_features(fabric)
+            self._execution_transport = (
+                "persistent-service"
+                if self.config.controller_mode == "service" and features["execution"]
+                else "embedded-direct-compatibility"
+                if self.config.controller_mode == "transitional"
+                else "embedded-direct"
+                if self.config.controller_mode == "embedded"
+                else "unsupported"
+            )
+            self._capability_inventory = (
+                "service"
+                if self.config.controller_mode == "service" and features["capability_ingestion"]
+                else "embedded"
+                if self.config.controller_mode == "embedded"
+                else "unsupported"
+            )
+            if self.config.controller_mode in {"service", "transitional"}:
+                self.client.controller_status()
+                self._controller_state = "connected"
             else:
-                factory = self._client_factory
-            self.client = factory(self.config.controller_id, self.config.state_path)
+                self._controller_state = "embedded"
             from mncs_fabric.api import LocalWorkerConfig, RemoteWorkerConfig
 
             registered = 0
@@ -230,7 +359,7 @@ class FabricSession:
             # Explicit worker tables are backward-compatible operator overrides.
             # Registry entries with the same identity must retain the same
             # endpoint; FabricClient rejects contradictory duplicates.
-            for worker in self.config.workers:
+            for worker in self.config.workers if self.config.controller_mode in {"embedded", "transitional"} else ():
                 try:
                     if worker.kind == "local":
                         bundle_root = worker.bundle_root or self.config.worker_bundle_root
@@ -271,7 +400,7 @@ class FabricSession:
                     registered += 1
                 except Exception as exc:  # configuration is reported, not hidden
                     errors.append(f"{worker.worker_id}: {exc}")
-            if self.config.registry_path is not None:
+            if self.config.registry_path is not None and self.config.controller_mode in {"embedded", "transitional"}:
                 try:
                     report = self.client.load_registry(self.config.registry_path)
                     registered = len(getattr(self.client, "remote_configs", {})) + len(
@@ -283,14 +412,25 @@ class FabricSession:
                     )
                 except Exception as exc:
                     errors.append(f"registry: {exc}")
-            if self.config.refresh_on_startup and registered:
+            if self.config.refresh_on_startup and registered and self.config.controller_mode == "embedded":
                 self._refresh_remote_workers()
                 errors.extend(self._ensure_cuda_runtime_observations())
-            if registered == 0:
+            if self.config.controller_mode in {"service", "transitional"}:
+                workers = self.client.workers()
+                self._fleet_state = "available" if workers else "empty"
+                self._state = "available"
+                self._detail = (
+                    "Fabric controller connected; persistent service execution is unsupported"
+                    if self.config.controller_mode == "service"
+                    else "Fabric fleet authority connected; execution uses embedded compatibility"
+                )
+            elif registered == 0:
                 self._state = "unavailable"
+                self._fleet_state = "empty"
                 self._detail = "; ".join(errors) or "no Fabric workers are configured"
             else:
                 self._state = "available"
+                self._fleet_state = "available"
                 combined = [item for item in (self._detail, *errors) if item]
                 self._detail = "; ".join(dict.fromkeys(combined)) if combined else None
         except ImportError as exc:
@@ -300,7 +440,21 @@ class FabricSession:
         except Exception as exc:
             self.client = None
             self._state = "unavailable"
-            self._detail = str(exc)
+            self._controller_state = "unavailable"
+            self._fleet_state = "unavailable"
+            self._detail = (
+                f"FABRIC_CONTROLLER_UNAVAILABLE: {exc}"
+                if self.config.controller_mode in {"service", "transitional"}
+                else str(exc)
+            )
+
+    def close(self) -> None:
+        """Close only consumer transports; never write Fabric worker presence."""
+
+        if self._connection is not None:
+            self._connection.close()
+        self._connection = None
+        self.client = None
 
     def _refresh_remote_workers(self) -> None:
         if self.client is None:
@@ -464,7 +618,13 @@ class FabricSession:
                     self.config.controller_id,
                     detail=str(exc),
                     last_inference=self.last_inference,
+                    controller_mode=self.config.controller_mode,
+                    controller_state="unavailable",
+                    fleet_state="unavailable",
+                    execution_transport=self._execution_transport,
+                    capability_inventory=self._capability_inventory,
                 )
+            fleet_state = "available" if workers else self._fleet_state
         return FabricStatus(
             self.config.enabled,
             self._state,
@@ -472,6 +632,11 @@ class FabricSession:
             workers,
             self._detail,
             self.last_inference,
+            self.config.controller_mode,
+            self._controller_state,
+            fleet_state if self.client is not None else self._fleet_state,
+            self._execution_transport,
+            self._capability_inventory,
         )
 
     def _placement(self, model: ModelConfig) -> Any:
@@ -504,6 +669,10 @@ class FabricSession:
     ) -> tuple[dict[str, Any], dict[str, Any]]:
         if self.client is None or self._state != "available":
             raise FabricUnavailable(self._detail or "Fabric is unavailable")
+        if self._execution_transport == "unsupported":
+            raise FabricExecutionError(
+                "FABRIC_SERVICE_EXECUTION_UNSUPPORTED: persistent Fabric service does not yet dispatch execution"
+            )
         self.last_execution_record = None
         if model.execution_device == "accelerator" or model.accelerator_backend == "cuda":
             failures = self._ensure_cuda_runtime_observations()
@@ -641,6 +810,8 @@ class FabricSession:
             "provider": "ollama-via-mncs-fabric",
             "backend": "ollama",
             "fabric_enabled": True,
+            "fabric_controller_mode": self.config.controller_mode,
+            "execution_transport": self._execution_transport,
             "fabric_worker": result.get("worker_identity"),
             "execution_source": (
                 "local"

@@ -67,6 +67,7 @@ requires_image = false
                 """
 [fabric]
 enabled = true
+controller_mode = "embedded"
 fallback_to_local = false
 refresh_on_startup = false
 state_path = "state/fabric.jsonl"

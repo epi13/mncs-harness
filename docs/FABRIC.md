@@ -34,15 +34,16 @@ whether a provider or placement failure may return to local Ollama.
 ```
 
 The harness decides the task, semantic lane, model role, tools, permissions,
-workspace, verification, and escalation. Fabric registers configured workers,
-refreshes worker/resource observations, admits eligible placement, transports a
-bounded invocation bundle, and returns worker/placement/record/receipt evidence.
+workspace, verification, and escalation. Persistent Fabric owns worker
+membership/presence and factual fleet state. In embedded compatibility mode
+Fabric also admits placement, transports a bounded invocation bundle, and returns
+worker/placement/record/receipt evidence.
 The worker-local provider runtime remains responsible for model loading, CUDA,
 quantization, KV cache, and actual layer movement.
 
 ## Configuration
 
-The Fabric-backed inference provider requires MNCS Fabric `0.2.0a13` or newer in
+Service-mode consumers require MNCS Fabric `0.2.0a15` or newer in
 the `0.2.x` line. That version retains provider-neutral worker capability observations,
 ensures each explicitly supplied request bundle is staged after placement, and
 separates short control waits from job-bounded execution responses. Install from a
@@ -59,13 +60,16 @@ python -m pip install -e ../mncs-fabric
 python -m pip install -e .
 ```
 
-Add only operator-owned worker entries to the user configuration. Paths are
-deliberately not populated in the bundled defaults:
+Service mode primarily configures the persistent consumer endpoint:
 
 ```toml
 [fabric]
 enabled = true
+controller_mode = "service"
 controller_id = "epi13-local-harness"
+service_socket = "~/.local/state/mncs-fabric/controller.sock"
+service_timeout_seconds = 5.0
+consumer_identity = "epi13-local-harness"
 state_path = "~/.local/state/epi13-local-harness/fabric.jsonl"
 fallback_to_local = true
 refresh_on_startup = true
@@ -74,26 +78,27 @@ provider_ollama_base_url = "http://127.0.0.1:11434"
 provider_timeout_seconds = 600
 job_timeout_overhead_seconds = 5
 
-[fabric.workers.local]
-kind = "local"
-state_path = "~/.local/state/epi13-local-harness/fabric-local.jsonl"
-bundle_root = "~/.local/state/epi13-local-harness/fabric-worker-bundle"
-capabilities = ["python"]
+```
+
+For explicit embedded or transitional compatibility, add the historical worker
+tables and registry path under `controller_mode = "embedded"` or
+`"transitional"`; those fields are rejected in service mode. Worker endpoint
+and trust material belongs to Fabric in the persistent architecture.
+
+```toml
+[fabric]
+controller_mode = "embedded"
+registry_path = "~/.local/state/mncs-fabric/workers.json"
 
 [fabric.workers.windows-gpu]
 kind = "remote"
 host = "operator-configured.example"
 port = 9443
-state_path = "~/.local/state/epi13-local-harness/fabric-windows.jsonl"
 capabilities = ["python"]
 ca_file = "/operator/path/ca.pem"
 client_certificate = "/operator/path/client.pem"
 client_key = "/operator/path/client.key"
 trust_state = "/operator/path/trust.jsonl"
-timeout_seconds = 5.0
-connect_timeout_seconds = 5.0
-control_timeout_seconds = 5.0
-execution_timeout_overhead_seconds = 5.0
 ```
 
 The provider timeout bounds worker-local Ollama. The Fabric job adds only
@@ -135,13 +140,14 @@ reports that Fabric moved model layers.
 
 ## Startup, diagnostics, and fallback
 
-Startup constructs the Fabric consumer session, registers explicit workers, and
-performs bounded refreshes when enabled. The TUI's **Fabric** view and **Doctor**
-panel distinguish disabled, unavailable/misconfigured, available-but-no-eligible
-worker, stale/unknown capability or resource observations, and provider-runtime
-failure. The bounded `/api/tags` result is normalized into Fabric's generic model and
-runtime entries, ingested through `FabricClient`, and read back through
-`FabricClient.workers()` for routing and status.
+Startup constructs the configured Fabric consumer session. Service mode connects
+and reads the shared fleet without registering, refreshing, or ingesting worker
+state. Embedded mode performs the historical bounded refreshes. The TUI's
+**Fabric** view and **Doctor** panel distinguish controller connection, fleet
+availability, execution transport, capability inventory, and generation
+availability. Inventory probes and residency warming are explicit unsupported
+states in service mode until Fabric exposes persistent execution and capability
+ingestion features.
 
 Completed attempts show provider, worker, placement mode, precision, and Fabric
 identities. They also record independent inference, workspace, and tool-execution
@@ -183,3 +189,32 @@ worker-local provider runtime. It must not change firewall, SSH trust, TLS,
 drivers, or OS configuration. Report local/in-process and remote physical
 evidence separately; no physical GPU or offload claim is made by the ordinary
 suite.
+# Persistent Fabric consumer boundary
+
+Fabric is persistent infrastructure owned by `mncs-fabric-controller.service`.
+Local Harness is an ordinary `FabricClient` consumer and never uses
+`FabricAdminClient`. Service mode reads the shared consumer AF_UNIX socket and
+closes only its own connection; Harness shutdown is not worker disconnect and
+does not stop Fabric.
+
+```toml
+[fabric]
+enabled = true
+controller_mode = "service"
+service_socket = "~/.local/state/mncs-fabric/controller.sock"
+service_timeout_seconds = 5.0
+consumer_identity = "epi13-local-harness"
+```
+
+`embedded` is an explicit compatibility mode that retains the historical
+worker/registry setup. `transitional` reads fleet authority from the persistent
+service but uses a separate embedded-direct client only for bounded execution
+until Fabric exposes execution dispatch over the service boundary. It is
+temporary and clearly labeled in diagnostics/results.
+
+Service mode reports the controller, fleet, execution, and inventory states
+independently. A connected controller does not imply executable inference:
+Fabric 0.2.0a15 currently reports `FABRIC_SERVICE_EXECUTION_UNSUPPORTED` for
+execution, model inventory probes, residency warming, and capability ingestion.
+Future public contract feature flags can enable those operations without
+changing the Harness routing/session boundary.

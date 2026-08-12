@@ -238,3 +238,20 @@ The core interfaces are deliberately small:
   an authorization signal; and
 - add task-DAG planning only after single-task distributed sessions are measurable and
   reliable.
+# Fabric ownership
+
+The persistent Fabric controller owns durable lifecycle, fleet membership,
+worker presence, and worker facts. Local Harness owns semantic model choice,
+residency preference, task decomposition, verification, escalation, and agent
+policy. The split is factual fleet observation below and routing policy above.
+
+Harness has three explicit Fabric connection modes:
+
+* `service`: ordinary consumer reads from the existing controller service;
+* `embedded`: isolated compatibility controller/client with configured workers;
+* `transitional`: persistent fleet authority plus an explicitly bounded embedded
+  direct-execution compatibility path.
+
+There is no automatic service-to-embedded fallback. Missing service sockets are
+reported as `FABRIC_CONTROLLER_UNAVAILABLE`, and unsupported service execution
+as `FABRIC_SERVICE_EXECUTION_UNSUPPORTED`.

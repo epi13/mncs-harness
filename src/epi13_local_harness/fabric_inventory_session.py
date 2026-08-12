@@ -289,32 +289,62 @@ class InventoryAwareFabricSession(FabricSession):
         self.model_inventory_errors: dict[str, str] = {}
         self.capability_api_available = False
 
+    def _service_execution_supported(self) -> bool:
+        return (
+            self.config.controller_mode == "service"
+            and self._execution_transport == "persistent-service"
+            and self._capability_inventory == "service"
+        )
+
     def initialize(self) -> None:
         super().initialize()
         if self.enabled and self.client is not None:
             if _supports_request_id(self.client) and not isinstance(self.client, _FreshDispatchClient):
                 self.client = _FreshDispatchClient(self.client)
-            self.capability_api_available = callable(
-                getattr(self.client, "ingest_capability_observation", None)
+            self.capability_api_available = (
+                (
+                    self.config.controller_mode == "embedded"
+                    or self._service_execution_supported()
+                )
+                and callable(getattr(self.client, "ingest_capability_observation", None))
             )
-            self._refresh_model_inventories()
+            if self.config.controller_mode == "embedded" or self._service_execution_supported():
+                self._refresh_model_inventories()
 
     def refresh(self) -> FabricStatus:
         super().refresh()
-        if self.enabled and self.client is not None:
+        if (
+            self.enabled
+            and self.client is not None
+            and (
+                self.config.controller_mode == "embedded"
+                or self._service_execution_supported()
+            )
+        ):
             self._refresh_model_inventories()
         return self.status()
 
     def refresh_model_inventory(self) -> FabricStatus:
         """Refresh worker availability and query Ollama tags again right now."""
 
-        if self.enabled and self.client is not None:
+        if (
+            self.enabled
+            and self.client is not None
+            and (
+                self.config.controller_mode == "embedded"
+                or self._service_execution_supported()
+            )
+        ):
             if self._state == "available":
                 self._refresh_remote_workers()
             self._refresh_model_inventories()
         return self.status()
 
     def _probe_model_inventory(self, worker_id: str) -> tuple[dict[str, Any], ...]:
+        if self.config.controller_mode != "embedded" and not self._service_execution_supported():
+            raise FabricExecutionError(
+                "FABRIC_SERVICE_EXECUTION_UNSUPPORTED: worker inventory probes require persistent execution dispatch"
+            )
         if self.client is None:
             raise FabricExecutionError("Fabric client is unavailable")
         self.config.state_path.parent.mkdir(parents=True, exist_ok=True)
@@ -419,6 +449,10 @@ class InventoryAwareFabricSession(FabricSession):
             raise FabricExecutionError("RESIDENCY_MODEL_INVALID: model name is invalid")
         if not 1 <= timeout_seconds <= 3600:
             raise FabricExecutionError("RESIDENCY_TIMEOUT_INVALID: warm timeout is out of bounds")
+        if self.config.controller_mode == "service" and not self._service_execution_supported():
+            raise FabricExecutionError(
+                "FABRIC_SERVICE_EXECUTION_UNSUPPORTED: model residency requires persistent execution dispatch"
+            )
         status = self.status()
         worker = next(
             (item for item in status.workers if item.get("worker_id") == worker_id),
@@ -530,7 +564,13 @@ class InventoryAwareFabricSession(FabricSession):
         }
 
     def _refresh_model_inventories(self) -> None:
-        if self.client is None:
+        if (
+            self.client is None
+            or (
+                self.config.controller_mode != "embedded"
+                and not self._service_execution_supported()
+            )
+        ):
             return
         try:
             workers = [dict(worker) for worker in self.client.workers()]
@@ -981,4 +1021,9 @@ class InventoryAwareFabricSession(FabricSession):
             workers=tuple(workers),
             detail="; ".join(dict.fromkeys(details)) if details else None,
             last_inference=base.last_inference,
+            controller_mode=base.controller_mode,
+            controller_state=base.controller_state,
+            fleet_state=base.fleet_state,
+            execution_transport=base.execution_transport,
+            capability_inventory=base.capability_inventory,
         )

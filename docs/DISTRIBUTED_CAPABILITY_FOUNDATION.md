@@ -11,12 +11,21 @@ enrolled worker -> loopback Ollama /api/tags -> bounded Fabric job
                 -> harness routing, status, capability graph, and TUI
 ```
 
-MNCS Fabric `0.2.0a11` or newer in the `0.2.x` line provides
+Embedded MNCS Fabric `0.2.0a15` or newer in the `0.2.x` line provides
 `mncs-fabric.worker-capability-observation.v0.1`. Fabric validates and retains these
 generic facts but does not import Ollama, classify a model, authorize a tool, or pick
 the semantically best model. The harness owns deterministic exact/fallback selection
 and chooses only a specific currently available worker that reported the selected
 model.
+
+The current persistent Fabric consumer service exposes fleet/controller reads but not
+execution dispatch or capability-observation ingestion. Consequently, service mode
+reports capability inventory as unavailable and does not run worker-local probes.
+Explicit `embedded` mode retains the complete compatibility path; explicit
+`transitional` mode keeps persistent Fabric as fleet authority while using embedded
+execution compatibility. A future public Fabric contract feature for persistent
+execution and capability ingestion can move these operations to the service client
+without changing Harness routing or residency policy.
 
 Inventory states are fail-closed. `CURRENT` may be routed; `STALE`, `UNKNOWN`, and
 `UNAVAILABLE` may be displayed with retained evidence but are not treated as model
