@@ -35,9 +35,11 @@ Local Harness is a Fabric consumer/router. In the intended `fabric.controller_mo
 = "service"` configuration it connects to the already-running persistent Fabric
 controller and reads its fleet; it does not start Fabric, register workers, load
 the endpoint registry, or own worker presence. The current Fabric public
-contract does not advertise persistent execution over the consumer socket, so generation and
-worker-local inventory remain unavailable in service mode unless the operator
-explicitly selects `transitional` compatibility. `embedded` remains available
+contract is supplemented by the connected controller's public service feature
+projection. When controller-managed execution and observations are advertised,
+service mode can use the persistent consumer path; otherwise generation and
+worker-local inventory remain unavailable unless the operator explicitly selects
+`transitional` compatibility. `embedded` remains available
 for isolated tests and deployments.
 
 This repository contains a functional alpha rather than only an architecture sketch.

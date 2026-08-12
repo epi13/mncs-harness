@@ -145,12 +145,14 @@ reports that Fabric moved model layers.
 
 Startup constructs the configured Fabric consumer session. Service mode connects
 and reads the shared fleet without registering, refreshing, or ingesting worker
-state. Embedded mode performs the historical bounded refreshes. The TUI's
-**Fabric** view and **Doctor** panel distinguish controller connection, fleet
-availability, execution transport, capability inventory, and generation
-availability. Inventory probes and residency warming are explicit unsupported
-states in service mode until Fabric exposes persistent execution and capability
-ingestion features.
+state. When the connected controller's public service status advertises
+controller-managed execution and capability observations, service mode uses
+those features; otherwise inventory probes and residency warming remain explicit
+unsupported states. Embedded mode performs the historical bounded refreshes.
+The TUI's **Fabric** view and **Doctor** panel distinguish controller
+connection, fleet availability, execution transport, capability inventory, and
+generation availability. Worker-initiated rendezvous is a separate planned
+Fabric feature and is never inferred from a package version.
 
 Completed attempts show provider, worker, placement mode, precision, and Fabric
 identities. They also record independent inference, workspace, and tool-execution

@@ -101,19 +101,31 @@ class _TransitionalFabricClient:
         return getattr(self._service_client, name)
 
 
-def _persistent_features(fabric: Any) -> dict[str, bool]:
-    """Read only public contract metadata; absent future features remain unsupported."""
+def _persistent_features(fabric: Any, service_status: dict[str, Any] | None = None) -> dict[str, bool]:
+    """Project public package/service feature metadata without version guesses."""
 
     try:
         contract = fabric.FabricClient.contract()
         features = contract.get("features", {}) if isinstance(contract, dict) else {}
-        return {
+        projected = {
             "fleet_read": features.get("persistent_fleet_read") is True,
             "execution": features.get("persistent_service_execution") is True,
             "capability_ingestion": features.get("persistent_service_capability_ingestion") is True,
             "worker_observations": features.get("persistent_worker_observations") is True,
             "rendezvous": features.get("worker_rendezvous") is True,
         }
+        runtime_features = service_status.get("service_features") if isinstance(service_status, dict) else None
+        if isinstance(runtime_features, dict):
+            projected.update(
+                {
+                    "fleet_read": runtime_features.get("persistent_fleet_read") is True,
+                    "execution": runtime_features.get("persistent_service_execution") is True,
+                    "capability_ingestion": runtime_features.get("persistent_service_capability_ingestion") is True,
+                    "worker_observations": runtime_features.get("persistent_worker_observations") is True,
+                    "rendezvous": runtime_features.get("worker_rendezvous") is True,
+                }
+            )
+        return projected
     except Exception:
         return {"fleet_read": False, "execution": False, "capability_ingestion": False, "worker_observations": False, "rendezvous": False}
 
@@ -353,6 +365,10 @@ class FabricSession:
                 self.config, client_factory=self._client_factory
             )
             self.client = self._connection.client
+            controller: dict[str, Any] | None = None
+            if self.config.controller_mode in {"service", "transitional"}:
+                controller = self.client.controller_status()
+                features = _persistent_features(fabric, controller)
             self._execution_transport = (
                 "persistent-service"
                 if self.config.controller_mode == "service" and features["execution"]
@@ -372,7 +388,6 @@ class FabricSession:
                 else "unsupported"
             )
             if self.config.controller_mode in {"service", "transitional"}:
-                controller = self.client.controller_status()
                 if isinstance(controller, dict):
                     self._controller_version = (
                         str(controller["fabric_version"]) if controller.get("fabric_version") else None
@@ -455,11 +470,14 @@ class FabricSession:
                 workers = self.client.workers()
                 self._fleet_state = "available" if workers else "empty"
                 self._state = "available"
-                self._detail = (
-                    "Fabric controller connected; persistent service execution is unsupported"
-                    if self.config.controller_mode == "service"
-                    else "Fabric fleet authority connected; execution uses embedded compatibility"
-                )
+                if self.config.controller_mode == "service":
+                    self._detail = (
+                        "Fabric controller connected; execution uses persistent service"
+                        if features["execution"]
+                        else "Fabric controller connected; service execution is unavailable"
+                    )
+                else:
+                    self._detail = "Fabric fleet authority connected; execution uses embedded compatibility"
             elif registered == 0:
                 self._state = "unavailable"
                 self._fleet_state = "empty"
