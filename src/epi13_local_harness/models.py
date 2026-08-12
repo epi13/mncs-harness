@@ -254,9 +254,9 @@ class FabricWorkerConfig:
 @dataclass(frozen=True)
 class FabricConfig:
     enabled: bool = False
-    # Direct Python construction remains embedded for API compatibility;
-    # TOML configuration defaults to service mode explicitly in config.py.
-    controller_mode: str = "embedded"
+    # Service mode is the architecture default for both TOML and direct API
+    # construction. Compatibility callers must opt into embedded explicitly.
+    controller_mode: str = "service"
     controller_id: str = "epi13-local-harness"
     service_socket: Path = Path("~/.local/state/mncs-fabric/controller.sock")
     service_timeout_seconds: float = 5.0
@@ -280,6 +280,11 @@ class FabricConfig:
     def __post_init__(self) -> None:
         if self.controller_mode not in {"service", "embedded", "transitional"}:
             raise ValueError("fabric.controller_mode must be service, embedded, or transitional")
+        if self.controller_mode == "service" and (self.registry_path is not None or self.workers):
+            raise ValueError(
+                "fabric.controller_mode=service cannot contain workers or registry_path; "
+                "use controller_mode=embedded or transitional for explicit compatibility"
+            )
         if not 0.1 <= self.service_timeout_seconds <= 30:
             raise ValueError("fabric.service_timeout_seconds must be between 0.1 and 30")
         if not self.consumer_identity or len(self.consumer_identity) > 128:
