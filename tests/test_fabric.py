@@ -8,6 +8,7 @@ import unittest
 from dataclasses import replace
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from unittest.mock import patch
 
 from epi13_local_harness.agent import LocalAgent
 from epi13_local_harness.config import load_config
@@ -98,7 +99,7 @@ class FabricTests(unittest.TestCase):
 
     def test_fallback_provider_preserves_local_response_and_reason(self) -> None:
         provider = FabricOllamaProvider(_FailingSession(), _LocalProvider(), True)
-        response = provider.chat(replace(load_config(None).models["e2b"]), [])
+        response = provider.chat(replace(load_config(Path("/missing/config.toml")).models["e2b"]), [])
         self.assertEqual(response["message"]["content"], "local fallback")
         self.assertTrue(provider.last_metadata["fabric_fallback"])
         self.assertIn("no eligible worker", provider.last_metadata["fabric_fallback_reason"])
@@ -106,7 +107,7 @@ class FabricTests(unittest.TestCase):
     def test_fallback_policy_can_prohibit_local_retry(self) -> None:
         provider = FabricOllamaProvider(_FailingSession(), _LocalProvider(), False)
         with self.assertRaises(ProviderError):
-            provider.chat(replace(load_config(None).models["e2b"]), [])
+            provider.chat(replace(load_config(Path("/missing/config.toml")).models["e2b"]), [])
 
     def test_status_counts_available_accelerator_and_unknown_workers(self) -> None:
         status = FabricStatus(
@@ -136,6 +137,38 @@ class FabricTests(unittest.TestCase):
         self.assertEqual(status.accelerator_count, 1)
         self.assertEqual(status.cuda_ready_count, 1)
         self.assertEqual(status.offload_capable_count, 1)
+
+    def test_service_refresh_reads_cuda_facts_without_running_unsupported_probes(self) -> None:
+        class ServiceClient:
+            def workers(self):
+                return [
+                    {
+                        "worker_id": "service-gpu",
+                        "source": "remote",
+                        "availability": "AVAILABLE",
+                        "resource_snapshot": {"accelerators": [{"backend": "cuda"}]},
+                    }
+                ]
+
+        config = replace(
+            load_config(Path("/missing/config.toml")).fabric,
+            enabled=True,
+            controller_mode="service",
+        )
+        session = FabricSession(config)
+        session.client = ServiceClient()
+        session._state = "available"
+        session._controller_state = "connected"
+        session._fleet_state = "available"
+        session._execution_transport = "unsupported"
+        with patch.object(session, "_refresh_remote_workers", side_effect=AssertionError("probe attempted")), patch.object(
+            session, "_ensure_cuda_runtime_observations", side_effect=AssertionError("probe attempted")
+        ):
+            status = session.refresh()
+        self.assertEqual(status.fleet_state, "available")
+        self.assertEqual(status.execution_transport, "unsupported")
+        self.assertEqual(status.capability_inventory, "unavailable")
+        self.assertEqual(status.fleet_authority, "persistent-controller")
 
     def test_agent_keeps_semantic_route_and_uses_fabric_metadata(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

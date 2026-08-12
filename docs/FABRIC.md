@@ -43,8 +43,11 @@ quantization, KV cache, and actual layer movement.
 
 ## Configuration
 
-Service-mode consumers require MNCS Fabric `0.2.0a15` or newer in
-the `0.2.x` line. That version retains provider-neutral worker capability observations,
+Service-mode consumers require a Fabric public contract that advertises
+`persistent_fleet_read`; the current supported contract is `0.2.0a15` or newer in
+the `0.2.x` line. Persistent execution and capability ingestion are selected
+from public feature metadata rather than inferred from a package version. The
+current contract retains provider-neutral worker capability observations,
 ensures each explicitly supplied request bundle is staged after placement, and
 separates short control waits from job-bounded execution responses. Install from a
 released package:
@@ -159,6 +162,11 @@ When a model requests a tool, the remote model response returns to the local
 harness. The local policy registry validates and executes the tool, and only the
 next inference request may cross Fabric. Remote inference never grants a worker
 access to the local workspace.
+
+In `transitional` mode, persistent Fabric remains authoritative for membership,
+presence, and fleet identity. Bounded execution and worker-local observations
+come from the explicitly labeled embedded compatibility client and are reported
+as `embedded-compatibility`; they do not overwrite persistent lifecycle facts.
 
 See [DISTRIBUTED_CAPABILITY_FOUNDATION.md](DISTRIBUTED_CAPABILITY_FOUNDATION.md)
 for inventory states, compatibility behavior, the capability graph, and target

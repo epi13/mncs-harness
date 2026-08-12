@@ -1,5 +1,11 @@
 # Architecture
 
+Local Harness is a Fabric consumer/router. `service` connects to the existing
+consumer socket; `embedded` is explicit compatibility ownership for isolated
+deployments; `transitional` combines persistent fleet authority with a separate
+embedded execution path. The latter is temporary and every status projection
+keeps fleet authority and execution/inventory transport distinct.
+
 The unified fleet view combines controller policy, the Fabric registry, current
 worker/resource/capability observations, installed/loaded provider models, and
 Harness-owned resident assignments. Runtime routing, Doctor, Models, CLI, and TUI

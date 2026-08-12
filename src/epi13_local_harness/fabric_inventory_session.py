@@ -293,7 +293,7 @@ class InventoryAwareFabricSession(FabricSession):
         return (
             self.config.controller_mode == "service"
             and self._execution_transport == "persistent-service"
-            and self._capability_inventory == "service"
+            and self._capability_inventory == "persistent-service"
         )
 
     def initialize(self) -> None:
@@ -1026,4 +1026,9 @@ class InventoryAwareFabricSession(FabricSession):
             fleet_state=base.fleet_state,
             execution_transport=base.execution_transport,
             capability_inventory=base.capability_inventory,
+            fleet_authority=base.fleet_authority,
+            inventory_transport=base.inventory_transport,
+            controller_version=base.controller_version,
+            controller_contract_identity=base.controller_contract_identity,
+            service_contract=base.service_contract,
         )

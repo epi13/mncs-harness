@@ -64,6 +64,9 @@ class PersistentFabricTests(unittest.TestCase):
         self.assertEqual(first.status().controller_state, "connected")
         self.assertEqual(first.status().fleet_state, "empty")
         self.assertEqual(first.status().execution_transport, "unsupported")
+        self.assertEqual(first.status().controller_version, self.service.status()["fabric_version"])
+        self.assertEqual(first.status().controller_contract_identity, self.service.status()["public_contract_identity"])
+        self.assertEqual(first.status().fleet_authority, "persistent-controller")
         self.assertEqual(first.status().workers, second.status().workers)
 
         with self.assertRaisesRegex(

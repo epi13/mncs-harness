@@ -79,6 +79,24 @@ class FabricCompatibilityTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "capability methods"):
                 require_execution_bundle_archive_api()
 
+    def test_guard_uses_pep440_ordering_for_alpha_beta_and_final_versions(self) -> None:
+        class Client:
+            def execute(self, plan: object, manifest: object, *, execution_bundle_archive=None):
+                return []
+
+            def ingest_capability_observation(self):
+                return None
+
+            def load_registry(self, path):
+                return {"path": path}
+
+            def workers(self):
+                return []
+
+        for version in ("0.2.0a15", "0.2.0a16", "0.2.0b1", "0.2.0"):
+            with self.subTest(version=version), patch.dict(sys.modules, {"mncs_fabric": self._module(Client, version)}):
+                self.assertEqual(require_execution_bundle_archive_api()["version"], version)
+
 
 class WorkerLocalModelTests(unittest.TestCase):
     def test_default_model_set_is_accelerator_roles_only(self) -> None:
