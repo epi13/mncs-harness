@@ -118,6 +118,14 @@ def _persistent_features(fabric: Any) -> dict[str, bool]:
         return {"fleet_read": False, "execution": False, "capability_ingestion": False, "worker_observations": False, "rendezvous": False}
 
 
+def _public_consumer_api_supported(fabric: Any, *, transitional: bool) -> bool:
+    client = getattr(fabric, "FabricClient", None)
+    required = ["connect", "contract", "controller_status", "workers"]
+    if transitional:
+        required.extend(["execute", "refresh_workers"])
+    return client is not None and all(callable(getattr(client, name, None)) for name in required)
+
+
 @dataclass(frozen=True)
 class FabricStatus:
     enabled: bool
@@ -330,16 +338,11 @@ class FabricSession:
         try:
             import mncs_fabric as fabric
 
-            version = str(getattr(fabric, "__version__", ""))
-            from packaging.version import InvalidVersion, Version
-
-            try:
-                incompatible = Version(version) < Version("0.2.0a15")
-            except InvalidVersion:
-                incompatible = True
-            if self.config.controller_mode in {"service", "transitional"} and incompatible:
+            if self.config.controller_mode in {"service", "transitional"} and not _public_consumer_api_supported(
+                fabric, transitional=self.config.controller_mode == "transitional"
+            ):
                 raise FabricUnavailable(
-                    "FABRIC_API_INCOMPATIBLE: service and transitional modes require mncs-fabric>=0.2.0a15"
+                    "FABRIC_API_INCOMPATIBLE: Fabric public consumer API is missing required methods"
                 )
             features = _persistent_features(fabric)
             if self.config.controller_mode in {"service", "transitional"} and not features["fleet_read"]:
