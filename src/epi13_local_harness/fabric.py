@@ -108,13 +108,22 @@ def _persistent_features(fabric: Any) -> dict[str, bool]:
         contract = fabric.FabricClient.contract()
         features = contract.get("features", {}) if isinstance(contract, dict) else {}
         return {
-            "execution": bool(features.get("persistent_service_execution", False)),
-            "capability_ingestion": bool(
-                features.get("persistent_service_capability_ingestion", False)
-            ),
+            "fleet_read": features.get("persistent_fleet_read") is True,
+            "execution": features.get("persistent_service_execution") is True,
+            "capability_ingestion": features.get("persistent_service_capability_ingestion") is True,
+            "worker_observations": features.get("persistent_worker_observations") is True,
+            "rendezvous": features.get("worker_rendezvous") is True,
         }
     except Exception:
-        return {"execution": False, "capability_ingestion": False}
+        return {"fleet_read": False, "execution": False, "capability_ingestion": False, "worker_observations": False, "rendezvous": False}
+
+
+def _public_consumer_api_supported(fabric: Any, *, transitional: bool) -> bool:
+    client = getattr(fabric, "FabricClient", None)
+    required = ["connect", "contract", "controller_status", "workers"]
+    if transitional:
+        required.extend(["execute", "refresh_workers"])
+    return client is not None and all(callable(getattr(client, name, None)) for name in required)
 
 
 @dataclass(frozen=True)
@@ -130,6 +139,11 @@ class FabricStatus:
     fleet_state: str = "unknown"
     execution_transport: str = "unsupported"
     capability_inventory: str = "unavailable"
+    fleet_authority: str = "unknown"
+    inventory_transport: str = "unsupported"
+    controller_version: str | None = None
+    controller_contract_identity: str | None = None
+    service_contract: str | None = None
 
     @property
     def available_workers(self) -> int:
@@ -294,6 +308,9 @@ class FabricSession:
         self._fleet_state = "unavailable" if config.enabled else "disabled"
         self._execution_transport = "unsupported"
         self._capability_inventory = "unavailable"
+        self._controller_version: str | None = None
+        self._controller_contract_identity: str | None = None
+        self._service_contract: str | None = None
 
     @property
     def enabled(self) -> bool:
@@ -321,16 +338,21 @@ class FabricSession:
         try:
             import mncs_fabric as fabric
 
-            version = str(getattr(fabric, "__version__", ""))
-            if self.config.controller_mode in {"service", "transitional"} and version < "0.2.0a15":
+            if self.config.controller_mode in {"service", "transitional"} and not _public_consumer_api_supported(
+                fabric, transitional=self.config.controller_mode == "transitional"
+            ):
                 raise FabricUnavailable(
-                    "FABRIC_API_INCOMPATIBLE: service and transitional modes require mncs-fabric>=0.2.0a15"
+                    "FABRIC_API_INCOMPATIBLE: Fabric public consumer API is missing required methods"
+                )
+            features = _persistent_features(fabric)
+            if self.config.controller_mode in {"service", "transitional"} and not features["fleet_read"]:
+                raise FabricUnavailable(
+                    "FABRIC_SERVICE_FLEET_READ_UNSUPPORTED: Fabric public contract does not advertise persistent fleet reads"
                 )
             self._connection = HarnessFabricConnection.open(
                 self.config, client_factory=self._client_factory
             )
             self.client = self._connection.client
-            features = _persistent_features(fabric)
             self._execution_transport = (
                 "persistent-service"
                 if self.config.controller_mode == "service" and features["execution"]
@@ -341,14 +363,28 @@ class FabricSession:
                 else "unsupported"
             )
             self._capability_inventory = (
-                "service"
+                "persistent-service"
                 if self.config.controller_mode == "service" and features["capability_ingestion"]
                 else "embedded"
                 if self.config.controller_mode == "embedded"
+                else "embedded-compatibility"
+                if self.config.controller_mode == "transitional"
                 else "unsupported"
             )
             if self.config.controller_mode in {"service", "transitional"}:
-                self.client.controller_status()
+                controller = self.client.controller_status()
+                if isinstance(controller, dict):
+                    self._controller_version = (
+                        str(controller["fabric_version"]) if controller.get("fabric_version") else None
+                    )
+                    self._controller_contract_identity = (
+                        str(controller["public_contract_identity"])
+                        if controller.get("public_contract_identity")
+                        else None
+                    )
+                    self._service_contract = (
+                        str(controller["service_contract"]) if controller.get("service_contract") else None
+                    )
                 self._controller_state = "connected"
             else:
                 self._controller_state = "embedded"
@@ -457,7 +493,9 @@ class FabricSession:
         self.client = None
 
     def _refresh_remote_workers(self) -> None:
-        if self.client is None:
+        if self.client is None or (
+            self.config.controller_mode == "service" and self._execution_transport != "persistent-service"
+        ):
             return
         remote_ids = sorted(
             getattr(self.client, "remote_configs", {})
@@ -570,7 +608,9 @@ class FabricSession:
         return self.client.ingest_runtime_observation(worker_id, probe)
 
     def _ensure_cuda_runtime_observations(self, *, force: bool = False) -> list[str]:
-        if self.client is None or not self.config.runtime_probe_on_refresh:
+        if self.client is None or not self.config.runtime_probe_on_refresh or (
+            self.config.controller_mode == "service" and self._execution_transport != "persistent-service"
+        ):
             return []
         try:
             workers = [dict(worker) for worker in self.client.workers()]
@@ -599,8 +639,14 @@ class FabricSession:
 
     def refresh(self) -> FabricStatus:
         if self._state == "available":
-            self._refresh_remote_workers()
-            failures = self._ensure_cuda_runtime_observations()
+            if self.config.controller_mode != "service" or self._execution_transport == "persistent-service":
+                self._refresh_remote_workers()
+                failures = self._ensure_cuda_runtime_observations()
+            else:
+                # Current persistent Fabric supports fleet reads only. A
+                # refresh must not turn that truthful limitation into an
+                # artificial probe failure.
+                failures = []
             if failures:
                 existing = [self._detail] if self._detail else []
                 self._detail = "; ".join([*existing, *failures])
@@ -623,6 +669,11 @@ class FabricSession:
                     fleet_state="unavailable",
                     execution_transport=self._execution_transport,
                     capability_inventory=self._capability_inventory,
+                    fleet_authority="persistent-controller" if self.config.controller_mode in {"service", "transitional"} else "embedded-compatibility-controller",
+                    inventory_transport=self._capability_inventory,
+                    controller_version=self._controller_version,
+                    controller_contract_identity=self._controller_contract_identity,
+                    service_contract=self._service_contract,
                 )
             fleet_state = "available" if workers else self._fleet_state
         return FabricStatus(
@@ -637,6 +688,11 @@ class FabricSession:
             fleet_state if self.client is not None else self._fleet_state,
             self._execution_transport,
             self._capability_inventory,
+            "persistent-controller" if self.config.controller_mode in {"service", "transitional"} else "embedded-compatibility-controller",
+            self._capability_inventory,
+            self._controller_version,
+            self._controller_contract_identity,
+            self._service_contract,
         )
 
     def _placement(self, model: ModelConfig) -> Any:

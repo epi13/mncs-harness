@@ -175,7 +175,8 @@ def fabric_status_summary(status: FabricStatus) -> str:
     )
     summary = (
         f"mode={status.controller_mode} | controller={status.controller_state} "
-        f"fleet={status.fleet_state} | execution={status.execution_transport} "
+        f"authority={status.fleet_authority} | fleet={status.fleet_state} "
+        f"| execution={status.execution_transport} | inventory={status.inventory_transport} "
         f"workers={status.available_workers}/{len(status.workers)} "
         f"| accelerators={status.accelerator_count} "
         f"| worker-models={model_count} "

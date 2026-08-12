@@ -1,6 +1,6 @@
 # epi13-local-harness
 
-Version 0.6 adds normal multi-node operation: persistent Fabric fleet observation,
+Version 0.6.1 adds normal multi-node operation: persistent Fabric fleet observation,
 per-worker installed/loaded model state, a bounded resident-model policy, exact
 worker/model routing overrides, and direct Commons CLI/TUI access. See
 [`docs/DISTRIBUTED_RESIDENCY_ROUTING.md`](docs/DISTRIBUTED_RESIDENCY_ROUTING.md).
@@ -34,8 +34,8 @@ metrics, and decides whether a result is acceptable.
 Local Harness is a Fabric consumer/router. In the intended `fabric.controller_mode
 = "service"` configuration it connects to the already-running persistent Fabric
 controller and reads its fleet; it does not start Fabric, register workers, load
-the endpoint registry, or own worker presence. Fabric 0.2.0a15 does not yet
-dispatch execution over the persistent consumer socket, so generation and
+the endpoint registry, or own worker presence. The current Fabric public
+contract does not advertise persistent execution over the consumer socket, so generation and
 worker-local inventory remain unavailable in service mode unless the operator
 explicitly selects `transitional` compatibility. `embedded` remains available
 for isolated tests and deployments.
