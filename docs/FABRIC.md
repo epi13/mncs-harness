@@ -154,6 +154,20 @@ connection, fleet availability, execution transport, capability inventory, and
 generation availability. Worker-initiated rendezvous is a separate planned
 Fabric feature and is never inferred from a package version.
 
+`elh fabric refresh` records installed and currently loaded Ollama models from
+the worker loopback API, including `/api/show` capabilities. A model appearing
+in `ollama list` is not proof that it is loadable: use `elh residency warm
+WORKER` or a small routed inference to verify the provider. HTTP 4xx/5xx bodies,
+connection failures, and timeouts are retained as an unavailable observation;
+the router will not select stale or unknown inventory. Persistent service
+dispatch temporarily extends the short control-socket timeout for a bounded
+job (never beyond the transport's 30-second ceiling), so cold model loads do
+not get mislabeled as an immediate routing success.
+When Ollama returns `HTTP 500: unable to load model` with a blob identity,
+retain that diagnostic and have the operator verify disk/permissions and
+re-pull the named model; Harness never deletes or silently replaces model
+blobs.
+
 Completed attempts show provider, worker, placement mode, precision, and Fabric
 identities. They also record independent inference, workspace, and tool-execution
 targets. The SQLite migration is additive and does not store prompt text by default.
