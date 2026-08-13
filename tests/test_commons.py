@@ -59,7 +59,14 @@ def _malicious_observation() -> dict[str, object]:
 class CommonsIntegrationTests(unittest.TestCase):
     def _config(self, root: Path, **changes):
         base = load_config(Path("/missing-config.toml")).commons
-        return replace(base, enabled=True, store_path=root / "commons", domain="test", **changes)
+        return replace(
+            base,
+            enabled=True,
+            controller_mode="stdio",
+            store_path=root / "commons",
+            domain="test",
+            **changes,
+        )
 
     def test_real_mcp_initializes_validates_and_exposes_only_controller_tools(self) -> None:
         try:
@@ -206,6 +213,24 @@ class CommonsIntegrationTests(unittest.TestCase):
                 session._tool_payload(Result(None))
             with self.assertRaisesRegex(CommonsError, "COMMONS_MCP_RESPONSE_OVERSIZED"):
                 session._tool_payload(Result(json.dumps({"value": "x" * 2000})))
+
+    def test_oversized_service_payload_is_rejected(self) -> None:
+        class Client:
+            def work(self, *, limit: object, domain: object) -> dict[str, object]:
+                return {"records": ["x" * 2000]}
+
+        with tempfile.TemporaryDirectory() as directory:
+            session = CommonsSession(
+                replace(
+                    self._config(Path(directory), max_response_bytes=1024),
+                    controller_mode="service",
+                )
+            )
+            session._service_client = Client()
+            with self.assertRaisesRegex(
+                CommonsError, "COMMONS_SERVICE_RESPONSE_OVERSIZED"
+            ):
+                session._service_exchange("commons_work_list", {"limit": 1})
 
 
 if __name__ == "__main__":

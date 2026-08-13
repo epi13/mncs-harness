@@ -217,14 +217,14 @@ consumer_identity = "epi13-local-harness"
 ```
 
 `embedded` is an explicit compatibility mode that retains the historical
-worker/registry setup. `transitional` reads fleet authority from the persistent
-service but uses a separate embedded-direct client only for bounded execution
-until Fabric exposes execution dispatch over the service boundary. It is
-temporary and clearly labeled in diagnostics/results.
+worker/registry setup. `transitional` remains an explicit compatibility mode for an
+older Fabric contract and is clearly labeled in diagnostics/results.
 
 Service mode reports the controller, fleet, execution, and inventory states
 independently. A connected controller does not imply executable inference:
-Fabric 0.2.0a15 currently reports `FABRIC_SERVICE_EXECUTION_UNSUPPORTED` for
-execution, model inventory probes, residency warming, and capability ingestion.
-Future public contract feature flags can enable those operations without
-changing the Harness routing/session boundary.
+the static package contract is only a compatibility ceiling. Harness derives
+inference dispatch, inventory, residency, and capability-ingestion support from the
+live service projection and fails closed with `FABRIC_SERVICE_EXECUTION_UNSUPPORTED`
+when a connected service does not advertise execution. A configured backend or
+rendezvous worker can advertise those features without changing the Harness
+routing/session boundary.

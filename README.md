@@ -60,8 +60,9 @@ It includes:
 
 Version 0.5.0 also supports an optional controller-local MNCS Commons service.
 Fabric-placed models receive approved Commons tool schemas, but every requested
-operation returns to the harness policy layer and executes against the controller
-store. The worker receives only the bounded result on the next Fabric inference.
+operation returns to the harness policy layer and executes through the persistent
+Commons consumer socket. Publication is separately opt-in and uses the operator
+socket. The worker receives only the bounded result on the next Fabric inference.
 
 ## Requirements
 
@@ -91,7 +92,7 @@ For the complete distributed development setup from sibling checkouts:
 
 ```bash
 python -m pip install -e '../mncs-fabric'
-python -m pip install -e '../MNCS-Commons[mcp]'
+python -m pip install -e '../MNCS-Commons'
 python -m pip install -e '.[distributed]'
 ```
 

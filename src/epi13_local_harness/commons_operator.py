@@ -29,6 +29,12 @@ class CommonsOperatorService:
             "exchange": status.exchange,
             "store_healthy": status.store_healthy,
             "record_count": status.record_count,
+            "controller_mode": status.controller_mode,
+            "package_compatible": status.package_compatible,
+            "service_reachable": status.service_reachable,
+            "read_capable": status.read_capable,
+            "publication_capable": status.publication_capable,
+            "publication_configured": status.publication_configured,
             "content_trust": "UNTRUSTED",
         }
 

@@ -163,6 +163,6 @@ is actually true. Its metrics and tool boundary should remain separable enough t
 reused by Forge without coupling the repository to MNCS internals prematurely.
 - [x] Consume Fabric-owned persistent controller/fleet state through the
   ordinary local service socket with explicit embedded/transitional compatibility.
-- [ ] Move inference dispatch, worker-local inventory, residency warming, and
-  capability ingestion to persistent Fabric once its public service contract
-  advertises those features.
+- [x] Derive inference dispatch, worker-local inventory, residency warming, and
+  capability ingestion from the persistent Fabric service's live feature projection;
+  connected services that omit a feature remain explicitly unsupported.
