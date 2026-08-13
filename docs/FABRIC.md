@@ -44,7 +44,7 @@ quantization, KV cache, and actual layer movement.
 ## Configuration
 
 Service-mode consumers require a Fabric public contract that advertises
-`persistent_fleet_read`; the current supported contract is `0.2.0a15` or newer in
+`persistent_fleet_read`; the current package floor is `0.2.0a17` or newer in
 the `0.2.x` line. Persistent execution and capability ingestion are selected
 from public feature metadata rather than inferred from a package version. The
 current contract retains provider-neutral worker capability observations,
@@ -164,6 +164,23 @@ When a model requests a tool, the remote model response returns to the local
 harness. The local policy registry validates and executes the tool, and only the
 next inference request may cross Fabric. Remote inference never grants a worker
 access to the local workspace.
+
+For an explicitly remote tool target, `FabricTargetToolExecutor` first applies the
+same Harness command policy and approval decision. It currently accepts only Python
+argv workloads through Fabric's worker-local `@python` alias. The consumer selects an
+exact enrolled worker and an allowed workspace root; the adapter stages only that root
+as an immutable content bundle, converts in-root absolute arguments to bundle-relative
+paths, and rejects paths outside it. It then calls `FabricClient.execute_target` with
+the Harness consumer context and an identity-addressed record of the policy decision.
+
+The adapter reads only public fleet and capability records. It does not receive worker
+addresses, TLS material, registry paths, rendezvous sessions, or remote staging paths.
+Fabric rechecks membership, presence, freshness, and runtime compatibility and returns
+target admission and execution evidence. A denial, disconnect, or malformed result is
+returned as a failed tool call; there is no controller-local or alternate-worker
+fallback. The authorization identity is Harness provenance, not Fabric proof that a
+semantic tool request was permitted. Automatic model-directed target choice and result
+material import remain future policy work.
 
 In `transitional` mode, persistent Fabric remains authoritative for membership,
 presence, and fleet identity. Bounded execution and worker-local observations

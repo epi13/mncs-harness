@@ -72,8 +72,11 @@ JSON data passed to the provider and never become shell commands or filesystem p
 
 Each attempt defaults workspace and tool execution to the controller even when its
 inference target is remote. An absent or unresolved inference target cannot cause the
-tool target to default remotely. Fabric inventory never grants SSH, shell, workspace,
-filesystem, MCP, or tool authority.
+tool target to default remotely. The optional target-tool adapter requires an explicit
+worker selected by Harness, the ordinary command-policy and approval gates, a fresh
+runtime observation, and a workspace-confined immutable bundle. It supports no shell,
+ambient environment, host-home path, alternate-worker, or local fallback. Fabric
+inventory never grants SSH, shell, workspace, filesystem, MCP, or tool authority.
 
 ### Optional Commons boundary
 

@@ -109,6 +109,19 @@ class SessionTargets:
         return cls(inference=SessionTarget("fabric-worker", worker_identity))
 
     @classmethod
+    def remote_inference_and_tools(
+        cls,
+        inference_worker_identity: str,
+        tool_worker_identity: str,
+    ) -> "SessionTargets":
+        """Keep controller workspace authority while splitting inference and tools."""
+
+        return cls(
+            inference=SessionTarget("fabric-worker", inference_worker_identity),
+            tools=SessionTarget("fabric-worker", tool_worker_identity),
+        )
+
+    @classmethod
     def unresolved_inference(cls) -> "SessionTargets":
         return cls(inference=SessionTarget("unresolved"))
 
