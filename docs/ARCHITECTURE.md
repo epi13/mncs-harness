@@ -103,8 +103,11 @@ reduction, and escalation.
 
 The implemented `SessionTargets` value records these three locations independently on
 every attempt. `capability_graph.py` assembles a deterministic inspection view from
-current Fabric observations plus configured controller facts. The current tool target
-remains controller-local; remote targeted tools are deliberately future work.
+current Fabric observations plus configured controller facts. Tools remain
+controller-local by default. `FabricTargetToolExecutor` is the explicit remote path:
+Harness selects one worker, applies its existing command policy and approval, converts
+the chosen workspace material into an immutable bundle, and invokes Fabric's exact
+target API with no fallback.
 
 Controller-hosted MNCS MCPs should normally be exposed to remote models by tool
 schema and proxied invocation through the harness. Worker-local MCPs are reserved for
@@ -160,7 +163,8 @@ The distributed capability/session layer extends this boundary without changing 
 authority model. The bounded worker-local model probe publishes generic entries into
 Fabric's identity-bound capability observation API. The harness accepts only current
 observations, selects a model and exact reporting worker, and separately records the
-controller workspace and controller tool target.
+controller workspace and tool target. Inference and tool workers can differ while
+workspace authority stays on the controller.
 
 ### `agent.py`
 
@@ -183,8 +187,9 @@ command tools. The registry records every decision and modified path for metrics
 verification.
 
 Tool requests carry an attempt-level target that is controller-local by default.
-Remote target dispatch is not implemented; when added, it must correspond to enrolled
-Fabric capabilities and still pass the same policy and approval checks.
+The explicit remote Python adapter corresponds to an enrolled Fabric worker and a
+fresh factual runtime observation, then reuses the same policy and approval checks.
+It is bounded argv execution, not a general remote shell, and never falls back locally.
 
 ### `policy.py`
 

@@ -113,6 +113,7 @@ def _persistent_features(fabric: Any, service_status: dict[str, Any] | None = No
             "capability_ingestion": features.get("persistent_service_capability_ingestion") is True,
             "worker_observations": features.get("persistent_worker_observations") is True,
             "rendezvous": features.get("worker_rendezvous") is True,
+            "target_execution": features.get("target_aware_execution") is True,
         }
         runtime_features = service_status.get("service_features") if isinstance(service_status, dict) else None
         if isinstance(runtime_features, dict):
@@ -123,11 +124,12 @@ def _persistent_features(fabric: Any, service_status: dict[str, Any] | None = No
                     "capability_ingestion": runtime_features.get("persistent_service_capability_ingestion") is True,
                     "worker_observations": runtime_features.get("persistent_worker_observations") is True,
                     "rendezvous": runtime_features.get("worker_rendezvous") is True,
+                    "target_execution": runtime_features.get("target_aware_execution") is True,
                 }
             )
         return projected
     except Exception:
-        return {"fleet_read": False, "execution": False, "capability_ingestion": False, "worker_observations": False, "rendezvous": False}
+        return {"fleet_read": False, "execution": False, "capability_ingestion": False, "worker_observations": False, "rendezvous": False, "target_execution": False}
 
 
 def _public_consumer_api_supported(fabric: Any, *, transitional: bool) -> bool:
@@ -156,6 +158,7 @@ class FabricStatus:
     controller_version: str | None = None
     controller_contract_identity: str | None = None
     service_contract: str | None = None
+    target_execution_transport: str = "unsupported"
 
     @property
     def available_workers(self) -> int:
@@ -323,6 +326,7 @@ class FabricSession:
         self._controller_version: str | None = None
         self._controller_contract_identity: str | None = None
         self._service_contract: str | None = None
+        self._target_execution_supported = False
 
     @property
     def enabled(self) -> bool:
@@ -369,6 +373,9 @@ class FabricSession:
             if self.config.controller_mode in {"service", "transitional"}:
                 controller = self.client.controller_status()
                 features = _persistent_features(fabric, controller)
+            self._target_execution_supported = (
+                self.config.controller_mode == "service" and features["target_execution"]
+            )
             self._execution_transport = (
                 "persistent-service"
                 if self.config.controller_mode == "service" and features["execution"]
@@ -692,6 +699,9 @@ class FabricSession:
                     controller_version=self._controller_version,
                     controller_contract_identity=self._controller_contract_identity,
                     service_contract=self._service_contract,
+                    target_execution_transport=(
+                        "persistent-service" if self.target_execution_supported else "unsupported"
+                    ),
                 )
             fleet_state = "available" if workers else self._fleet_state
         return FabricStatus(
@@ -711,6 +721,29 @@ class FabricSession:
             self._controller_version,
             self._controller_contract_identity,
             self._service_contract,
+            "persistent-service" if self.target_execution_supported else "unsupported",
+        )
+
+    @property
+    def target_execution_supported(self) -> bool:
+        return self._target_execution_supported and callable(
+            getattr(self.client, "execute_target", None)
+        )
+
+    def consumer_context(self) -> Any:
+        """Build the current Harness-owned opaque Fabric provenance context."""
+
+        if self._consumer_context is None:
+            raise FabricExecutionError(
+                "FABRIC_TARGET_CONTEXT_REQUIRED: set Harness consumer context before target execution"
+            )
+        from mncs_fabric import ConsumerContext
+
+        return ConsumerContext(
+            "epi13-local-harness",
+            self._consumer_context["workload_identity"],
+            provider_identity=self._consumer_context["provider_identity"],
+            partition_identity=self._consumer_context["partition_identity"],
         )
 
     def _placement(self, model: ModelConfig) -> Any:

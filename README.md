@@ -1,13 +1,15 @@
 # epi13-local-harness
 
-Version 0.6.1 adds normal multi-node operation: persistent Fabric fleet observation,
-per-worker installed/loaded model state, a bounded resident-model policy, exact
-worker/model routing overrides, and direct Commons CLI/TUI access. See
+Version 0.6.2 adds an explicit policy-gated target tool adapter: Harness may send an
+approved immutable Python workload bundle to one exact enrolled Fabric worker without
+reading endpoint, registry, or credential configuration. Version 0.6.1 added persistent
+fleet observation, per-worker model state, resident-model policy, exact routing, and
+direct Commons CLI/TUI access. See
 [`docs/DISTRIBUTED_RESIDENCY_ROUTING.md`](docs/DISTRIBUTED_RESIDENCY_ROUTING.md).
 
-The authority boundary remains unchanged: remote inference receives schemas and
-tool results, while workspace tools and controller-local Commons execution remain
-owned by Local Harness.
+The authority boundary remains unchanged: Local Harness owns workspace meaning,
+tool choice, policy, approval, and result acceptance. Fabric owns exact-target
+admission, transport, bounded execution, retry identity, and evidence.
 
 A local, policy-aware AI harness for routing work across multiple local models,
 executing narrowly scoped tools, and escalating only when deterministic checks say

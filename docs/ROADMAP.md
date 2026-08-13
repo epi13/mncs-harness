@@ -10,6 +10,8 @@
   model, worker, and exact worker/model operator overrides.
 - Unified fleet view for runtime routing, CLI, Doctor, Models, and TUI.
 - Direct Commons CLI and TUI browsing over the existing controller-local MCP seam.
+- Policy-gated exact-worker Python tool execution through Fabric target admission,
+  immutable bundles, deterministic retry, and bound evidence.
 
 ## Still future
 
@@ -51,7 +53,7 @@ agent loop useful across MNCS Fabric without turning Fabric into an agent runtim
   separate task properties rather than assuming they are the same host;
 - [x] allow a model placed on a remote worker to request controller-owned tools against
   the controller workspace through the existing policy/approval boundary;
-- [ ] introduce explicit execution-target routing for policy-approved tools that must run
+- [x] introduce explicit execution-target routing for policy-approved tools that must run
   on another enrolled worker, without granting the model arbitrary SSH or host shell
   authority;
 - [x] model a capability graph spanning observed models/runtimes/worker capabilities,
@@ -64,8 +66,9 @@ agent loop useful across MNCS Fabric without turning Fabric into an agent runtim
 - [x] support controller-local MNCS Commons for remote models through validated
   tool-schema proxying while reserving worker-local MCPs for future resources
   inherently attached to a worker; and
-- [x] add an in-process evaluation proving remote inference can safely operate on a different
-  workspace/execution target and that policy remains authoritative.
+- [x] add in-process evaluations proving inference and tools can use different workers,
+  controller workspace authority remains separate, policy denial prevents dispatch,
+  and identical retry does not execute twice.
 
 The 0.5.0 integration additionally proves a multi-turn Commons WorkRequest-to-
 Observation contribution, opaque Fabric consumer provenance, optional inert Fabric

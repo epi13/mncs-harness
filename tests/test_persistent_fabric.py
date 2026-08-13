@@ -15,7 +15,9 @@ from pathlib import Path
 
 from epi13_local_harness.config import load_config
 from epi13_local_harness.fabric import FabricExecutionError, FabricSession
-from epi13_local_harness.models import FabricConfig, FabricWorkerConfig
+from epi13_local_harness.fabric_target_tools import FabricTargetToolExecutor
+from epi13_local_harness.models import FabricConfig, FabricWorkerConfig, SessionTargets
+from epi13_local_harness.tools import ToolRegistry
 
 OPENSSL = shutil.which("openssl")
 
@@ -135,6 +137,7 @@ class PersistentFabricTests(unittest.TestCase):
         self.assertEqual(first.status().controller_state, "connected")
         self.assertEqual(first.status().fleet_state, "empty")
         self.assertEqual(first.status().execution_transport, "unsupported")
+        self.assertEqual(first.status().target_execution_transport, "unsupported")
         self.assertEqual(first.status().controller_version, self.service.status()["fabric_version"])
         self.assertEqual(first.status().controller_contract_identity, self.service.status()["public_contract_identity"])
         self.assertEqual(first.status().fleet_authority, "persistent-controller")
@@ -169,6 +172,7 @@ class PersistentFabricTests(unittest.TestCase):
     def test_service_mode_inference_uses_controller_owned_worker_backend(self) -> None:
         from mncs_fabric.controller_service import ControllerConfig, ControllerService
         from mncs_fabric.enrollment import TrustStore, certificate_fingerprint
+        from mncs_fabric.lifecycle import LifecycleStore
         from mncs_fabric.registry import RegistryWorker, WorkerRegistry
         from mncs_fabric.transport import TLSWorkerServer
         from mncs_fabric.worker import LocalWorker
@@ -223,6 +227,27 @@ class PersistentFabricTests(unittest.TestCase):
         )
         worker_thread.start()
 
+        lifecycle = LifecycleStore(self.root / "lifecycle.jsonl")
+        authorization = lifecycle.create_authorization(
+            expected_worker_identity="persistent-worker"
+        )
+        public_key = subprocess.run(
+            [OPENSSL, "x509", "-in", str(cert["server"]), "-pubkey", "-noout"],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout
+        enrollment = lifecycle.build_request(
+            worker_identity="persistent-worker",
+            public_key_pem=public_key,
+            hostname_hint="persistent-worker.test",
+            operating_system="linux",
+            architecture="x86_64",
+            authorization_id=str(authorization["authorization_id"]),
+        )
+        lifecycle.submit_request(enrollment, str(authorization["token"]))
+        lifecycle.approve_request(str(enrollment["request_id"]))
+
         registry_path = self.root / "workers.json"
         registry = WorkerRegistry(registry_path, controller_id="persistent-fixture")
         registry.register(
@@ -274,6 +299,10 @@ class PersistentFabricTests(unittest.TestCase):
             session = FabricSession(config)
             session.initialize()
             self.assertEqual(session.status().execution_transport, "persistent-service")
+            self.assertEqual(
+                session.status().target_execution_transport,
+                "persistent-service",
+            )
             model = replace(
                 load_config(Path("/missing/config.toml")).models["e2b"],
                 provider="fabric",
@@ -286,6 +315,78 @@ class PersistentFabricTests(unittest.TestCase):
             self.assertEqual(response["message"]["content"], "persistent fixture response")
             self.assertEqual(metadata["fabric_worker"], "persistent-worker")
             self.assertEqual(metadata["execution_transport"], "persistent-service")
+
+            session.set_consumer_context(
+                workload_identity="sha256:" + "a" * 64,
+                provider_identity="sha256:" + "b" * 64,
+                partition_identity="sha256:" + "c" * 64,
+            )
+            observation = session.client.ingest_capability_observation(
+                "persistent-worker",
+                [{"kind": "runtime", "namespace": "system", "name": "python"}],
+            )
+            workspace = self.root / "tool-workspace"
+            workspace.mkdir()
+            script = workspace / "remote_tool.py"
+            script.write_text("print('persistent-target-tool-ok')\n", encoding="utf-8")
+            registry = ToolRegistry(
+                workspace,
+                load_config(Path("/missing/config.toml")).policy,
+                auto_approve=True,
+                interactive=False,
+            )
+            executor = FabricTargetToolExecutor(session, registry)
+            result = executor.execute(
+                "persistent-worker",
+                ["python", str(script)],
+                source_root=workspace,
+            )
+            self.assertTrue(result.execution.success, result.execution.output)
+            self.assertIn("persistent-target-tool-ok", result.execution.output)
+            self.assertEqual(result.target.label, "fabric-worker:persistent-worker")
+            self.assertIsNotNone(result.authorization_identity)
+            self.assertEqual(result.fabric_result["disposition"], "EXECUTED")
+            self.assertEqual(
+                result.fabric_result["target_execution_evidence"]["worker_identity"],
+                "persistent-worker",
+            )
+            self.assertEqual(
+                result.fabric_result["target_execution_evidence"][
+                    "consumer_authorization_identity"
+                ],
+                result.authorization_identity,
+            )
+            self.assertEqual(result.fabric_result["record"]["declared_argv"][0], "@python")
+            self.assertEqual(result.fabric_result["record"]["declared_argv"][1], "remote_tool.py")
+            self.assertNotIn(str(workspace), json.dumps(result.fabric_result))
+            self.assertEqual(observation["worker_identity"], "persistent-worker")
+
+            execution_count = len(worker.ledger.records(record_type="execution.record"))
+            duplicate = executor.execute(
+                "persistent-worker",
+                ["python", str(script)],
+                source_root=workspace,
+            )
+            self.assertTrue(duplicate.execution.success, duplicate.execution.output)
+            self.assertEqual(
+                duplicate.fabric_result["disposition"],
+                "DUPLICATE_IDEMPOTENT",
+            )
+            self.assertEqual(
+                len(worker.ledger.records(record_type="execution.record")),
+                execution_count,
+            )
+
+            denied = executor.execute(
+                "persistent-worker",
+                ["rm", "remote_tool.py"],
+                source_root=workspace,
+            )
+            self.assertFalse(denied.execution.success)
+            self.assertIsNone(denied.fabric_result)
+            self.assertTrue(script.exists())
+            self.assertEqual(config.workers, ())
+            self.assertIsNone(config.registry_path)
             session.close()
             session = None
             self.assertEqual(self.service.status()["service_runtime"], "RUNNING")
@@ -329,6 +430,12 @@ class PersistentFabricTests(unittest.TestCase):
 
 
 class PersistentFabricConfigTests(unittest.TestCase):
+    def test_session_targets_split_inference_and_tool_workers(self) -> None:
+        targets = SessionTargets.remote_inference_and_tools("worker-a", "worker-b")
+        self.assertEqual(targets.inference.label, "fabric-worker:worker-a")
+        self.assertEqual(targets.workspace.label, "controller")
+        self.assertEqual(targets.tools.label, "fabric-worker:worker-b")
+
     def test_direct_and_toml_defaults_are_service_without_worker_ownership(self) -> None:
         direct = FabricConfig()
         loaded = load_config(Path("/definitely/not/a/real/config.toml")).fabric
