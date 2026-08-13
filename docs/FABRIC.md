@@ -163,6 +163,10 @@ the router will not select stale or unknown inventory. Persistent service
 dispatch temporarily extends the short control-socket timeout for a bounded
 job (never beyond the transport's 30-second ceiling), so cold model loads do
 not get mislabeled as an immediate routing success.
+When Ollama returns `HTTP 500: unable to load model` with a blob identity,
+retain that diagnostic and have the operator verify disk/permissions and
+re-pull the named model; Harness never deletes or silently replaces model
+blobs.
 
 Completed attempts show provider, worker, placement mode, precision, and Fabric
 identities. They also record independent inference, workspace, and tool-execution
