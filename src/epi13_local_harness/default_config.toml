@@ -128,14 +128,19 @@ store_prompt_text = false
 
 [commons]
 enabled = false
-store_path = "~/.local/state/mncs-commons"
+controller_mode = "service"
+service_socket = "~/.local/state/mncs-commons/commons.sock"
+operator_socket = "~/.local/state/mncs-commons/commons-operator.sock"
 domain = "local"
-auto_initialize = true
 allow_model_publication = false
 publish_fabric_evidence = false
 startup_timeout_seconds = 10.0
 call_timeout_seconds = 30.0
 max_response_bytes = 1048576
+# Stdio compatibility/development mode only:
+# controller_mode = "stdio"
+# store_path = "~/.local/state/mncs-commons/store"
+# auto_initialize = true
 
 [controller]
 generation_policy = "local-generation-allowed"

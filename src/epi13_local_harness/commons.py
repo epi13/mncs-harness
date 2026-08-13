@@ -7,6 +7,7 @@ import sys
 import tempfile
 from dataclasses import dataclass
 from datetime import timedelta
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any, Callable
 
@@ -56,16 +57,24 @@ class CommonsStatus:
     exchange: str | None = None
     store_healthy: bool = False
     record_count: int | None = None
+    controller_mode: str | None = None
+    package_compatible: bool = False
+    service_reachable: bool = False
+    read_capable: bool = False
+    publication_capable: bool = False
+    publication_configured: bool = False
 
 
 ExchangeRunner = Callable[[str, dict[str, Any]], CommonsExchange]
 
 
 class CommonsSession:
-    """Launch a fixed stdio MCP server per bounded controller operation.
+    """Mediate bounded Commons tools through the configured controller boundary.
 
-    The model sees schemas and results only. It cannot select the executable,
-    module, store path, domain, environment, or subprocess lifecycle.
+    The normal path is the persistent consumer socket; fixed stdio remains an
+    explicit compatibility mode. The model sees schemas and results only. It
+    cannot select a socket, executable, store path, domain, environment, or
+    service/process lifecycle.
     """
 
     def __init__(self, config: Any, *, exchange_runner: ExchangeRunner | None = None):
@@ -80,6 +89,8 @@ class CommonsSession:
         )
         self._schemas: dict[str, dict[str, Any]] = {}
         self._descriptor: dict[str, Any] | None = None
+        self._service_client: Any | None = None
+        self._admin_client: Any | None = None
 
     @property
     def enabled(self) -> bool:
@@ -96,6 +107,8 @@ class CommonsSession:
     def initialize(self) -> CommonsStatus:
         if not self.enabled:
             return self._status
+        if self.config.controller_mode == "service":
+            return self._initialize_service()
         try:
             from mncs_commons.store import CommonsStore
 
@@ -121,6 +134,12 @@ class CommonsSession:
                 exchange=str(exchange.descriptor["exchangeVersion"]),
                 store_healthy=True,
                 record_count=len(store.records()),
+                controller_mode="stdio",
+                package_compatible=True,
+                service_reachable=True,
+                read_capable=True,
+                publication_capable=True,
+                publication_configured=bool(self.config.allow_model_publication),
             )
         except CommonsError as exc:
             self._status = CommonsStatus(True, False, exc.code, exc.detail)
@@ -133,6 +152,110 @@ class CommonsSession:
             )
         except Exception as exc:
             self._status = CommonsStatus(True, False, "COMMONS_INITIALIZATION_FAILED", str(exc))
+        return self._status
+
+    def _initialize_service(self) -> CommonsStatus:
+        try:
+            from mncs_commons.local_service import (
+                SERVICE_PROTOCOL,
+                CommonsAdminClient,
+                CommonsClient,
+            )
+
+            client = CommonsClient.connect(
+                self.config.service_socket,
+                timeout=float(self.config.call_timeout_seconds),
+            )
+            status = client.status()
+            service_descriptor = client.descriptor()
+            descriptor = client.describe()
+            if status.get("serviceProtocol") != SERVICE_PROTOCOL:
+                raise CommonsError(
+                    "COMMONS_PROTOCOL_MISMATCH", "Commons local-service protocol is incompatible"
+                )
+            consumer_schemas = service_descriptor.get("consumerTools")
+            operator_schemas = service_descriptor.get("operatorTools")
+            if not isinstance(consumer_schemas, list) or not isinstance(operator_schemas, list):
+                raise CommonsError(
+                    "COMMONS_PROTOCOL_MISMATCH", "Commons service tool projection is invalid"
+                )
+            schemas = list(consumer_schemas)
+            publication_capable = status.get("operatorPublicationCapable") is True
+            if self.config.allow_model_publication:
+                admin = CommonsAdminClient.connect(
+                    self.config.operator_socket,
+                    timeout=float(self.config.call_timeout_seconds),
+                )
+                admin.status()
+                self._admin_client = admin
+                schemas.extend(operator_schemas)
+            self._service_client = client
+            exchange = CommonsExchange(
+                "mncs-commons",
+                tuple(dict(schema) for schema in schemas),
+                descriptor,
+                descriptor,
+            )
+            self._accept_exchange(exchange)
+            self._status = CommonsStatus(
+                enabled=True,
+                ready=status.get("storeHealthy") is True,
+                code=(
+                    "COMMONS_READY"
+                    if status.get("storeHealthy") is True
+                    else "COMMONS_STORE_INVALID"
+                ),
+                detail=(
+                    "persistent controller-local Commons service is ready"
+                    if status.get("storeHealthy") is True
+                    else "persistent Commons service reports an unhealthy store"
+                ),
+                profile=str(descriptor["profile"]["version"]),
+                protocol=str(descriptor["recordVersions"][0]),
+                exchange=str(descriptor["exchangeVersion"]),
+                store_healthy=status.get("storeHealthy") is True,
+                record_count=(
+                    int(status["recordCount"])
+                    if isinstance(status.get("recordCount"), int)
+                    else None
+                ),
+                controller_mode="service",
+                package_compatible=True,
+                service_reachable=True,
+                read_capable=status.get("consumerReadCapable") is True,
+                publication_capable=publication_capable,
+                publication_configured=bool(self.config.allow_model_publication),
+            )
+        except CommonsError as exc:
+            self._status = CommonsStatus(
+                True,
+                False,
+                exc.code,
+                exc.detail,
+                controller_mode="service",
+                package_compatible=True,
+                publication_configured=bool(self.config.allow_model_publication),
+            )
+        except ImportError as exc:
+            self._status = CommonsStatus(
+                True,
+                False,
+                "COMMONS_UNAVAILABLE",
+                f"optional Commons integration is unavailable: {exc}",
+                controller_mode="service",
+                publication_configured=bool(self.config.allow_model_publication),
+            )
+        except Exception as exc:
+            self._status = CommonsStatus(
+                True,
+                False,
+                "COMMONS_SERVICE_UNREACHABLE",
+                self._root_exception(exc),
+                controller_mode="service",
+                package_compatible=True,
+                service_reachable=False,
+                publication_configured=bool(self.config.allow_model_publication),
+            )
         return self._status
 
     def status(self) -> CommonsStatus:
@@ -180,8 +303,6 @@ class CommonsSession:
             )
         try:
             from mncs_commons.adapters.fabric import from_fabric_execution
-            from mncs_commons.application import CommonsApplication
-            from mncs_commons.store import CommonsStore
 
             subject = execution.get("candidate_identity")
             if not isinstance(subject, str) or not subject:
@@ -195,6 +316,23 @@ class CommonsSession:
                     "COMMONS_FABRIC_TRANSLATION_INVALID",
                     json.dumps(translated.as_dict(), sort_keys=True),
                 )
+            if self.config.controller_mode == "service":
+                if self._admin_client is None:
+                    from mncs_commons.local_service import CommonsAdminClient
+
+                    self._admin_client = CommonsAdminClient.connect(
+                        self.config.operator_socket,
+                        timeout=float(self.config.call_timeout_seconds),
+                    )
+                if translated.record is None:
+                    raise CommonsError(
+                        "COMMONS_FABRIC_TRANSLATION_INVALID",
+                        "Fabric translation did not produce a record",
+                    )
+                return self._admin_client.publish(translated.record)
+            from mncs_commons.application import CommonsApplication
+            from mncs_commons.store import CommonsStore
+
             return CommonsApplication(CommonsStore(self.store_path)).ingest_adapter_result(
                 translated, publish=True, domain=self.config.domain
             )
@@ -204,7 +342,11 @@ class CommonsSession:
             raise CommonsError("COMMONS_EVIDENCE_PUBLICATION_FAILED", str(exc)) from exc
 
     def _exchange(self, name: str, arguments: dict[str, Any]) -> CommonsExchange:
-        runner = self._exchange_runner or self._native_exchange
+        runner = self._exchange_runner or (
+            self._service_exchange
+            if self.config.controller_mode == "service"
+            else self._native_exchange
+        )
         try:
             return runner(name, arguments)
         except CommonsError:
@@ -217,6 +359,69 @@ class CommonsSession:
                 else "COMMONS_MCP_UNAVAILABLE"
             )
             raise CommonsError(code, detail) from exc
+
+    def _service_exchange(self, name: str, arguments: dict[str, Any]) -> CommonsExchange:
+        client = self._service_client
+        if client is None:
+            raise CommonsError("COMMONS_SERVICE_UNREACHABLE", "Commons service is not connected")
+        operations = {
+            "commons_describe": lambda: client.describe(),
+            "commons_validate_record": lambda: client.validate(arguments.get("record", {})),
+            "commons_get_record": lambda: client.get(arguments.get("digest", "")),
+            "commons_query": lambda: client.query(**arguments),
+            "commons_sync": lambda: client.sync(
+                arguments.get("cursor"),
+                limit=arguments.get("limit", 1000),
+                kind=arguments.get("kind"),
+            ),
+            "commons_conversation": lambda: client.conversation(
+                arguments.get("root", ""),
+                depth=arguments.get("depth", 2),
+                max_nodes=arguments.get("maxNodes", 1000),
+            ),
+            "commons_work_list": lambda: client.work(
+                limit=arguments.get("limit", 100), domain=arguments.get("domain")
+            ),
+            "commons_evidence_trace": lambda: client.evidence(
+                arguments.get("root", ""),
+                depth=arguments.get("depth", 3),
+                max_nodes=arguments.get("maxNodes", 1000),
+            ),
+            "commons_publish_record": lambda: self._admin_publish(arguments),
+        }
+        operation = operations.get(name)
+        if operation is None:
+            raise CommonsError("COMMONS_UNKNOWN_TOOL", f"unsupported Commons tool: {name}")
+        result = operation()
+        if not isinstance(result, dict):
+            raise CommonsError("COMMONS_PROTOCOL_MISMATCH", "Commons result is not an object")
+        encoded = json.dumps(
+            result, ensure_ascii=True, separators=(",", ":"), sort_keys=True
+        ).encode("utf-8")
+        if len(encoded) > int(self.config.max_response_bytes):
+            raise CommonsError(
+                "COMMONS_SERVICE_RESPONSE_OVERSIZED",
+                "Commons service response exceeded policy",
+            )
+        return CommonsExchange(
+            "mncs-commons",
+            tuple(self.schemas()),
+            dict(self._descriptor or client.describe()),
+            result,
+        )
+
+    def _admin_publish(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        if self._admin_client is None:
+            raise CommonsError(
+                "COMMONS_TOOL_DENIED", "Commons publication is not configured"
+            )
+        record = arguments.get("record")
+        if not isinstance(record, dict):
+            raise CommonsError("COMMONS_INVALID_ARGUMENTS", "record must be an object")
+        participant = arguments.get("participant")
+        if participant is not None and not isinstance(participant, dict):
+            raise CommonsError("COMMONS_INVALID_ARGUMENTS", "participant must be an object")
+        return self._admin_client.publish(record, participant=participant)
 
     def _native_exchange(self, name: str, arguments: dict[str, Any]) -> CommonsExchange:
         try:
@@ -252,12 +457,20 @@ class CommonsSession:
                     read_stream,
                     write_stream,
                 ):
+                    timeout_value: float | timedelta
+                    try:
+                        mcp_major = int(version("mcp").split(".", 1)[0])
+                    except (PackageNotFoundError, ValueError):
+                        mcp_major = 1
+                    timeout_value = (
+                        float(self.config.call_timeout_seconds)
+                        if mcp_major >= 2
+                        else timedelta(seconds=float(self.config.call_timeout_seconds))
+                    )
                     async with ClientSession(
                         read_stream,
                         write_stream,
-                        read_timeout_seconds=timedelta(
-                            seconds=float(self.config.call_timeout_seconds)
-                        ),
+                        read_timeout_seconds=timeout_value,
                     ) as session:
                         with anyio.fail_after(float(self.config.startup_timeout_seconds)):
                             initialized = await session.initialize()
@@ -272,9 +485,7 @@ class CommonsSession:
                                 else await session.call_tool(
                                     name,
                                     arguments,
-                                    read_timeout_seconds=timedelta(
-                                        seconds=float(self.config.call_timeout_seconds)
-                                    ),
+                                    read_timeout_seconds=timeout_value,
                                 )
                             )
                         schemas = tuple(
@@ -363,7 +574,8 @@ class CommonsSession:
         if exchange.server_name != "mncs-commons":
             raise CommonsError("COMMONS_PROTOCOL_MISMATCH", "unexpected MCP server identity")
         names = {str(item.get("function", {}).get("name")) for item in exchange.schemas}
-        if names != EXPECTED_TOOLS:
+        allowed_toolsets = {EXPECTED_TOOLS, EXPECTED_TOOLS - WRITE_TOOLS}
+        if names not in allowed_toolsets:
             raise CommonsError(
                 "COMMONS_TOOLSET_MISMATCH", "Commons MCP tool set is missing or unexpected"
             )
@@ -381,7 +593,8 @@ class CommonsSession:
             or profile.get("executionAuthority") != "none"
             or profile.get("trustDomain") != self.config.domain
             or not isinstance(interface, dict)
-            or interface.get("binding") != "stdio-mcp"
+            or interface.get("binding")
+            != ("local-service" if self.config.controller_mode == "service" else "stdio-mcp")
             or interface.get("localOnly") is not True
             or not isinstance(security, dict)
             or security.get("instructionsAreUntrusted") is not True

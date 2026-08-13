@@ -10,6 +10,7 @@ from pathlib import Path
 
 from epi13_local_harness.agent import LocalAgent
 from epi13_local_harness.capability_graph import build_capability_graph
+from epi13_local_harness.commons import CommonsError
 from epi13_local_harness.config import load_config
 from epi13_local_harness.fabric import FabricExecutionError, FabricStatus
 from epi13_local_harness.fabric_inventory_session import (
@@ -527,6 +528,7 @@ class DistributedSessionIntegrationTests(unittest.TestCase):
                 commons=replace(
                     base.commons,
                     enabled=True,
+                    controller_mode="stdio",
                     store_path=root / "commons",
                     domain="controller:test",
                 ),
@@ -557,6 +559,11 @@ class DistributedSessionIntegrationTests(unittest.TestCase):
 
     def test_remote_fabric_model_uses_controller_commons_and_publishes_inert_evidence(self) -> None:
         try:
+            from mncs_commons.local_service import (
+                CommonsService,
+                CommonsServiceConfig,
+                CommonsServiceServer,
+            )
             from mncs_commons.store import CommonsStore
             from mncs_fabric.api import FabricClient
             from mncs_fabric.transport import InProcessTransport
@@ -617,6 +624,19 @@ class DistributedSessionIntegrationTests(unittest.TestCase):
                 session._refresh_model_inventories()
 
                 commons_path = root / "controller-commons"
+                commons_store = CommonsStore(commons_path)
+                commons_store.init()
+                commons_service_config = CommonsServiceConfig(
+                    commons_path,
+                    root / "commons.sock",
+                    root / "commons-operator.sock",
+                    domain="controller:test",
+                )
+                commons_server = CommonsServiceServer(
+                    CommonsService(commons_service_config)
+                )
+                commons_server.start()
+                self.addCleanup(commons_server.close)
                 base = load_config(None)
                 config = replace(
                     base,
@@ -624,6 +644,9 @@ class DistributedSessionIntegrationTests(unittest.TestCase):
                     commons=replace(
                         base.commons,
                         enabled=True,
+                        controller_mode="service",
+                        service_socket=commons_service_config.consumer_socket,
+                        operator_socket=commons_service_config.operator_socket,
                         store_path=commons_path,
                         domain="controller:test",
                         publish_fabric_evidence=True,
@@ -632,6 +655,11 @@ class DistributedSessionIntegrationTests(unittest.TestCase):
                 )
                 agent = LocalAgent(config)
                 agent.fabric_session = session
+                self.assertNotIn(
+                    "commons_publish_record", agent.commons_session.tool_names
+                )
+                with self.assertRaises(CommonsError):
+                    agent.commons_session.call("commons_work_list", {"limit": "1"})
                 workspace = root / "controller-workspace"
                 workspace.mkdir()
                 result = agent.run(
@@ -727,6 +755,11 @@ class DistributedSessionIntegrationTests(unittest.TestCase):
         try:
             from mncs_commons.application import CommonsApplication
             from mncs_commons.bootstrap import _request
+            from mncs_commons.local_service import (
+                CommonsService,
+                CommonsServiceConfig,
+                CommonsServiceServer,
+            )
             from mncs_commons.store import CommonsStore
             from mncs_fabric.api import FabricClient
             from mncs_fabric.transport import InProcessTransport
@@ -754,6 +787,17 @@ class DistributedSessionIntegrationTests(unittest.TestCase):
                     "controller:test",
                 )
                 receipt = CommonsApplication(store).publish(request, domain="controller:test")
+                commons_service_config = CommonsServiceConfig(
+                    commons_path,
+                    root / "commons.sock",
+                    root / "commons-operator.sock",
+                    domain="controller:test",
+                )
+                commons_server = CommonsServiceServer(
+                    CommonsService(commons_service_config)
+                )
+                commons_server.start()
+                self.addCleanup(commons_server.close)
                 _AgentOllamaFixture.publication_record = _response_observation(
                     str(request["metadata"]["recordId"])
                 )
@@ -801,6 +845,9 @@ class DistributedSessionIntegrationTests(unittest.TestCase):
                     commons=replace(
                         base.commons,
                         enabled=True,
+                        controller_mode="service",
+                        service_socket=commons_service_config.consumer_socket,
+                        operator_socket=commons_service_config.operator_socket,
                         store_path=commons_path,
                         domain="controller:test",
                         allow_model_publication=True,

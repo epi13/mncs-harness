@@ -336,6 +336,9 @@ class ControllerConfig:
 @dataclass(frozen=True)
 class CommonsConfig:
     enabled: bool = False
+    controller_mode: str = "service"
+    service_socket: Path = Path("~/.local/state/mncs-commons/commons.sock")
+    operator_socket: Path = Path("~/.local/state/mncs-commons/commons-operator.sock")
     store_path: Path = Path("~/.local/state/mncs-commons")
     domain: str = "local"
     auto_initialize: bool = True

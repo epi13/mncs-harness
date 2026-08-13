@@ -1,15 +1,86 @@
 from __future__ import annotations
 
 import importlib.util
+import json
+import shutil
+import ssl
+import subprocess
 import tempfile
 import threading
 import time
 import unittest
+from dataclasses import replace
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 from epi13_local_harness.config import load_config
 from epi13_local_harness.fabric import FabricExecutionError, FabricSession
 from epi13_local_harness.models import FabricConfig, FabricWorkerConfig
+
+OPENSSL = shutil.which("openssl")
+
+
+class _OllamaFixture(BaseHTTPRequestHandler):
+    def do_POST(self) -> None:  # noqa: N802 - stdlib handler API
+        length = int(self.headers["Content-Length"])
+        json.loads(self.rfile.read(length))
+        body = json.dumps(
+            {
+                "message": {"role": "assistant", "content": "persistent fixture response"},
+                "eval_count": 2,
+                "eval_duration": 1_000_000,
+            }
+        ).encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, *_args: object) -> None:
+        return
+
+
+def _certificates(root: Path) -> dict[str, Path]:
+    assert OPENSSL
+    ca_key, ca_cert = root / "ca.key", root / "ca.pem"
+    subprocess.run(
+        [
+            OPENSSL, "req", "-x509", "-newkey", "rsa:2048", "-nodes",
+            "-keyout", str(ca_key), "-out", str(ca_cert), "-subj",
+            "/CN=Harness Fabric test CA", "-days", "1", "-addext",
+            "basicConstraints=critical,CA:TRUE", "-addext",
+            "keyUsage=critical,keyCertSign,cRLSign",
+        ],
+        check=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    result: dict[str, Path] = {"ca": ca_cert}
+    for name in ("server", "client"):
+        key, csr, cert = root / f"{name}.key", root / f"{name}.csr", root / f"{name}.pem"
+        subprocess.run(
+            [
+                OPENSSL, "req", "-new", "-newkey", "rsa:2048", "-nodes",
+                "-keyout", str(key), "-out", str(csr), "-subj", f"/CN=Harness Fabric {name}",
+            ],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        subprocess.run(
+            [
+                OPENSSL, "x509", "-req", "-in", str(csr), "-CA", str(ca_cert),
+                "-CAkey", str(ca_key), "-CAcreateserial", "-out", str(cert),
+                "-days", "1", "-sha256",
+            ],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        result[name] = cert
+        result[f"{name}_key"] = key
+    return result
 
 
 @unittest.skipUnless(importlib.util.find_spec("mncs_fabric"), "mncs-fabric is not installed")
@@ -18,15 +89,15 @@ class PersistentFabricTests(unittest.TestCase):
         from mncs_fabric.controller_service import ControllerConfig, ControllerService
 
         self.directory = tempfile.TemporaryDirectory()
-        root = Path(self.directory.name)
-        self.socket = root / "controller.sock"
+        self.root = Path(self.directory.name)
+        self.socket = self.root / "controller.sock"
         self.service = ControllerService(
             ControllerConfig(
                 "persistent-fixture",
-                root / "lifecycle.jsonl",
-                service_log=root / "controller-service.jsonl",
+                self.root / "lifecycle.jsonl",
+                service_log=self.root / "controller-service.jsonl",
                 socket_path=self.socket,
-                admin_socket_path=root / "controller-admin.sock",
+                admin_socket_path=self.root / "controller-admin.sock",
             )
         )
         self.thread = threading.Thread(
@@ -93,6 +164,140 @@ class PersistentFabricTests(unittest.TestCase):
         self.assertEqual(status.controller_state, "unavailable")
         self.assertIn("FABRIC_CONTROLLER_UNAVAILABLE", status.detail or "")
         self.assertIsNone(session.client)
+
+    @unittest.skipUnless(OPENSSL, "openssl is required for ephemeral Fabric TLS certificates")
+    def test_service_mode_inference_uses_controller_owned_worker_backend(self) -> None:
+        from mncs_fabric.controller_service import ControllerConfig, ControllerService
+        from mncs_fabric.enrollment import TrustStore, certificate_fingerprint
+        from mncs_fabric.registry import RegistryWorker, WorkerRegistry
+        from mncs_fabric.transport import TLSWorkerServer
+        from mncs_fabric.worker import LocalWorker
+
+        self.service.request_stop()
+        self.thread.join(timeout=3)
+
+        cert_root = self.root / "certificates"
+        cert_root.mkdir()
+        cert = _certificates(cert_root)
+        controller_trust_path = self.root / "controller-trust.jsonl"
+        worker_trust = TrustStore(self.root / "worker-trust.jsonl")
+        TrustStore(controller_trust_path).enroll(
+            "worker",
+            "persistent-worker",
+            certificate_fingerprint(
+                ssl.PEM_cert_to_DER_cert(cert["server"].read_text(encoding="ascii"))
+            ),
+        )
+        worker_trust.enroll(
+            "controller",
+            "persistent-fixture",
+            certificate_fingerprint(
+                ssl.PEM_cert_to_DER_cert(cert["client"].read_text(encoding="ascii"))
+            ),
+        )
+        worker_root = self.root / "worker-root"
+        worker_root.mkdir()
+        worker = LocalWorker(
+            "persistent-worker",
+            worker_root,
+            self.root / "worker-ledger.jsonl",
+            bundle_cache_root=self.root / "worker-bundles",
+        )
+        worker_server = TLSWorkerServer(
+            worker,
+            "127.0.0.1",
+            0,
+            ca_file=cert["ca"],
+            server_cert=cert["server"],
+            server_key=cert["server_key"],
+            controller_id="persistent-fixture",
+            worker_id="persistent-worker",
+            trust_store=worker_trust,
+            timeout=3,
+        )
+        worker_port = worker_server.bind()
+        worker_thread = threading.Thread(
+            target=worker_server.serve_forever,
+            kwargs={"max_requests": 40, "idle_timeout": 15},
+            daemon=True,
+        )
+        worker_thread.start()
+
+        registry_path = self.root / "workers.json"
+        registry = WorkerRegistry(registry_path, controller_id="persistent-fixture")
+        registry.register(
+            RegistryWorker(
+                worker_id="persistent-worker",
+                host="127.0.0.1",
+                port=worker_port,
+                capabilities=tuple(sorted(worker.capabilities())),
+                ca_file=str(cert["ca"]),
+                client_certificate=str(cert["client"]),
+                client_key=str(cert["client_key"]),
+                trust_state=str(controller_trust_path),
+            )
+        )
+        execution_root = self.root / "execution-bundles"
+        config = ControllerConfig(
+            "persistent-fixture",
+            self.root / "lifecycle.jsonl",
+            service_log=self.root / "controller-service.jsonl",
+            socket_path=self.socket,
+            admin_socket_path=self.root / "controller-admin.sock",
+            worker_registry_path=registry_path,
+            worker_state_path=self.root / "controller-workers.jsonl",
+            execution_bundle_root=execution_root,
+        )
+        self.service = ControllerService(config)
+        self.thread = threading.Thread(
+            target=self.service.run,
+            kwargs={"max_seconds": 30.0},
+            daemon=True,
+        )
+        self.thread.start()
+        for _ in range(150):
+            if self.socket.is_socket():
+                break
+            time.sleep(0.02)
+        self.assertTrue(self.socket.is_socket())
+
+        ollama = ThreadingHTTPServer(("127.0.0.1", 0), _OllamaFixture)
+        ollama_thread = threading.Thread(target=ollama.serve_forever, daemon=True)
+        ollama_thread.start()
+        session = None
+        try:
+            config = replace(
+                self._config(),
+                state_path=self.root / "harness-private-state" / "fabric.jsonl",
+                provider_ollama_base_url=f"http://127.0.0.1:{ollama.server_port}",
+            )
+            session = FabricSession(config)
+            session.initialize()
+            self.assertEqual(session.status().execution_transport, "persistent-service")
+            model = replace(
+                load_config(Path("/missing/config.toml")).models["e2b"],
+                provider="fabric",
+                execution_device="cpu",
+            )
+            response, metadata = session.chat(
+                model,
+                [{"role": "user", "content": "hello from persistent Harness"}],
+            )
+            self.assertEqual(response["message"]["content"], "persistent fixture response")
+            self.assertEqual(metadata["fabric_worker"], "persistent-worker")
+            self.assertEqual(metadata["execution_transport"], "persistent-service")
+            session.close()
+            session = None
+            self.assertEqual(self.service.status()["service_runtime"], "RUNNING")
+            self.assertEqual(self.service.status()["fleet"]["workers"][0]["availability"], "AVAILABLE")
+        finally:
+            if session is not None:
+                session.close()
+            ollama.shutdown()
+            ollama_thread.join(timeout=3)
+            ollama.server_close()
+            worker_server.request_stop()
+            worker_thread.join(timeout=5)
 
     def test_transitional_keeps_persistent_fleet_authority(self) -> None:
         config = FabricConfig(

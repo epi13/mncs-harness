@@ -661,9 +661,9 @@ class FabricSession:
                 self._refresh_remote_workers()
                 failures = self._ensure_cuda_runtime_observations()
             else:
-                # Current persistent Fabric supports fleet reads only. A
-                # refresh must not turn that truthful limitation into an
-                # artificial probe failure.
+                # This running controller does not advertise the required live
+                # features. A refresh must not turn that truthful limitation
+                # into an artificial probe failure.
                 failures = []
             if failures:
                 existing = [self._detail] if self._detail else []
@@ -745,7 +745,7 @@ class FabricSession:
             raise FabricUnavailable(self._detail or "Fabric is unavailable")
         if self._execution_transport == "unsupported":
             raise FabricExecutionError(
-                "FABRIC_SERVICE_EXECUTION_UNSUPPORTED: persistent Fabric service does not yet dispatch execution"
+                "FABRIC_SERVICE_EXECUTION_UNSUPPORTED: running Fabric service does not advertise execution"
             )
         self.last_execution_record = None
         if model.execution_device == "accelerator" or model.accelerator_backend == "cuda":

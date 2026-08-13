@@ -238,6 +238,9 @@ def load_config(path: Path | None = None) -> HarnessConfig:
 
 
 def _parse_commons_config(raw: dict[str, Any]) -> CommonsConfig:
+    controller_mode = str(raw.get("controller_mode", "service"))
+    if controller_mode not in {"service", "stdio"}:
+        raise ValueError("commons.controller_mode must be service or stdio")
     domain = str(raw.get("domain", "local"))
     startup = float(raw.get("startup_timeout_seconds", 10.0))
     call = float(raw.get("call_timeout_seconds", 30.0))
@@ -250,6 +253,18 @@ def _parse_commons_config(raw: dict[str, Any]) -> CommonsConfig:
         raise ValueError("commons.max_response_bytes must be between 1024 and 4194304")
     return CommonsConfig(
         enabled=bool(raw.get("enabled", False)),
+        controller_mode=controller_mode,
+        service_socket=Path(
+            str(raw.get("service_socket", "~/.local/state/mncs-commons/commons.sock"))
+        ).expanduser(),
+        operator_socket=Path(
+            str(
+                raw.get(
+                    "operator_socket",
+                    "~/.local/state/mncs-commons/commons-operator.sock",
+                )
+            )
+        ).expanduser(),
         store_path=Path(
             str(raw.get("store_path", "~/.local/state/mncs-commons"))
         ).expanduser(),
