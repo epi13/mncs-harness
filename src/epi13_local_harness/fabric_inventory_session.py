@@ -129,7 +129,18 @@ try:
         json.loads(response.read().decode("utf-8"))
     with urllib.request.urlopen("http://127.0.0.1:11434/api/ps", timeout=10) as response:
         running = json.loads(response.read().decode("utf-8")).get("models", [])
-except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
+except urllib.error.HTTPError as exc:
+    try:
+        detail = exc.read().decode("utf-8", "replace")[:1024]
+    except OSError:
+        detail = "<error body unavailable>"
+    raise SystemExit(
+        "worker-local Ollama residency failed: HTTP "
+        + str(exc.code)
+        + ": "
+        + detail
+    ) from exc
+except (urllib.error.URLError, TimeoutError, OSError, json.JSONDecodeError) as exc:
     raise SystemExit("worker-local Ollama residency failed: " + str(exc)) from exc
 if not isinstance(running, list):
     raise SystemExit("worker-local Ollama residency returned malformed running state")
@@ -162,7 +173,21 @@ class _FreshDispatchClient:
     def execute(self, *args: Any, **kwargs: Any) -> Any:
         if "request_id" not in kwargs:
             kwargs["request_id"] = _fresh_request_id("elh-dispatch")
-        return self._client.execute(*args, **kwargs)
+        transport = getattr(self._client, "_service_transport", None)
+        previous_timeout = getattr(transport, "timeout", None)
+        if transport is not None and isinstance(previous_timeout, (int, float)):
+            plan = args[0] if args else None
+            plan_timeout = plan.get("timeout_seconds") if isinstance(plan, dict) else None
+            if isinstance(plan_timeout, (int, float)) and plan_timeout > previous_timeout:
+                # A provider job can legitimately outlive the short control
+                # request timeout. Keep the local socket bound while honoring
+                # the transport's hard 30-second safety ceiling.
+                transport.timeout = min(30.0, max(float(previous_timeout), float(plan_timeout)))
+        try:
+            return self._client.execute(*args, **kwargs)
+        finally:
+            if transport is not None and previous_timeout is not None:
+                transport.timeout = previous_timeout
 
 
 def _supports_request_id(client: Any) -> bool:

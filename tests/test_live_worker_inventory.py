@@ -24,6 +24,18 @@ class _RecordingClient:
         return []
 
 
+class _Transport:
+    timeout = 2.0
+
+
+class _TimedClient(_RecordingClient):
+    _service_transport = _Transport()
+
+    def execute(self, *args, **kwargs):
+        self.seen_timeout = self._service_transport.timeout
+        return super().execute(*args, **kwargs)
+
+
 class _WorkerListClient:
     def workers(self):
         return [
@@ -70,6 +82,14 @@ class LiveWorkerInventoryTests(unittest.TestCase):
         wrapped = _FreshDispatchClient(client)
         wrapped.execute({}, {}, request_id="operator-request")
         self.assertEqual(client.request_ids, ["operator-request"])
+
+    def test_dispatch_wrapper_extends_short_service_timeout_for_bounded_jobs(self) -> None:
+        client = _TimedClient()
+        wrapped = _FreshDispatchClient(client)
+        wrapped.execute({"timeout_seconds": 20}, {})
+        self.assertEqual(len(client.request_ids), 1)
+        self.assertEqual(client.seen_timeout, 20.0)
+        self.assertEqual(client._service_transport.timeout, 2.0)
 
     def test_successful_idempotent_replay_is_not_mislabeled_as_failure(self) -> None:
         self.assertTrue(
