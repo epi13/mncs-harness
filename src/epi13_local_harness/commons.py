@@ -20,11 +20,29 @@ EXPECTED_TOOLS = frozenset(
         "commons_sync",
         "commons_conversation",
         "commons_work_list",
+        "commons_work_status",
+        "commons_durable_work_list",
         "commons_evidence_trace",
         "commons_publish_record",
+        "commons_submit_work_record",
+        "commons_transition_work_record",
     }
 )
-WRITE_TOOLS = frozenset({"commons_publish_record"})
+WRITE_TOOLS = frozenset(
+    {
+        "commons_publish_record",
+        "commons_submit_work_record",
+        "commons_transition_work_record",
+    }
+)
+DURABLE_WORK_TOOLS = frozenset(
+    {
+        "commons_work_status",
+        "commons_durable_work_list",
+        "commons_submit_work_record",
+        "commons_transition_work_record",
+    }
+)
 
 
 class CommonsError(RuntimeError):
@@ -382,12 +400,20 @@ class CommonsSession:
             "commons_work_list": lambda: client.work(
                 limit=arguments.get("limit", 100), domain=arguments.get("domain")
             ),
+            "commons_work_status": lambda: client.work_status(
+                arguments.get("workId", "")
+            ),
+            "commons_durable_work_list": lambda: client.work_list(
+                states=arguments.get("states"), limit=arguments.get("limit", 100)
+            ),
             "commons_evidence_trace": lambda: client.evidence(
                 arguments.get("root", ""),
                 depth=arguments.get("depth", 3),
                 max_nodes=arguments.get("maxNodes", 1000),
             ),
             "commons_publish_record": lambda: self._admin_publish(arguments),
+            "commons_submit_work_record": lambda: self._admin_submit_work(arguments),
+            "commons_transition_work_record": lambda: self._admin_transition_work(arguments),
         }
         operation = operations.get(name)
         if operation is None:
@@ -422,6 +448,29 @@ class CommonsSession:
         if participant is not None and not isinstance(participant, dict):
             raise CommonsError("COMMONS_INVALID_ARGUMENTS", "participant must be an object")
         return self._admin_client.publish(record, participant=participant)
+
+    def _admin_submit_work(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        if self._admin_client is None:
+            raise CommonsError(
+                "COMMONS_TOOL_DENIED", "Commons work publication is not configured"
+            )
+        request = arguments.get("request")
+        if not isinstance(request, dict):
+            raise CommonsError("COMMONS_INVALID_ARGUMENTS", "request must be an object")
+        return self._admin_client.submit_work(request)
+
+    def _admin_transition_work(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        if self._admin_client is None:
+            raise CommonsError(
+                "COMMONS_TOOL_DENIED", "Commons work publication is not configured"
+            )
+        work_id = arguments.get("workId")
+        transition = arguments.get("transition")
+        if not isinstance(work_id, str) or not isinstance(transition, dict):
+            raise CommonsError(
+                "COMMONS_INVALID_ARGUMENTS", "workId and transition are required"
+            )
+        return self._admin_client.transition_work(work_id, transition)
 
     def _native_exchange(self, name: str, arguments: dict[str, Any]) -> CommonsExchange:
         try:
@@ -574,7 +623,12 @@ class CommonsSession:
         if exchange.server_name != "mncs-commons":
             raise CommonsError("COMMONS_PROTOCOL_MISMATCH", "unexpected MCP server identity")
         names = {str(item.get("function", {}).get("name")) for item in exchange.schemas}
-        allowed_toolsets = {EXPECTED_TOOLS, EXPECTED_TOOLS - WRITE_TOOLS}
+        allowed_toolsets = {
+            EXPECTED_TOOLS,
+            EXPECTED_TOOLS - WRITE_TOOLS,
+            EXPECTED_TOOLS - DURABLE_WORK_TOOLS,
+            EXPECTED_TOOLS - DURABLE_WORK_TOOLS - WRITE_TOOLS,
+        }
         if names not in allowed_toolsets:
             raise CommonsError(
                 "COMMONS_TOOLSET_MISMATCH", "Commons MCP tool set is missing or unexpected"

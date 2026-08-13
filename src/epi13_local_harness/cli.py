@@ -145,11 +145,14 @@ def build_parser() -> argparse.ArgumentParser:
         "commons", help="Browse controller-local Commons without a model"
     )
     commons_sub = commons_parser.add_subparsers(dest="commons_command", required=True)
-    for name in ("status", "work"):
+    for name in ("status", "work", "opportunities"):
         command = commons_sub.add_parser(name)
         command.add_argument("--json", action="store_true")
-        if name == "work":
+        if name in {"work", "opportunities"}:
             command.add_argument("--limit", type=int, default=100)
+    commons_work_status = commons_sub.add_parser("work-status")
+    commons_work_status.add_argument("work_id")
+    commons_work_status.add_argument("--json", action="store_true")
     commons_query = commons_sub.add_parser("query")
     commons_query.add_argument("--kind")
     commons_query.add_argument("--state")
@@ -787,6 +790,10 @@ def cmd_commons(args: argparse.Namespace) -> int:
         payload = service.status()
     elif command == "work":
         payload = service.work(limit=args.limit)
+    elif command == "opportunities":
+        payload = service.opportunities(limit=args.limit)
+    elif command == "work-status":
+        payload = service.work_status(args.work_id)
     elif command == "query":
         payload = service.query(
             kind=args.kind,

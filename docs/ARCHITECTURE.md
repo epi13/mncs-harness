@@ -125,6 +125,12 @@ publication is a separate controller action and is conservative by default. Expl
 `stdio` mode remains a compatibility path. The capability graph therefore places
 Commons under `controller.mcp`; it is never copied into a Fabric worker observation.
 
+MNCS Control is the remote API surface; Local Harness owns semantic routing and
+acceptance policy; Fabric owns persistent execution and worker observations; Commons
+owns durable shared coordination/history; Forge owns evaluation, evidence, and claim
+semantics. A submitting client may disconnect after Fabric acceptance without
+transferring any of these authority boundaries.
+
 Shell access follows the same authority boundary. The preferred primitive remains a
 guarded executable plus argv. Bash or PowerShell script tools may be added where they
 provide real value, but script content must pass policy inspection and approval before

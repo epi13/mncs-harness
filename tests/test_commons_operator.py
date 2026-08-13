@@ -40,7 +40,7 @@ class CommonsOperatorTests(unittest.TestCase):
         session = _Session()
         service = CommonsOperatorService(session)
         result = service.work(limit=7)
-        self.assertEqual(session.calls, [("commons_work_list", {"limit": 7}, False)])
+        self.assertEqual(session.calls, [("commons_durable_work_list", {"limit": 7}, False)])
         self.assertEqual(result["content_trust"], "UNTRUSTED")
         self.assertIn("rm -rf /", result["result"]["records"][0]["statement"])
 
