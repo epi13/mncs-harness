@@ -138,10 +138,8 @@ def load_config(path: Path | None = None) -> HarnessConfig:
             resource_max_age_seconds=float(item.get("resource_max_age_seconds", 300.0)),
         )
 
-    required_roles = {"e2b", "e4b", "reviewer"}
-    missing = required_roles.difference(models)
-    if missing:
-        raise ValueError(f"Missing required model roles: {', '.join(sorted(missing))}")
+    if not models:
+        raise ValueError("At least one model role must be configured")
 
     lanes: dict[str, LaneConfig] = {}
     for lane_name, item in lanes_raw.items():
