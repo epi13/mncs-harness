@@ -708,9 +708,13 @@ class InventoryAwareFabricSession(FabricSession):
         current_candidates = [
             (str(worker.get("worker_id")), self._worker_inventory(worker))
             for worker in workers
-            if worker.get("source") in {"remote", "registry"}
+            if worker.get("source") in {None, "", "remote", "registry"}
             and worker.get("availability") == "AVAILABLE"
-            and worker.get("model_inventory_status") == "CURRENT"
+            and str(
+                worker.get("model_inventory_status")
+                or worker.get("capability_inventory_status")
+                or "UNKNOWN"
+            ) == "CURRENT"
         ]
         candidates = [
             (worker_id, inventory)
@@ -850,7 +854,7 @@ class InventoryAwareFabricSession(FabricSession):
                     worker_id,
                     str(requested.model),
                     inventory,
-                    "operator selected the exact model; worker resolved from current inventory",
+                    f"selected {requested.model} on {worker_id} because the operator pinned the exact model",
                 )
             elif not requested.allow_fallback:
                 selection = unavailable(
@@ -883,9 +887,11 @@ class InventoryAwareFabricSession(FabricSession):
                     )
                 )
                 worker_id, inventory = exact_candidates[0]
-                reason = "configured model is installed on the Fabric worker inventory"
-                if named(inventory, model.name).get("loaded"):
-                    reason += "; preferred an already loaded eligible instance"
+                loaded = bool(named(inventory, model.name).get("loaded"))
+                reason = (
+                    f"selected {model.name} on {worker_id} because it exactly matches "
+                    f"role {role} and is {'already resident' if loaded else 'installed'}"
+                )
                 if manual_failed_open:
                     reason = "explicit manual fallback enabled; " + reason
                 selection = selected(worker_id, model.name, inventory, reason)

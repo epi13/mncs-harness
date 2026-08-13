@@ -63,7 +63,7 @@ class DisabledLocalGenerationProvider:
             "provider": "controller-policy",
             "backend": "none",
             "controller_generation_denied": True,
-            "controller_generation_policy": "router-only",
+            "controller_generation_policy": "local-generation-allowed",
             **SessionTargets.unresolved_inference().as_metadata(),
         }
 

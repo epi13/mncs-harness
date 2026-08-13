@@ -6,7 +6,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from epi13_local_harness.config import load_config
-from epi13_local_harness.models import SemanticRouteResult
+from epi13_local_harness.models import RoutingOverride, SemanticRouteResult
 from epi13_local_harness.router import plan_route
 
 
@@ -110,6 +110,29 @@ class RouterTests(unittest.TestCase):
         self.assertTrue(
             any("model unavailable" in reason for reason in plan.reasons)
         )
+
+    def test_exact_worker_model_pin_bypasses_semantic_compatibility_router(self) -> None:
+        config = replace(
+            self.config,
+            router=replace(
+                self.config.router,
+                enable_semantic_routing=True,
+                backend="transformers",
+            ),
+        )
+        with patch(
+            "epi13_local_harness.router.route_with_backend",
+            side_effect=AssertionError("semantic router must not run for an exact pin"),
+        ):
+            plan = plan_route(
+                "Explain this without network access",
+                config,
+                routing_override=RoutingOverride.from_values(
+                    worker="collamore02-windows", model="gemma4:e4b"
+                ),
+            )
+        self.assertIsNone(plan.semantic)
+        self.assertEqual(plan.routing_override.mode, "WORKER_MODEL")
 
 
 if __name__ == "__main__":

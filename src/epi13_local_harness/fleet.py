@@ -7,7 +7,6 @@ from typing import Any
 from .models import HarnessConfig
 from .ollama import OllamaClient, OllamaError
 from .residency import ResidencyManager
-from .semantic_router import router_status
 
 
 class FleetService:
@@ -65,7 +64,6 @@ class FleetService:
                     "residency": assignments.get(str(worker.get("worker_id"))),
                 }
             )
-        semantic = router_status(self.config)
         return {
             "controller": {
                 "generation_policy": self.config.controller.generation_policy,
@@ -74,13 +72,7 @@ class FleetService:
                 "installed_model_count": len(local_models),
                 "loaded_generation_models": sorted(running_names),
                 "generation_model_loaded": bool(running_names),
-                "semantic_router": {
-                    "state": semantic.state,
-                    "active": semantic.active,
-                    "cached": semantic.cached,
-                    "model": semantic.model,
-                    "device": semantic.device,
-                },
+                "routing": "deterministic-policy-and-fabric-inventory",
             },
             "fabric": {
                 "state": fabric.state,
@@ -105,4 +97,3 @@ class FleetService:
         if reconcile and self.config.model_residency.enabled:
             self.residency.reconcile()
         return self.snapshot()
-

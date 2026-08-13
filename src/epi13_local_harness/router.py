@@ -116,104 +116,35 @@ def profile_task(
     )
 
 
-def _heuristic_lane_scores(
-    text: str,
-    config: HarnessConfig,
-    profile: TaskProfile,
-) -> SemanticRouteResult | None:
-    """Retain the old scorer only as an explicitly named heuristic backend."""
-    if not config.lanes:
-        return None
-
-    normalized = " ".join(text.lower().split())
-    lane_labels = {
-        "chat": 0.35,
-        "coding": 0.55,
-        "review": 0.48,
-        "ocr": 0.67,
-    }
-
-    if profile.has_image:
-        lane_labels["ocr"] += 0.15
-    if _contains_any(normalized, OCR_TERMS):
-        lane_labels["ocr"] += 0.15
-    if profile.has_code and (profile.asks_for_edit or profile.asks_for_execution):
-        lane_labels["coding"] += 0.18
-    if profile.is_high_risk or profile.is_complex:
-        lane_labels["review"] += 0.22
-    if profile.asks_for_explanation and not (
-        profile.asks_for_edit or profile.asks_for_execution
-    ):
-        lane_labels["chat"] += 0.10
-
-    scores: dict[str, float] = {}
-    for lane_name, lane in config.lanes.items():
-        if not lane.enabled:
-            continue
-        if lane.requires_image and not profile.has_image:
-            continue
-        base = lane_labels.get(lane_name, 0.30)
-        if lane.worker_role == "reviewer":
-            base += 0.05
-        scores[lane_name] = max(0.0, min(1.0, base))
-
-    if not scores:
-        return None
-
-    ranked = sorted(scores.items(), key=lambda item: item[1], reverse=True)
-    selected_lane, selected_score = ranked[0]
-    runner_up_lane, runner_up_score = (
-        ranked[1] if len(ranked) > 1 else (None, None)
-    )
-    margin = (
-        selected_score - runner_up_score
-        if runner_up_score is not None
-        else selected_score
-    )
-
-    reason = "heuristic lane selected"
-    if selected_score < config.router.minimum_score:
-        selected_lane = config.router.ambiguity_lane
-        reason = "heuristic score below configured threshold"
-    elif runner_up_score is not None and margin < config.router.minimum_margin:
-        selected_lane = config.router.ambiguity_lane
-        reason = "heuristic score margin below configured threshold"
-
-    return SemanticRouteResult(
-        selected_lane=selected_lane,
-        selected_score=selected_score,
-        runner_up_lane=runner_up_lane,
-        runner_up_score=runner_up_score,
-        margin=margin,
-        all_scores=scores,
-        backend="heuristic",
-        reason=reason,
-    )
-
-
 def _deterministic_route(profile: TaskProfile, config: HarnessConfig) -> RoutePlan:
+    def available(preferred: str) -> str:
+        if preferred in config.models:
+            return preferred
+        return next(iter(config.models))
+
     if profile.is_high_risk or profile.has_image or profile.is_complex:
-        primary = "reviewer"
+        primary = available("reviewer")
         escalations: tuple[str, ...] = ()
         reasons = (
             *profile.reasons,
             "reviewer selected for risk, multimodality, or complexity",
         )
     elif profile.has_code and (profile.asks_for_edit or profile.asks_for_execution):
-        primary = "e4b"
+        primary = available("e4b")
         chain: list[str] = []
         if config.routing.code_specialist_enabled and "coder" in config.models:
             chain.append("coder")
-        chain.append("reviewer")
+        if "reviewer" in config.models:
+            chain.append("reviewer")
         escalations = tuple(chain)
         reasons = (*profile.reasons, "E4B selected as primary tool-using worker")
     elif profile.asks_for_edit or profile.asks_for_execution:
-        primary = "e4b"
-        escalations = ("reviewer",)
+        primary = available("e4b")
+        escalations = ("reviewer",) if "reviewer" in config.models else ()
         reasons = (*profile.reasons, "E4B selected because the request needs tools")
     else:
-        primary = "e2b"
-        escalations = ("e4b", "reviewer")
+        primary = available("e2b")
+        escalations = tuple(role for role in ("e4b", "reviewer") if role in config.models)
         reasons = (*profile.reasons, "E2B selected for inexpensive read-only work")
 
     max_roles = max(1, config.routing.max_attempts)
@@ -223,6 +154,49 @@ def _deterministic_route(profile: TaskProfile, config: HarnessConfig) -> RoutePl
         escalation_roles=tuple(all_roles[1:]),
         reasons=tuple(dict.fromkeys(reasons)),
         profile=profile,
+    )
+
+
+def _compatibility_lane_route(
+    text: str, config: HarnessConfig, profile: TaskProfile
+) -> SemanticRouteResult | None:
+    """Pure task-feature lane selection for deprecated configs.
+
+    This is intentionally local and dependency-free. It exists only so older
+    configuration files can be read while operators migrate; the normal route
+    path does not enable it.
+    """
+    if not config.lanes:
+        return None
+    normalized = " ".join(text.lower().split())
+    scores: dict[str, float] = {}
+    for name, lane in config.lanes.items():
+        if lane.enabled and (not lane.requires_image or profile.has_image):
+            score = 0.35
+            if name == "ocr" and (profile.has_image or _contains_any(normalized, OCR_TERMS)):
+                score += 0.35
+            if name == "coding" and profile.has_code and (profile.asks_for_edit or profile.asks_for_execution):
+                score += 0.18
+            if name == "review" and (profile.is_high_risk or profile.is_complex):
+                score += 0.22
+            if name == "chat" and profile.asks_for_explanation and not profile.asks_for_edit:
+                score += 0.10
+            scores[name] = min(1.0, score)
+    if not scores:
+        return None
+    ranked = sorted(scores.items(), key=lambda item: item[1], reverse=True)
+    selected, selected_score = ranked[0]
+    runner, runner_score = ranked[1] if len(ranked) > 1 else (None, None)
+    margin = selected_score - runner_score if runner_score is not None else selected_score
+    return SemanticRouteResult(
+        selected_lane=selected,
+        selected_score=selected_score,
+        runner_up_lane=runner,
+        runner_up_score=runner_score,
+        margin=margin,
+        all_scores=scores,
+        backend="heuristic",
+        reason="deterministic compatibility lane selected",
     )
 
 
@@ -254,56 +228,35 @@ def plan_route(
             routing_override=requested,
         )
 
+    # Every operator pin is authoritative. In particular, exact worker/model
+    # requests must never initialize compatibility routing or consult unrelated
+    # roles before Fabric validates the pair.
+    if requested.mode != "AUTO":
+        return replace(_deterministic_route(profile, config), routing_override=requested)
+
     plan = _deterministic_route(profile, config)
-    semantic: SemanticRouteResult | None = None
-    fallback_reason: str | None = None
-
-    if config.router.enable_semantic_routing:
-        if config.router.backend == "heuristic":
-            semantic = _heuristic_lane_scores(text, config, profile)
-        else:
-            semantic, fallback_reason = route_with_backend(text, config, profile)
-
-    reasons = list(plan.reasons)
-    if fallback_reason:
-        reasons.append(f"semantic router fallback: {fallback_reason}")
-
+    # Legacy config compatibility only: no external model is loaded and the
+    # deprecated Transformer backend is reduced to a no-op fallback.
+    semantic = None
+    compatibility_reason: str | None = None
+    if config.router.enable_semantic_routing and config.router.backend == "heuristic":
+        semantic = _compatibility_lane_route(text, config, profile)
+    elif config.router.enable_semantic_routing and config.router.backend == "transformers":
+        semantic, compatibility_reason = route_with_backend(text, config, profile)
     if semantic and semantic.selected_lane in config.lanes:
         lane = config.lanes[semantic.selected_lane]
-        worker_role = lane.worker_role
-        if lane.enabled and worker_role in config.models:
-            escalations = [
-                role for role in plan.escalation_roles if role != worker_role
-            ]
-            for escalation_lane in lane.escalation:
-                target = config.lanes.get(escalation_lane)
-                target_role = target.worker_role if target else escalation_lane
-                if target_role in config.models and target_role != worker_role:
-                    escalations.append(target_role)
-            max_roles = max(1, config.routing.max_attempts)
-            return RoutePlan(
-                primary_role=worker_role,
-                escalation_roles=tuple(dict.fromkeys(escalations))[: max_roles - 1],
-                reasons=tuple(
-                    dict.fromkeys(
-                        (
-                            *reasons,
-                            semantic.reason or "semantic routing selected a lane",
-                        )
-                    )
-                ),
-                profile=plan.profile,
+        if lane.enabled and lane.worker_role in config.models:
+            return replace(
+                plan,
+                primary_role=lane.worker_role,
                 lane=semantic.selected_lane,
                 semantic=semantic,
                 routing_override=requested,
             )
-
-    if reasons != list(plan.reasons):
-        return RoutePlan(
-            primary_role=plan.primary_role,
-            escalation_roles=plan.escalation_roles,
-            reasons=tuple(dict.fromkeys(reasons)),
-            profile=plan.profile,
+    if compatibility_reason:
+        return replace(
+            plan,
+            reasons=(*plan.reasons, f"semantic router fallback: {compatibility_reason}"),
             routing_override=requested,
         )
     return replace(plan, routing_override=requested)

@@ -138,10 +138,8 @@ def load_config(path: Path | None = None) -> HarnessConfig:
             resource_max_age_seconds=float(item.get("resource_max_age_seconds", 300.0)),
         )
 
-    required_roles = {"e2b", "e4b", "reviewer"}
-    missing = required_roles.difference(models)
-    if missing:
-        raise ValueError(f"Missing required model roles: {', '.join(sorted(missing))}")
+    if not models:
+        raise ValueError("At least one model role must be configured")
 
     lanes: dict[str, LaneConfig] = {}
     for lane_name, item in lanes_raw.items():
@@ -368,7 +366,7 @@ def _parse_fabric_config(raw: dict[str, Any]) -> FabricConfig:
             "fabric.controller_mode=service cannot contain fabric.workers or registry_path; "
             "use controller_mode=embedded or transitional for explicit compatibility"
         )
-    service_timeout = float(raw.get("service_timeout_seconds", 5.0))
+    service_timeout = float(raw.get("service_timeout_seconds", 30.0))
     if not 0.1 <= service_timeout <= 30:
         raise ValueError("fabric.service_timeout_seconds must be between 0.1 and 30")
     consumer_identity = str(raw.get("consumer_identity", "epi13-local-harness"))

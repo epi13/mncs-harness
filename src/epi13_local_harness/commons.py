@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import importlib.util
 import json
+import os
 import sys
 import tempfile
 from dataclasses import dataclass
@@ -483,6 +485,24 @@ class CommonsSession:
             ) from exc
 
         async def run(stderr: Any) -> CommonsExchange:
+            environment = dict(os.environ)
+            # Stdio compatibility is sometimes launched by a host Python that
+            # can import ELH from a checkout but cannot see the optional Commons
+            # distribution. Bind the resolved package root explicitly rather than
+            # relying on the caller's venv or current working directory.
+            spec = importlib.util.find_spec("mncs_commons")
+            roots: list[str] = []
+            if spec is not None:
+                locations = spec.submodule_search_locations
+                if locations:
+                    roots.extend(str(Path(location).resolve().parent) for location in locations)
+                elif spec.origin:
+                    roots.append(str(Path(spec.origin).resolve().parent.parent))
+            if roots:
+                existing = environment.get("PYTHONPATH", "")
+                environment["PYTHONPATH"] = os.pathsep.join(
+                    dict.fromkeys([*roots, *([existing] if existing else [])])
+                )
             params = StdioServerParameters(
                 command=sys.executable,
                 args=[
@@ -493,6 +513,7 @@ class CommonsSession:
                     "--domain",
                     str(self.config.domain),
                 ],
+                env=environment,
             )
             total_bound = (
                 float(self.config.startup_timeout_seconds)
