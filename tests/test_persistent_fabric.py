@@ -430,6 +430,34 @@ class PersistentFabricTests(unittest.TestCase):
 
 
 class PersistentFabricConfigTests(unittest.TestCase):
+    def test_target_tool_argv_rejects_paths_outside_selected_bundle(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            workspace = Path(directory)
+            bundle = workspace / "bundle"
+            bundle.mkdir()
+            script = bundle / "tool.py"
+            script.write_text("print('ok')\n", encoding="utf-8")
+            outside = workspace / "outside.py"
+            outside.write_text("print('outside')\n", encoding="utf-8")
+            registry = ToolRegistry(
+                workspace,
+                load_config(Path("/missing/config.toml")).policy,
+                auto_approve=True,
+                interactive=False,
+            )
+            executor = FabricTargetToolExecutor(FabricSession(FabricConfig()), registry)
+
+            self.assertEqual(
+                executor._remote_argv(["python", str(script)], bundle),
+                ["@python", "tool.py"],
+            )
+            with self.assertRaisesRegex(ValueError, "parent traversal"):
+                executor._remote_argv(["python", str(script), "../../secret"], bundle)
+            with self.assertRaisesRegex(ValueError, "outside the selected"):
+                executor._remote_argv(["python", str(outside)], bundle)
+            with self.assertRaisesRegex(ValueError, "Windows paths"):
+                executor._remote_argv(["python", str(script), r"C:\\Users\\secret"], bundle)
+
     def test_session_targets_split_inference_and_tool_workers(self) -> None:
         targets = SessionTargets.remote_inference_and_tools("worker-a", "worker-b")
         self.assertEqual(targets.inference.label, "fabric-worker:worker-a")

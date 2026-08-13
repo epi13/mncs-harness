@@ -75,8 +75,10 @@ inference target is remote. An absent or unresolved inference target cannot caus
 tool target to default remotely. The optional target-tool adapter requires an explicit
 worker selected by Harness, the ordinary command-policy and approval gates, a fresh
 runtime observation, and a workspace-confined immutable bundle. It supports no shell,
-ambient environment, host-home path, alternate-worker, or local fallback. Fabric
-inventory never grants SSH, shell, workspace, filesystem, MCP, or tool authority.
+ambient environment inheritance, parent-traversing argv path, alternate-worker, or
+local fallback. This is not an OS sandbox: once approved, the Python program retains
+the worker service account's ordinary filesystem access. Fabric inventory never grants
+SSH, shell, workspace, filesystem, MCP, or tool authority.
 
 ### Optional Commons boundary
 

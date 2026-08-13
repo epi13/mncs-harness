@@ -170,7 +170,9 @@ same Harness command policy and approval decision. It currently accepts only Pyt
 argv workloads through Fabric's worker-local `@python` alias. The consumer selects an
 exact enrolled worker and an allowed workspace root; the adapter stages only that root
 as an immutable content bundle, converts in-root absolute arguments to bundle-relative
-paths, and rejects paths outside it. It then calls `FabricClient.execute_target` with
+paths, rejects parent traversal and controller Windows paths, and requires a relative
+Python entry point to resolve inside the selected bundle. It then calls
+`FabricClient.execute_target` with
 the Harness consumer context and an identity-addressed record of the policy decision.
 
 The adapter reads only public fleet and capability records. It does not receive worker
@@ -181,6 +183,11 @@ returned as a failed tool call; there is no controller-local or alternate-worker
 fallback. The authorization identity is Harness provenance, not Fabric proof that a
 semantic tool request was permitted. Automatic model-directed target choice and result
 material import remain future policy work.
+
+The immutable bundle and argv checks are an authority boundary, not an operating-system
+sandbox. An approved Python program still runs with the Fabric worker service account's
+ordinary filesystem permissions. Use only trusted workspace programs until worker-side
+Landlock, bubblewrap, or an equivalent containment profile is implemented.
 
 In `transitional` mode, persistent Fabric remains authoritative for membership,
 presence, and fleet identity. Bounded execution and worker-local observations

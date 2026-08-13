@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import tempfile
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from typing import Any, Sequence
 
 from .fabric import FabricExecutionError, FabricSession, _identity
@@ -216,9 +216,25 @@ class FabricTargetToolExecutor:
                 "Python runtime alias"
             )
         result = ["@python"]
-        for argument in argv[1:]:
+        for index, argument in enumerate(argv[1:], start=1):
+            path_segments = argument.replace("\\", "/").split("/")
+            if ".." in path_segments:
+                raise ValueError("parent traversal is not allowed in Fabric target arguments")
             candidate = Path(argument)
+            if PureWindowsPath(argument).is_absolute():
+                raise ValueError(
+                    "controller Windows paths cannot be used as remote Fabric arguments"
+                )
             if not candidate.is_absolute():
+                if index == 1 and not argument.startswith("-"):
+                    resolved = self.registry.guard.resolve(candidate, must_exist=True)
+                    try:
+                        result.append(resolved.relative_to(source_root).as_posix())
+                    except ValueError as exc:
+                        raise ValueError(
+                            "Python entry point is outside the selected execution bundle"
+                        ) from exc
+                    continue
                 result.append(argument)
                 continue
             resolved = self.registry.guard.resolve(candidate, must_exist=False)
