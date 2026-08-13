@@ -8,6 +8,7 @@ from pathlib import Path
 
 from epi13_local_harness.capability_graph import build_capability_graph
 from epi13_local_harness.commons import (
+    DURABLE_WORK_TOOLS,
     EXPECTED_TOOLS,
     CommonsError,
     CommonsExchange,
@@ -79,7 +80,7 @@ class CommonsIntegrationTests(unittest.TestCase):
             session = CommonsSession(self._config(root))
             status = session.initialize()
             self.assertTrue(status.ready, status)
-            self.assertEqual(set(session.tool_names), EXPECTED_TOOLS)
+            self.assertEqual(set(session.tool_names), EXPECTED_TOOLS - DURABLE_WORK_TOOLS)
             descriptor, success = session.call("commons_describe", {})
             self.assertTrue(success)
             self.assertEqual(

@@ -1,10 +1,18 @@
 # Controller-local MNCS Commons
 
 Human operators use the controller-owned service through
-`elh commons status|work|query|get|conversation|evidence|sync`. The TUI Commons
+`elh commons status|work|work-status|opportunities|query|get|conversation|evidence|sync`.
+`work` lists durable coordination records; `opportunities` retains the older open
+request projection. The TUI Commons
 control calls the same service facade. Neither interface reads store files or
 executes record content. Publication requires the explicit `publish --confirm`
 operation and remains distinct from model-requested publication policy.
+
+Durable work publication is operator-only. Submission records an untrusted request
+with no execution authority; an executor must independently validate and accept it.
+Transitions append revisions retaining worker/model/Fabric identities, attempts,
+checkpoints, blockers, results, artifacts, and evidence references. Forge continues
+to own evaluation/evidence/claim meaning; Commons only records references.
 
 MNCS Commons is optional. Local-Ollama-only and Fabric-only configurations continue
 to work with `[commons].enabled = false`. The supported integration floor is

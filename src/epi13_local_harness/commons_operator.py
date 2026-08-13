@@ -39,7 +39,13 @@ class CommonsOperatorService:
         }
 
     def work(self, *, limit: int = 100) -> dict[str, Any]:
+        return self._read("commons_durable_work_list", {"limit": limit})
+
+    def opportunities(self, *, limit: int = 100) -> dict[str, Any]:
         return self._read("commons_work_list", {"limit": limit})
+
+    def work_status(self, work_id: str) -> dict[str, Any]:
+        return self._read("commons_work_status", {"workId": work_id})
 
     def query(self, **filters: Any) -> dict[str, Any]:
         if "open_work" in filters:
