@@ -19,11 +19,6 @@ from .fleet import FleetService
 from .metrics import MetricsStore
 from .models import RoutingOverride
 from .router import plan_route
-from .semantic_router import (
-    SemanticRouterError,
-    prepare_router,
-    router_status,
-)
 from .verifiers import Verifier
 
 
@@ -69,12 +64,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     models_parser.add_argument("--worker", help="Limit output to one Fabric worker")
     models_parser.add_argument("--json", action="store_true")
-
-    router_parser = subparsers.add_parser(
-        "router",
-        help="Inspect or prepare the semantic prompt router",
-    )
-    router_parser.add_argument("action", choices=("status", "prepare"))
 
     pull_parser = subparsers.add_parser("pull", help="Pull one or all Ollama models")
     pull_parser.add_argument("--role", action="append", help="Configured role to pull")
@@ -286,44 +275,6 @@ def _plan_payload(plan) -> dict[str, object]:
     }
 
 
-def _router_status_payload(config) -> dict[str, object]:
-    status = router_status(config)
-    return {
-        "enabled": status.enabled,
-        "mode": status.mode,
-        "backend": status.backend,
-        "model": status.model,
-        "revision": status.revision,
-        "device": status.device,
-        "local_files_only": status.local_files_only,
-        "cache_directory": str(status.cache_directory),
-        "missing_dependencies": status.missing_dependencies,
-        "cached": status.cached,
-        "active": status.active,
-        "state": status.state,
-        "detail": status.detail,
-    }
-
-
-def _print_router_status(config) -> None:
-    status = router_status(config)
-    print("Semantic router:")
-    print(f"  state:      {status.state}")
-    print(f"  enabled:    {status.enabled}")
-    print(f"  mode:       {status.mode}")
-    print(f"  backend:    {status.backend}")
-    print(f"  model:      {status.model or '(not configured)'}")
-    print(f"  revision:   {status.revision or '(not configured)'}")
-    print(f"  device:     {status.device}")
-    print(f"  cached:     {status.cached}")
-    print(f"  active:     {status.active}")
-    print(f"  cache:      {status.cache_directory}")
-    if status.missing_dependencies:
-        print("  missing:    " + ", ".join(status.missing_dependencies))
-    if status.detail:
-        print(f"  detail:     {status.detail}")
-
-
 def cmd_init(args: argparse.Namespace) -> int:
     destination = initialize_config(args.path, args.force)
     print(destination)
@@ -340,15 +291,6 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     route_availability: list[dict[str, object]] = []
     failures = 0
     if commons_status["enabled"] and not commons_status["ready"]:
-        failures += 1
-    router = router_status(config)
-    if router.enabled and router.state in {
-        "unsupported",
-        "unpinned",
-        "missing-dependencies",
-    }:
-        failures += 1
-    if router.enabled and router.local_files_only and router.state == "not-cached":
         failures += 1
     local_names = {
         str(item.get("name") or item.get("model"))
@@ -400,7 +342,11 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         "python": sys.version.split()[0],
         "config": str(config_path),
         "metrics": {"path": str(config.metrics.path), "status": metrics},
-        "router": _router_status_payload(config),
+        "routing": {
+            "mode": "deterministic",
+            "semantic_router": "removed",
+            "offline": True,
+        },
         "commons": commons_status,
         "fleet": snapshot,
         "role_availability": route_availability,
@@ -411,7 +357,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     else:
         print(f"Python: {payload['python']}")
         print(f"Config: {config_path}")
-        _print_router_status(config)
+        print("Routing: deterministic policy + current Fabric inventory (semantic router removed)")
         print(
             f"Commons: {commons_status['code']} profile={commons_status['profile']} "
             f"records={commons_status['record_count']}"
@@ -489,16 +435,6 @@ def cmd_models(args: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_router(args: argparse.Namespace) -> int:
-    config = load_config(args.config)
-    if args.action == "status":
-        print(json.dumps(_router_status_payload(config), indent=2))
-        return 0
-    result = prepare_router(config)
-    print(json.dumps(_semantic_payload(result), indent=2))
-    return 0
-
-
 def cmd_pull(args: argparse.Namespace) -> int:
     config = load_config(args.config)
     roles = args.role or list(config.models)
@@ -512,12 +448,6 @@ def cmd_pull(args: argparse.Namespace) -> int:
             "Refusing to pull Fabric-backed roles on the controller: "
             + ", ".join(remote_roles)
             + ". Install models on the intended worker, then use `elh residency warm`.",
-            file=sys.stderr,
-        )
-        return 2
-    if config.controller.generation_policy == "router-only":
-        print(
-            "Controller generation policy is router-only; local generation pulls are denied.",
             file=sys.stderr,
         )
         return 2
@@ -561,11 +491,11 @@ def cmd_route(args: argparse.Namespace) -> int:
             "provider": "controller-ollama",
             "worker": "controller",
             "model": model.name,
-            "available": config.controller.generation_policy != "router-only",
+            "available": True,
             "loaded": False,
             "resident": False,
             "fallback": requested.allow_fallback,
-            "reason": f"controller policy is {config.controller.generation_policy}",
+            "reason": "local generation is available; deterministic routing is authoritative",
         }
     print(json.dumps(payload, indent=2))
     return 0
@@ -837,7 +767,6 @@ COMMANDS = {
     "init": cmd_init,
     "doctor": cmd_doctor,
     "models": cmd_models,
-    "router": cmd_router,
     "pull": cmd_pull,
     "route": cmd_route,
     "ask": cmd_ask,
@@ -861,7 +790,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         FileExistsError,
         OSError,
         CommonsError,
-        SemanticRouterError,
     ) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2

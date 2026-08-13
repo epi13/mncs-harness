@@ -23,12 +23,7 @@ from .models import (
 )
 from .ollama import OllamaClient, OllamaError
 from .prompts import system_prompt
-from .provider import (
-    DisabledLocalGenerationProvider,
-    FabricOllamaProvider,
-    LocalOllamaProvider,
-    ProviderError,
-)
+from .provider import FabricOllamaProvider, LocalOllamaProvider, ProviderError
 from .router import plan_route
 from .tools import ToolRegistry
 from .verifiers import Verifier
@@ -196,15 +191,10 @@ class LocalAgent:
             return FabricOllamaProvider(
                 self.fabric_session,
                 local,
-                self.config.fabric.fallback_to_local
-                and self.config.controller.generation_policy != "router-only",
+                self.config.fabric.fallback_to_local,
                 inference_worker_id=worker_id,
                 placement_error=placement_error,
                 session_targets=targets,
-            )
-        if self.config.controller.generation_policy == "router-only":
-            return DisabledLocalGenerationProvider(
-                "CONTROLLER_GENERATION_DENIED: controller policy is router-only"
             )
         return local
 

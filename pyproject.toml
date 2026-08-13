@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "epi13-local-harness"
-version = "0.6.3"
+version = "0.6.4"
 description = "A local, policy-aware AI harness that routes tasks across local models and verifies tool-driven work."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -29,11 +29,6 @@ commons = ["mncs-commons[mcp]>=0.5.0.dev1,<0.6"]
 distributed = [
   "mncs-fabric>=0.2.0a17,<0.3",
   "mncs-commons[mcp]>=0.5.0.dev1,<0.6",
-]
-router = [
-  "torch>=2.4",
-  "transformers>=5.1,<6",
-  "huggingface-hub>=0.34",
 ]
 dev = ["pytest>=8.0", "ruff>=0.9"]
 

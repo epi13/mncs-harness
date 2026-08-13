@@ -112,40 +112,13 @@ The default file is written to:
 ~/.config/epi13-local-harness/config.toml
 ```
 
-## Optional LiquidAI semantic router
+## Deterministic routing
 
-Install the router dependencies separately so deterministic-only installations do not
-need PyTorch or Transformers:
-
-```bash
-python -m pip install -e '.[router]'
-```
-
-Download the pinned router snapshot:
-
-```bash
-hf download LiquidAI/LFM2.5-Encoder-350M-Prompt-Router \
-  --revision 35ca4a0469f180f1cf05a630df8842fa17ac18e3
-```
-
-Check the configured, cached, and active state:
-
-```bash
-elh router status
-elh router prepare
-```
-
-After the smoke test succeeds, enable semantic routing in the user configuration:
-
-```toml
-[router]
-enable_semantic_routing = true
-local_files_only = true
-```
-
-The full model revision remains pinned because the official checkpoint requires custom
-Transformers code. The router only selects a worker lane; deterministic policy remains
-authoritative. See [Semantic prompt router](docs/SEMANTIC_ROUTER.md).
+The harness is intentionally offline by default. Routing uses explicit operator pins,
+task characteristics, configured roles, and the current Fabric worker/model inventory;
+there is no Transformer or Hugging Face model to download or initialize. Use
+`--worker` and `--model-name` together for an exact route. `--allow-fallback` is
+required before a failed manual route may use the configured fallback policy.
 
 ## Terminal interface
 
