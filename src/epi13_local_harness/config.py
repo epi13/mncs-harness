@@ -366,7 +366,7 @@ def _parse_fabric_config(raw: dict[str, Any]) -> FabricConfig:
             "fabric.controller_mode=service cannot contain fabric.workers or registry_path; "
             "use controller_mode=embedded or transitional for explicit compatibility"
         )
-    service_timeout = float(raw.get("service_timeout_seconds", 5.0))
+    service_timeout = float(raw.get("service_timeout_seconds", 30.0))
     if not 0.1 <= service_timeout <= 30:
         raise ValueError("fabric.service_timeout_seconds must be between 0.1 and 30")
     consumer_identity = str(raw.get("consumer_identity", "epi13-local-harness"))

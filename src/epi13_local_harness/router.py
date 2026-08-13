@@ -228,6 +228,12 @@ def plan_route(
             routing_override=requested,
         )
 
+    # Every operator pin is authoritative. In particular, exact worker/model
+    # requests must never initialize compatibility routing or consult unrelated
+    # roles before Fabric validates the pair.
+    if requested.mode != "AUTO":
+        return replace(_deterministic_route(profile, config), routing_override=requested)
+
     plan = _deterministic_route(profile, config)
     # Legacy config compatibility only: no external model is loaded and the
     # deprecated Transformer backend is reduced to a no-op fallback.

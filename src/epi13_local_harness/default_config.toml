@@ -159,7 +159,7 @@ enabled = false
 controller_mode = "service"
 controller_id = "epi13-local-harness"
 service_socket = "~/.local/state/mncs-fabric/controller.sock"
-service_timeout_seconds = 5.0
+service_timeout_seconds = 30.0
 consumer_identity = "epi13-local-harness"
 # Embedded/transitional compatibility only:
 # controller_mode = "embedded"
