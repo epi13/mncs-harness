@@ -451,12 +451,37 @@ class PersistentFabricConfigTests(unittest.TestCase):
                 executor._remote_argv(["python", str(script)], bundle),
                 ["@python", "tool.py"],
             )
+            self.assertEqual(
+                executor._remote_argv(["python", "tool.py"], bundle),
+                ["@python", "tool.py"],
+            )
             with self.assertRaisesRegex(ValueError, "parent traversal"):
                 executor._remote_argv(["python", str(script), "../../secret"], bundle)
             with self.assertRaisesRegex(ValueError, "outside the selected"):
                 executor._remote_argv(["python", str(outside)], bundle)
             with self.assertRaisesRegex(ValueError, "Windows paths"):
                 executor._remote_argv(["python", str(script), r"C:\\Users\\secret"], bundle)
+            for hostile in (
+                r"C:\foo",
+                "C:/foo",
+                r"C:foo",
+                r"\foo",
+                r"\\server\share",
+                r"\\?\C:\foo",
+                r"\\.\pipe\fabric",
+                r"folder\..\secret",
+                r"folder/..\secret",
+            ):
+                with self.subTest(hostile=hostile):
+                    with self.assertRaises(ValueError):
+                        executor._remote_argv(["python", str(script), hostile], bundle)
+            self.assertEqual(
+                executor._remote_argv(
+                    ["python", str(script), "model:name", "https://example.invalid/x"],
+                    bundle,
+                ),
+                ["@python", "tool.py", "model:name", "https://example.invalid/x"],
+            )
 
     def test_session_targets_split_inference_and_tool_workers(self) -> None:
         targets = SessionTargets.remote_inference_and_tools("worker-a", "worker-b")

@@ -75,9 +75,12 @@ inference target is remote. An absent or unresolved inference target cannot caus
 tool target to default remotely. The optional target-tool adapter requires an explicit
 worker selected by Harness, the ordinary command-policy and approval gates, a fresh
 runtime observation, and a workspace-confined immutable bundle. It supports no shell,
-ambient environment inheritance, parent-traversing argv path, alternate-worker, or
-local fallback. This is not an OS sandbox: once approved, the Python program retains
-the worker service account's ordinary filesystem access. Fabric inventory never grants
+ambient environment inheritance, POSIX/Windows rooted or drive-relative paths,
+mixed-separator parent traversal, alternate-worker, or local fallback. These are
+logical bundle controls, not proof of an OS sandbox. Fabric execution evidence reports
+whether bubblewrap containment was actually used; required Fedora/Linux mode removes
+ambient home/state mounts and isolates declared-offline networking, while explicit
+compatibility mode retains the worker account's ambient authority. Fabric inventory never grants
 SSH, shell, workspace, filesystem, MCP, or tool authority.
 
 ### Optional Commons boundary
@@ -102,7 +105,9 @@ authorization or accepted truth.
   Use a disposable workspace or container for untrusted repositories.
 - The process runs with the permissions of the user who launches it.
 - Resource limits are currently timeout- and size-based, not cgroup-based.
-- There is no seccomp, Landlock, bubblewrap, container, or virtual-machine isolation.
+- Local Harness tool execution has no seccomp, Landlock, bubblewrap, container, or
+  virtual-machine isolation. Remote Fabric target execution is isolated only when
+  its returned record reports a concrete containment provider/enforcement state.
 - `--yes` is appropriate only for repositories and tasks the user already trusts.
 - Model and tool outputs may contain sensitive repository data; prompt storage is off,
   but tool outputs are present in active model context.
