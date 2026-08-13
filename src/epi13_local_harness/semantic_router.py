@@ -1,3 +1,10 @@
+"""Deprecated compatibility surface for pre-0.6.4 router configurations.
+
+The normal harness never imports or initializes this backend.  It remains only
+to let older callers fail safely while migrating to deterministic policy and
+Fabric inventory routing; the optional router extra has been removed.
+"""
+
 from __future__ import annotations
 
 import importlib.util
