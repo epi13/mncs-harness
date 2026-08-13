@@ -170,8 +170,9 @@ same Harness command policy and approval decision. It currently accepts only Pyt
 argv workloads through Fabric's worker-local `@python` alias. The consumer selects an
 exact enrolled worker and an allowed workspace root; the adapter stages only that root
 as an immutable content bundle, converts in-root absolute arguments to bundle-relative
-paths, rejects parent traversal and controller Windows paths, and requires a relative
-Python entry point to resolve inside the selected bundle. It then calls
+paths, rejects POSIX and Windows drive/root/UNC/device forms plus mixed-separator
+parent traversal, and requires a relative Python entry point to resolve inside the
+selected bundle. Non-path CLI values such as URLs and `model:name` remain opaque. It then calls
 `FabricClient.execute_target` with
 the Harness consumer context and an identity-addressed record of the policy decision.
 
@@ -184,10 +185,14 @@ fallback. The authorization identity is Harness provenance, not Fabric proof tha
 semantic tool request was permitted. Automatic model-directed target choice and result
 material import remain future policy work.
 
-The immutable bundle and argv checks are an authority boundary, not an operating-system
-sandbox. An approved Python program still runs with the Fabric worker service account's
-ordinary filesystem permissions. Use only trusted workspace programs until worker-side
-Landlock, bubblewrap, or an equivalent containment profile is implemented.
+The immutable bundle and argv checks provide logical confinement, not an
+operating-system sandbox. Current Fabric execution records separately report the
+containment mode, provider, filesystem enforcement, and network enforcement.
+Fabric-owned Fedora/Linux deployments may require bubblewrap and fail closed when it
+is unavailable; `DECLARED_OFFLINE` execution then receives a network namespace.
+An older or explicitly `compatibility-uncontained` worker still runs with the service
+account's ambient filesystem/network authority. Harness must not infer containment
+from bundle verification or a Fabric package version alone.
 
 In `transitional` mode, persistent Fabric remains authoritative for membership,
 presence, and fleet identity. Bounded execution and worker-local observations

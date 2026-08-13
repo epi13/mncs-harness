@@ -1,6 +1,8 @@
 # epi13-local-harness
 
-Version 0.6.2 adds an explicit policy-gated target tool adapter: Harness may send an
+Version 0.6.3 rejects POSIX, Windows drive/root/UNC/device, and mixed-separator path
+escapes before an exact-target argv leaves the controller. Version 0.6.2 added an
+explicit policy-gated target tool adapter: Harness may send an
 approved immutable Python workload bundle to one exact enrolled Fabric worker without
 reading endpoint, registry, or credential configuration. Version 0.6.1 added persistent
 fleet observation, per-worker model state, resident-model policy, exact routing, and
