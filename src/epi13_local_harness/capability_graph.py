@@ -66,7 +66,10 @@ def build_capability_graph(
                         "capability_identity": entry.get("capability_identity"),
                     }
                 )
-        elif isinstance(source.get("model_inventory"), list):
+        elif (
+            worker["capability_inventory_status"] == "CURRENT"
+            and isinstance(source.get("model_inventory"), list)
+        ):
             capabilities.extend(
                 {
                     "kind": "model",

@@ -165,6 +165,29 @@ Legacy `[router] enable_semantic_routing = true` with the Transformers
 backend is ignored during normal execution. Only the explicit heuristic
 compatibility backend may still annotate a lane.
 
+Automatic and role-based placement use CURRENT capability inventory only.
+UNKNOWN, unavailable workers, and STALE inventory fail closed for AUTO/ROLE.
+An exact operator pin (`--worker` plus `--model-name`) may still use STALE
+persistent inventory when the worker is AVAILABLE and the model is represented.
+The distributed capability graph projects CURRENT model facts only; a stale
+worker may appear with `capability_inventory_status = STALE` and no model
+entries.
+
+Doctor, fleet role availability, and other batch diagnostics resolve every
+configured role against one captured Fabric status. They do not call
+`status()` once per role.
+
+Exact-pin inference can be accepted as detached persistent Fabric work:
+
+```bash
+elh submit 'Reply with exactly: MARKER' --worker fabric-worker-01 --model-name granite3.3:2b --json
+elh work status <work_id>
+elh work result <work_id>
+```
+
+This uses Fabric `submit_execution` / `execution.status` / `execution.result`.
+The initiating client may disconnect. Commons does not authorize execution.
+
 Worker-local Ollama invocation emits `ELH_FABRIC_STAGE` lines
 (`worker-started`, `provider-connecting`, `inference-started`,
 `inference-completed`, `completed` / `failed`) so a still-running job is not an

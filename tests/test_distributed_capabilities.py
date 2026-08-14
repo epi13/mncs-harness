@@ -168,6 +168,39 @@ class DistributedCapabilityTests(unittest.TestCase):
         self.assertEqual(selection.worker_id, "worker-b")
         self.assertIn("code-hinted", selection.reason)
 
+    def test_exact_pin_may_use_stale_inventory_while_auto_fails_closed(self) -> None:
+        worker = _worker("stale", [_entry("gemma4:e4b")], inventory_status="STALE")
+        session = self._session([worker])
+        configured = load_config(None).models["e4b"]
+        _effective, auto = session.resolve_model("e4b", configured)
+        self.assertFalse(auto.available)
+        self.assertEqual(auto.inventory_status, "STALE")
+        from epi13_local_harness.models import RoutingOverride
+
+        _effective, pinned = session.resolve_model(
+            "e4b",
+            configured,
+            RoutingOverride.from_values(worker="stale", model="gemma4:e4b"),
+        )
+        self.assertTrue(pinned.available)
+        self.assertEqual(pinned.worker_id, "stale")
+
+    def test_resolve_model_from_status_does_not_reread_controller(self) -> None:
+        session = self._session([_worker("worker-a", [_entry("gemma4:e4b")])])
+        captured = session.status()
+        calls = {"status": 0}
+        original = session.status
+
+        def counted() -> FabricStatus:
+            calls["status"] += 1
+            return original()
+
+        session.status = counted  # type: ignore[method-assign]
+        configured = load_config(None).models["e4b"]
+        session.resolve_model_from_status(captured, "e4b", configured)
+        session.resolve_model_from_status(captured, "coder", configured)
+        self.assertEqual(calls["status"], 0)
+
     def test_stale_unknown_and_unavailable_inventories_fail_closed(self) -> None:
         cases = (
             (_worker("stale", [_entry("gemma4:e4b")], inventory_status="STALE"), "STALE"),

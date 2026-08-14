@@ -375,6 +375,29 @@ class ResidentRoutingTests(unittest.TestCase):
             "RESIDENCY_UNCHANGED",
         )
 
+    def test_restore_reports_not_configured_when_no_declared_resident(self) -> None:
+        agent = object.__new__(LocalAgent)
+        agent.config = replace(self.config, model_residency=ModelResidencyConfig(enabled=True))
+        agent._last_residency_results = ()
+        agent._lifecycle_stages = []
+        agent.fleet = SimpleNamespace(residency=SimpleNamespace(reconcile=lambda **kwargs: (_ for _ in ()).throw(AssertionError("must not reconcile"))))
+        attempt = ModelAttempt(
+            role="e4b",
+            model="gemma4:e4b",
+            content="done",
+            thinking="",
+            metrics={},
+            tool_executions=[],
+            verification=VerificationResult(True, (), ()),
+            session_targets=SessionTargets.remote_inference("gpu"),
+        )
+        agent._restore_residency_after_attempt(attempt)
+        self.assertEqual(
+            attempt.metrics["residency_reconciliation"][0]["code"],
+            "RESIDENCY_NOT_CONFIGURED",
+        )
+        self.assertIsNone(attempt.metrics["residency_reconciliation"][0]["loaded"])
+
     def test_exact_pin_run_does_not_refresh_or_warm_fleet(self) -> None:
         agent = object.__new__(LocalAgent)
         agent.config = replace(self.config, fabric=replace(self.config.fabric, enabled=True))

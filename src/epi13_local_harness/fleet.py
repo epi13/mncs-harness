@@ -22,19 +22,27 @@ class FleetService:
     def _name(model: dict[str, Any]) -> str:
         return str(model.get("name") or model.get("model") or "")
 
-    def role_availability(self, snapshot: dict[str, Any] | None = None) -> list[dict[str, Any]]:
-        """Resolve configured roles against the current persistent inventory."""
+    def role_availability(
+        self,
+        snapshot: dict[str, Any] | None = None,
+        *,
+        status: Any | None = None,
+    ) -> list[dict[str, Any]]:
+        """Resolve every configured role against one captured Fabric status."""
 
-        view = snapshot if snapshot is not None else self.snapshot()
+        captured = status
+        if captured is None:
+            captured = self.fabric_session.status()
+        view = snapshot if snapshot is not None else self.snapshot(captured)
         local_names = {
             self._name(item)
             for item in (view.get("controller") or {}).get("installed_models", [])
         }
         rows: list[dict[str, Any]] = []
-        resolve = getattr(self.fabric_session, "resolve_model", None)
+        resolve = getattr(self.fabric_session, "resolve_model_from_status", None)
         for role, model in self.config.models.items():
             if model.provider == "fabric" and self.config.fabric.enabled and callable(resolve):
-                _effective, selection = resolve(role, model)
+                _effective, selection = resolve(captured, role, model)
                 rows.append(
                     {
                         "role": role,
@@ -61,8 +69,8 @@ class FleetService:
                 )
         return rows
 
-    def snapshot(self) -> dict[str, Any]:
-        fabric = self.fabric_session.status()
+    def snapshot(self, status: Any | None = None) -> dict[str, Any]:
+        fabric = status if status is not None else self.fabric_session.status()
         try:
             installed = self.local_ollama.tags()
             running = self.local_ollama.running()

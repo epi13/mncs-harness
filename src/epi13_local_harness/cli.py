@@ -9,6 +9,7 @@ import subprocess
 import sys
 import urllib.error
 import urllib.request
+from dataclasses import replace
 from pathlib import Path
 from typing import Any, Callable, Sequence
 
@@ -92,6 +93,24 @@ def build_parser() -> argparse.ArgumentParser:
         help="Auto-approve policy-allowed writes and commands; blocked actions remain blocked",
     )
     ask_parser.add_argument("--verbose", action="store_true")
+
+    submit_parser = subparsers.add_parser(
+        "submit",
+        help="Accept exact-pin inference as detached persistent Fabric work and return immediately",
+    )
+    submit_parser.add_argument("task", nargs="?", help="Task text; reads stdin when omitted")
+    _add_routing_arguments(submit_parser)
+    submit_parser.add_argument("--idempotency-key")
+    submit_parser.add_argument("--json", action="store_true")
+
+    work_parser = subparsers.add_parser("work", help="Inspect detached persistent Fabric inference work")
+    work_sub = work_parser.add_subparsers(dest="work_command", required=True)
+    work_status = work_sub.add_parser("status")
+    work_status.add_argument("work_id")
+    work_status.add_argument("--json", action="store_true")
+    work_result = work_sub.add_parser("result")
+    work_result.add_argument("work_id")
+    work_result.add_argument("--json", action="store_true")
 
     chat_parser = subparsers.add_parser("chat", help="Start a routed terminal session")
     chat_parser.add_argument("--workspace", type=_path, default=Path.cwd())
@@ -357,6 +376,35 @@ def _bounded_probe(
         signal.signal(signal.SIGALRM, previous)
 
 
+def doctor_outcome(
+    subsystems: list[dict[str, Any]],
+    route_availability: list[dict[str, Any]],
+) -> str:
+    """Summarize doctor health without treating optional route gaps as transport failure."""
+
+    core_failed = [
+        item
+        for item in subsystems
+        if item.get("status") != "PASS" and not str(item.get("name", "")).startswith("Worker ")
+    ]
+    worker_failed = [
+        item
+        for item in subsystems
+        if str(item.get("name", "")).startswith("Worker ") and item.get("status") != "PASS"
+    ]
+    fabric_roles = [item for item in route_availability if item.get("provider") == "fabric"]
+    unavailable_routes = [item for item in fabric_roles if not item.get("available")]
+    if any(item.get("status") == "ERROR" for item in core_failed):
+        return "ERROR"
+    if any(item.get("status") == "TIMEOUT" for item in core_failed):
+        return "UNKNOWN"
+    if worker_failed or unavailable_routes:
+        return "DEGRADED"
+    if core_failed:
+        return "UNKNOWN"
+    return "PASS"
+
+
 def _doctor_progress(message: str, *, json_output: bool) -> None:
     print(message, file=sys.stderr if json_output else sys.stdout, flush=True)
 
@@ -372,16 +420,16 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         return _commons(config).status()
 
     def fabric_probe() -> dict[str, Any]:
-        _session, fleet = _fleet(config, refresh_inventory=False)
-        snapshot = fleet.snapshot()
-        status = _session.status()
+        session, fleet = _fleet(config, refresh_inventory=False)
+        status = session.status()
+        snapshot = fleet.snapshot(status)
         return {
             "state": status.state,
             "execution_transport": status.execution_transport,
             "detail": status.detail,
             "workers": snapshot["fabric"]["workers"],
             "controller": snapshot["controller"],
-            "role_availability": fleet.role_availability(snapshot),
+            "role_availability": fleet.role_availability(snapshot, status=status),
         }
 
     def ollama_probe() -> dict[str, Any]:
@@ -441,8 +489,8 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         metrics = f"ERROR: {exc}"
         subsystems.append({"name": "Metrics", "status": "ERROR", "detail": str(exc)})
 
-    failed = [item for item in subsystems if item["status"] != "PASS"]
-    outcome = "PASS" if not failed else "UNKNOWN"
+    outcome = doctor_outcome(subsystems, route_availability)
+    failed = outcome not in {"PASS", "DEGRADED"}
 
     def _public_detail(item: dict[str, Any]) -> Any:
         detail = item.get("detail")
@@ -670,6 +718,61 @@ def cmd_ask(args: argparse.Namespace) -> int:
     _print_attempts(result, args.verbose)
     print(result.final_content)
     return 0 if result.successful else 1
+
+
+def cmd_submit(args: argparse.Namespace) -> int:
+    override = _routing_override(args)
+    if override.mode != "WORKER_MODEL":
+        raise ValueError("elh submit requires exact --worker and --model-name pins")
+    config = load_config(args.config)
+    task = _task_text(args.task)
+    agent = LocalAgent(config, refresh_inventory=False, warm_residency=False)
+    model, selection = agent.fabric_session.resolve_model(
+        "e2b",
+        replace(config.models["e2b"], name=str(override.model), think=False),
+        override,
+    )
+    if selection is None or not selection.available or not selection.worker_id:
+        raise ValueError(selection.reason if selection else "exact pin could not be resolved")
+    agent._configure_fabric_provenance(task, "e2b", model)
+    accepted = agent.fabric_session.submit_chat(
+        model,
+        [{"role": "user", "content": task}],
+        worker_id=selection.worker_id,
+        idempotency_key=args.idempotency_key,
+    )
+    payload = {
+        "outcome": "ACCEPTED",
+        "stage": "accepted",
+        "work_id": accepted.get("work_id"),
+        "worker": selection.worker_id,
+        "model": model.name,
+        "routing_mode": override.mode,
+        "execution_transport": accepted.get("execution_transport"),
+        "authority": "persistent-fabric",
+        "commons_authority": "none",
+    }
+    if args.json:
+        _emit(payload, json_output=True)
+    else:
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    return 0
+
+
+def cmd_work(args: argparse.Namespace) -> int:
+    config = load_config(args.config)
+    session = InventoryAwareFabricSession(config.fabric, residency_config=config.model_residency)
+    session.initialize(refresh_inventory=False)
+    if args.work_command == "status":
+        payload = session.work_status(args.work_id)
+    else:
+        payload = session.work_result(args.work_id)
+    payload["commons_authority"] = "none"
+    if args.json:
+        _emit(payload, json_output=True)
+    else:
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    return 0
 
 
 def cmd_chat(args: argparse.Namespace) -> int:
@@ -907,6 +1010,8 @@ COMMANDS = {
     "pull": cmd_pull,
     "route": cmd_route,
     "ask": cmd_ask,
+    "submit": cmd_submit,
+    "work": cmd_work,
     "chat": cmd_chat,
     "verify": cmd_verify,
     "eval": cmd_eval,
