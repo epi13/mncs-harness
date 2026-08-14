@@ -50,6 +50,7 @@ class LocalAgent:
         self.metrics = MetricsStore(config.metrics.path, config.metrics.store_prompt_text)
         self.fleet = FleetService(config, self.fabric_session)
         self._last_residency_results: tuple[dict[str, Any], ...] = ()
+        self._lifecycle_stages: list[dict[str, Any]] = []
         should_warm = (
             config.model_residency.enabled
             and (
@@ -127,19 +128,59 @@ class LocalAgent:
             metadata["commons_evidence_publication"] = exc.code
             metadata["commons_evidence_error"] = exc.detail
 
-    def refresh_fabric_inventory(self) -> FabricStatus | None:
-        """Refresh remote worker availability and model inventory on demand.
+    def _progress(self, stage: str, **fields: Any) -> None:
+        payload = {"stage": stage, **fields}
+        stages = getattr(self, "_lifecycle_stages", None)
+        if stages is None:
+            self._lifecycle_stages = [payload]
+        else:
+            stages.append(payload)
+        extras = " ".join(
+            f"{key}={value}"
+            for key, value in fields.items()
+            if value is not None and not isinstance(value, (list, dict))
+        )
+        line = f"elh: {stage}" + (f" {extras}" if extras else "")
+        print(line, file=sys.stderr, flush=True)
 
-        Custom/testing Fabric session seams predate runtime inventory discovery.
-        Keep that interface additive: sessions that do not expose refresh/status
-        simply opt out rather than making an otherwise valid provider unusable.
+    @staticmethod
+    def _exact_manual_route(override: RoutingOverride | None) -> bool:
+        return override is not None and override.mode in {"MODEL", "WORKER", "WORKER_MODEL"}
+
+    def _declared_resident(self, worker_id: str | None) -> str | None:
+        if not worker_id:
+            return None
+        for item in self.config.model_residency.workers:
+            if item.worker_id == worker_id:
+                return item.model
+        return None
+
+    def refresh_fabric_inventory(
+        self,
+        *,
+        reconcile: bool = True,
+        worker_id: str | None = None,
+    ) -> FabricStatus | None:
+        """Actively refresh worker inventory. This is not a persistent read.
+
+        Exact-pinned asks must not call this. Use ``status()`` for the current
+        controller-projected inventory, ``elh fabric refresh`` for a probe, and
+        ``elh residency warm`` for warming.
         """
 
+        self._progress(
+            "inventory-refresh",
+            worker=worker_id or "fleet",
+            reconcile=reconcile,
+        )
         refresher = getattr(self.fabric_session, "refresh_model_inventory", None)
         if callable(refresher):
             refreshed = refresher()
-            if self.config.model_residency.enabled:
-                self._last_residency_results = self.fleet.residency.reconcile()
+            if reconcile and self.config.model_residency.enabled:
+                self._progress("residency-reconciliation", worker=worker_id or "fleet")
+                self._last_residency_results = self.fleet.residency.reconcile(
+                    force_worker=worker_id
+                )
                 status = getattr(self.fabric_session, "status", None)
                 if callable(status):
                     return status()
@@ -150,12 +191,11 @@ class LocalAgent:
         return None
 
     def _restore_residency_after_attempt(self, attempt: ModelAttempt) -> None:
-        """Return a remote worker to its declared steady state after inference.
+        """Best-effort restore of one worker after a transient non-resident model.
 
-        A transient routed model can evict a resident model on constrained
-        hardware.  Re-observe the provider after each completed remote attempt
-        and apply the same bounded residency policy used at startup.  Failures
-        remain operational evidence and never change the inference result.
+        Exact pins of the declared resident model do nothing. Restoration never
+        refreshes or warms the rest of the fleet, and never changes the
+        completed inference result.
         """
 
         if (
@@ -163,8 +203,29 @@ class LocalAgent:
             or attempt.session_targets.inference.kind != "fabric-worker"
         ):
             return
+        worker_id = attempt.session_targets.inference.worker_identity
+        declared = self._declared_resident(worker_id)
+        if declared is None or declared == attempt.model:
+            attempt.metrics["residency_reconciliation"] = [
+                {
+                    "worker_id": worker_id,
+                    "resident_model": declared,
+                    "outcome": "PASS",
+                    "code": "RESIDENCY_UNCHANGED",
+                    "loaded": True,
+                    "detail": "inference used the declared resident model; no restore",
+                }
+            ]
+            return
         try:
-            self.refresh_fabric_inventory()
+            self._progress(
+                "residency-restore",
+                worker=worker_id,
+                resident_model=declared,
+                used_model=attempt.model,
+            )
+            results = self.fleet.residency.reconcile(force_worker=worker_id)
+            self._last_residency_results = results
             attempt.metrics["residency_reconciliation"] = [
                 {
                     key: item.get(key)
@@ -177,12 +238,12 @@ class LocalAgent:
                         "detail",
                     )
                 }
-                for item in self._last_residency_results
+                for item in results
             ]
         except Exception as exc:
             attempt.metrics["residency_reconciliation"] = [
                 {
-                    "worker_id": attempt.session_targets.inference.worker_identity,
+                    "worker_id": worker_id,
                     "outcome": "UNKNOWN",
                     "code": "RESIDENCY_POST_ATTEMPT_RECONCILE_FAILED",
                     "detail": str(exc),
@@ -463,10 +524,18 @@ class LocalAgent:
         auto_approve: bool = False,
         interactive_approval: bool | None = None,
     ) -> AgentResult:
-        # Model availability is runtime state, not configuration. Refresh it once
-        # per user run so additions/removals on the worker can affect this route.
-        if self.config.fabric.enabled:
-            self.refresh_fabric_inventory()
+        override = routing_override or RoutingOverride()
+        if self.config.fabric.enabled and not self._exact_manual_route(override):
+            # Auto-routing reads persistent controller inventory. Active
+            # fleet probes and residency warming are operator/TUI actions.
+            self._progress("persistent-inventory-read")
+        elif self.config.fabric.enabled:
+            self._progress(
+                "exact-pin",
+                worker=override.worker,
+                model=override.model,
+                mode=override.mode,
+            )
 
         route = plan_route(
             task,
@@ -475,12 +544,18 @@ class LocalAgent:
             forced_role,
             routing_override=routing_override,
         )
+        self._progress(
+            "route-planned",
+            mode=route.routing_override.mode,
+            roles=",".join(route.all_roles),
+        )
         run_id = self.metrics.begin_run(task, route)
         attempts: list[ModelAttempt] = []
         cumulative_modified: list[Path] = []
         previous: ModelAttempt | None = None
 
         for index, role in enumerate(route.all_roles):
+            self._progress("fabric-dispatch", role=role)
             attempt = self._run_attempt(
                 role,
                 task,
@@ -494,6 +569,15 @@ class LocalAgent:
             )
             attempts.append(attempt)
             self._restore_residency_after_attempt(attempt)
+            attempt.metrics["lifecycle_stages"] = list(getattr(self, "_lifecycle_stages", []))
+            last_stage = attempt.metrics.get("inference_stage")
+            if last_stage:
+                self._progress(
+                    "inference-result",
+                    last_stage=last_stage,
+                    worker=attempt.session_targets.inference.worker_identity,
+                    model=attempt.model,
+                )
             self.metrics.record_attempt(
                 run_id,
                 index,

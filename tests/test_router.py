@@ -6,7 +6,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from epi13_local_harness.config import load_config
-from epi13_local_harness.models import RoutingOverride, SemanticRouteResult
+from epi13_local_harness.models import RoutingOverride
 from epi13_local_harness.router import plan_route
 
 
@@ -61,7 +61,7 @@ class RouterTests(unittest.TestCase):
         self.assertEqual(plan.primary_role, "reviewer")
         self.assertEqual(plan.semantic.backend, "heuristic")
 
-    def test_transformers_result_selects_worker_lane(self) -> None:
+    def test_transformers_config_is_ignored_during_normal_execution(self) -> None:
         config = replace(
             self.config,
             router=replace(
@@ -71,26 +71,14 @@ class RouterTests(unittest.TestCase):
                 mode="hybrid",
             ),
         )
-        semantic = SemanticRouteResult(
-            selected_lane="coding",
-            selected_score=0.82,
-            runner_up_lane="review",
-            runner_up_score=0.10,
-            margin=0.72,
-            all_scores={"coding": 0.82, "review": 0.10},
-            backend="transformers",
-            revision="a" * 40,
-            latency_ms=12.0,
-            reason="semantic lane selected",
-        )
         with patch(
-            "epi13_local_harness.router.route_with_backend",
-            return_value=(semantic, None),
+            "epi13_local_harness.semantic_router.route_with_backend",
+            side_effect=AssertionError("transformers backend must not run"),
         ):
             plan = plan_route("Fix parser.py.", config)
-        self.assertEqual(plan.lane, "coding")
-        self.assertEqual(plan.primary_role, "coder")
-        self.assertEqual(plan.semantic.backend, "transformers")
+        self.assertEqual(plan.primary_role, "e4b")
+        self.assertIsNone(plan.semantic)
+        self.assertTrue(any("ignored during normal execution" in reason for reason in plan.reasons))
 
     def test_backend_error_preserves_deterministic_route(self) -> None:
         config = replace(
@@ -101,14 +89,10 @@ class RouterTests(unittest.TestCase):
                 backend="transformers",
             ),
         )
-        with patch(
-            "epi13_local_harness.router.route_with_backend",
-            return_value=(None, "model unavailable"),
-        ):
-            plan = plan_route("Explain what uname does.", config)
+        plan = plan_route("Explain what uname does.", config)
         self.assertEqual(plan.primary_role, "e2b")
         self.assertTrue(
-            any("model unavailable" in reason for reason in plan.reasons)
+            any("ignored during normal execution" in reason for reason in plan.reasons)
         )
 
     def test_exact_worker_model_pin_bypasses_semantic_compatibility_router(self) -> None:
@@ -121,7 +105,7 @@ class RouterTests(unittest.TestCase):
             ),
         )
         with patch(
-            "epi13_local_harness.router.route_with_backend",
+            "epi13_local_harness.semantic_router.route_with_backend",
             side_effect=AssertionError("semantic router must not run for an exact pin"),
         ):
             plan = plan_route(
@@ -133,6 +117,7 @@ class RouterTests(unittest.TestCase):
             )
         self.assertIsNone(plan.semantic)
         self.assertEqual(plan.routing_override.mode, "WORKER_MODEL")
+        self.assertEqual(plan.escalation_roles, ())
 
 
 if __name__ == "__main__":

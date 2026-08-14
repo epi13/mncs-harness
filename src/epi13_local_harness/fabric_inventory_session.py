@@ -682,7 +682,8 @@ class InventoryAwareFabricSession(FabricSession):
         if worker_id in self.model_inventory_errors:
             return ()
         if self.capability_api_available:
-            if worker.get("capability_inventory_status") != "CURRENT":
+            freshness = str(worker.get("capability_inventory_status") or "UNKNOWN")
+            if freshness not in {"CURRENT", "STALE"}:
                 return ()
             observation = worker.get("capability_observation")
             if not isinstance(observation, dict) or observation.get("availability") != "AVAILABLE":
@@ -741,7 +742,7 @@ class InventoryAwareFabricSession(FabricSession):
                 worker.get("model_inventory_status")
                 or worker.get("capability_inventory_status")
                 or "UNKNOWN"
-            ) == "CURRENT"
+            ) in {"CURRENT", "STALE"}
         ]
         candidates = [
             (worker_id, inventory)
@@ -820,7 +821,11 @@ class InventoryAwareFabricSession(FabricSession):
                     worker_id=requested.worker,
                     selected_model=requested.model,
                 )
-            elif target.get("model_inventory_status") != "CURRENT":
+            elif str(
+                target.get("model_inventory_status")
+                or target.get("capability_inventory_status")
+                or "UNKNOWN"
+            ) not in {"CURRENT", "STALE"}:
                 failure = unavailable(
                     "PINNED_INVENTORY_NOT_CURRENT",
                     f"selected worker {requested.worker} has no current model inventory",
@@ -1044,7 +1049,7 @@ class InventoryAwareFabricSession(FabricSession):
                 item["model_inventory_status"] = "CURRENT"
             inventory_known = (
                 self.capability_api_available
-                and item.get("model_inventory_status") == "CURRENT"
+                and item.get("model_inventory_status") in {"CURRENT", "STALE"}
             ) or (not self.capability_api_available and worker_id in self.model_inventories)
             if inventory_known and worker_id not in self.model_inventory_errors:
                 item["model_inventory"] = [dict(model) for model in inventory]

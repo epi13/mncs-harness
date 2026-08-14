@@ -357,8 +357,13 @@ def _bounded_probe(
         signal.signal(signal.SIGALRM, previous)
 
 
+def _doctor_progress(message: str, *, json_output: bool) -> None:
+    print(message, file=sys.stderr if json_output else sys.stdout, flush=True)
+
+
 def cmd_doctor(args: argparse.Namespace) -> int:
-    print("elh doctor: probing subsystems", flush=True)
+    json_output = bool(args.json)
+    _doctor_progress("elh doctor: probing subsystems", json_output=json_output)
     config = load_config(args.config)
     config_path = args.config or default_config_path()
     subsystems: list[dict[str, Any]] = []
@@ -367,15 +372,16 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         return _commons(config).status()
 
     def fabric_probe() -> dict[str, Any]:
-        session, fleet = _fleet(config, refresh_inventory=False)
+        _session, fleet = _fleet(config, refresh_inventory=False)
         snapshot = fleet.snapshot()
-        status = session.status()
+        status = _session.status()
         return {
             "state": status.state,
             "execution_transport": status.execution_transport,
             "detail": status.detail,
             "workers": snapshot["fabric"]["workers"],
             "controller": snapshot["controller"],
+            "role_availability": fleet.role_availability(snapshot),
         }
 
     def ollama_probe() -> dict[str, Any]:
@@ -400,7 +406,6 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         "controller": fabric_detail.get("controller", {}) if isinstance(fabric_detail, dict) else {},
         "fabric": {"workers": fabric_detail.get("workers", []) if isinstance(fabric_detail, dict) else []},
     }
-    session = None
     for worker in snapshot["fabric"]["workers"]:
         worker_id = str(worker.get("worker_id") or "unknown-worker")
         availability = str(worker.get("availability") or "UNKNOWN")
@@ -417,40 +422,11 @@ def cmd_doctor(args: argparse.Namespace) -> int:
             }
         )
 
-    route_availability: list[dict[str, object]] = []
-    if session is not None:
-        local_names = {
-            str(item.get("name") or item.get("model"))
-            for item in snapshot["controller"].get("installed_models", [])
-        }
-        for role, model in config.models.items():
-            if model.provider == "fabric" and config.fabric.enabled:
-                _effective, selection = session.resolve_model(role, model)
-                available = bool(selection and selection.available)
-                route_availability.append(
-                    {
-                        "role": role,
-                        "provider": "fabric",
-                        "configured_model": model.name,
-                        "resolved_model": selection.selected_model if selection else None,
-                        "worker": selection.worker_id if selection else None,
-                        "available": available,
-                        "reason": selection.reason if selection else "no Fabric selection",
-                    }
-                )
-            else:
-                available = model.name in local_names
-                route_availability.append(
-                    {
-                        "role": role,
-                        "provider": "controller-ollama",
-                        "configured_model": model.name,
-                        "resolved_model": model.name,
-                        "worker": "controller",
-                        "available": available,
-                        "reason": "controller-local installed inventory",
-                    }
-                )
+    route_availability = (
+        list(fabric_detail.get("role_availability") or [])
+        if isinstance(fabric_detail, dict)
+        else []
+    )
 
     tools = {
         executable: shutil.which(executable)
@@ -497,7 +473,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         "role_availability": route_availability,
         "tools": tools,
     }
-    if args.json:
+    if json_output:
         _emit(payload, json_output=True)
     else:
         print(f"Python: {payload['python']}")
@@ -645,13 +621,30 @@ def cmd_route(args: argparse.Namespace) -> int:
 
 def _print_attempts(result, verbose: bool) -> None:
     print(f"Route: {' -> '.join(result.route.all_roles)}", file=sys.stderr)
+    print(f"Routing mode: {result.route.routing_override.mode}", file=sys.stderr)
     for attempt in result.attempts:
         status = "passed" if attempt.verification.passed else "failed"
+        worker = attempt.session_targets.inference.worker_identity or "unresolved"
         print(
             f"Attempt {attempt.role} ({attempt.model}): {status}; "
-            f"tools={len(attempt.tool_executions)}",
+            f"worker={worker}; tools={len(attempt.tool_executions)}",
             file=sys.stderr,
         )
+        if attempt.error:
+            print(f"  error={attempt.error}", file=sys.stderr)
+        stages = attempt.metrics.get("inference_stages")
+        if stages:
+            print(f"  stages={' -> '.join(str(item) for item in stages)}", file=sys.stderr)
+        residency = attempt.metrics.get("residency_reconciliation")
+        if residency:
+            print(f"  residency={residency}", file=sys.stderr)
+        record = attempt.metrics.get("fabric_record_identity")
+        request = attempt.metrics.get("fabric_request_identity")
+        if record or request:
+            print(f"  fabric request={request} record={record}", file=sys.stderr)
+        commons = attempt.metrics.get("commons_evidence_receipt")
+        if commons:
+            print(f"  commons={commons}", file=sys.stderr)
         if verbose:
             for check in attempt.verification.checks:
                 print(f"  CHECK {check}", file=sys.stderr)
@@ -666,7 +659,7 @@ def cmd_ask(args: argparse.Namespace) -> int:
     if not workspace.is_dir():
         raise ValueError(f"Workspace is not a directory: {workspace}")
     images = _validate_images(args.image)
-    print("elh: dispatching", flush=True)
+    print("elh: starting", file=sys.stderr, flush=True)
     result = LocalAgent(config, refresh_inventory=False, warm_residency=False).run(
         task,
         workspace=workspace,
