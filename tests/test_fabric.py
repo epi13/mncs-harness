@@ -12,7 +12,13 @@ from unittest.mock import patch
 
 from epi13_local_harness.agent import LocalAgent
 from epi13_local_harness.config import load_config
-from epi13_local_harness.fabric import FabricSession, FabricStatus, FabricUnavailable
+from epi13_local_harness.fabric import (
+    FabricSession,
+    FabricStatus,
+    FabricUnavailable,
+    _invocation_script,
+    _parse_stage_lines,
+)
 from epi13_local_harness.models import FabricConfig, FabricWorkerConfig, MetricsConfig
 from epi13_local_harness.provider import FabricOllamaProvider, ProviderError
 
@@ -226,10 +232,26 @@ class FabricTests(unittest.TestCase):
                 self.assertEqual(metadata["execution_source"], "local")
                 self.assertEqual(metadata["placement_mode"], "cpu")
                 self.assertTrue(metadata["fabric_receipt_identity"])
+                self.assertIn("worker-started", metadata.get("inference_stages") or [])
+                self.assertEqual(metadata.get("inference_stage"), "completed")
         finally:
             server.shutdown()
             thread.join(timeout=2)
             server.server_close()
+
+    def test_invocation_script_emits_unbuffered_stage_markers(self) -> None:
+        script = _invocation_script()
+        self.assertIn('print("ELH_FABRIC_STAGE "', script)
+        self.assertIn("flush=True", script)
+        self.assertIn("worker-started", script)
+        self.assertIn("inference-started", script)
+        self.assertIn("inference-completed", script)
+        stages = _parse_stage_lines(
+            "ELH_FABRIC_STAGE {\"stage\":\"worker-started\"}\n"
+            "noise\n"
+            "ELH_FABRIC_STAGE {\"stage\":\"completed\"}\n"
+        )
+        self.assertEqual([item["stage"] for item in stages], ["worker-started", "completed"])
 
 
 if __name__ == "__main__":

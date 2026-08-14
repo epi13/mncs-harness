@@ -64,12 +64,23 @@ import json
 import urllib.error
 import urllib.request
 
+
+def stage(name, **fields):
+    payload = {"stage": name}
+    payload.update(fields)
+    print("ELH_FABRIC_STAGE " + json.dumps(payload, separators=(",", ":"), ensure_ascii=True), flush=True)
+
+
+stage("worker-started")
 try:
     values = {}
+    stage("provider-connecting")
     for name, endpoint in (("installed", "tags"), ("running", "ps"), ("version", "version")):
         with urllib.request.urlopen("http://127.0.0.1:11434/api/" + endpoint, timeout=10) as response:
             values[name] = json.loads(response.read().decode("utf-8"))
+    stage("provider-ready")
 except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
+    stage("failed", subsystem="ollama", error=str(exc))
     raise SystemExit("worker-local Ollama inventory failed: " + str(exc)) from exc
 installed = values["installed"].get("models", [])
 running = values["running"].get("models", [])
@@ -99,7 +110,8 @@ print("ELH_FABRIC_MODEL_INVENTORY " + json.dumps({
     "installed": installed,
     "running": running,
     "version": values["version"].get("version"),
-}, separators=(",", ":"), ensure_ascii=True))
+}, separators=(",", ":"), ensure_ascii=True), flush=True)
+stage("completed")
 '''
 
 
@@ -111,6 +123,13 @@ from pathlib import Path
 import urllib.error
 import urllib.request
 
+def stage(name, **fields):
+    payload = {"stage": name}
+    payload.update(fields)
+    print("ELH_FABRIC_STAGE " + json.dumps(payload, separators=(",", ":"), ensure_ascii=True), flush=True)
+
+
+stage("worker-started")
 request = json.loads(Path("request.json").read_text(encoding="utf-8"))
 payload = json.dumps({
     "model": request["model"],
@@ -119,21 +138,25 @@ payload = json.dumps({
     "keep_alive": request["keep_alive"],
 }).encode("utf-8")
 try:
+    stage("provider-connecting", model=request["model"])
     warm = urllib.request.Request(
         "http://127.0.0.1:11434/api/generate",
         data=payload,
         method="POST",
         headers={"Content-Type": "application/json"},
     )
+    stage("inference-started", model=request["model"])
     with urllib.request.urlopen(warm, timeout=request["timeout_seconds"]) as response:
         json.loads(response.read().decode("utf-8"))
     with urllib.request.urlopen("http://127.0.0.1:11434/api/ps", timeout=10) as response:
         running = json.loads(response.read().decode("utf-8")).get("models", [])
+    stage("inference-completed", model=request["model"])
 except urllib.error.HTTPError as exc:
     try:
         detail = exc.read().decode("utf-8", "replace")[:1024]
     except OSError:
         detail = "<error body unavailable>"
+    stage("failed", subsystem="ollama", error="HTTP " + str(exc.code))
     raise SystemExit(
         "worker-local Ollama residency failed: HTTP "
         + str(exc.code)
@@ -141,6 +164,7 @@ except urllib.error.HTTPError as exc:
         + detail
     ) from exc
 except (urllib.error.URLError, TimeoutError, OSError, json.JSONDecodeError) as exc:
+    stage("failed", subsystem="ollama", error=str(exc))
     raise SystemExit("worker-local Ollama residency failed: " + str(exc)) from exc
 if not isinstance(running, list):
     raise SystemExit("worker-local Ollama residency returned malformed running state")
@@ -151,7 +175,8 @@ print("ELH_FABRIC_RESIDENCY " + json.dumps({
     "model": request["model"],
     "loaded": selected is not None,
     "running": selected,
-}, separators=(",", ":"), ensure_ascii=True))
+}, separators=(",", ":"), ensure_ascii=True), flush=True)
+stage("completed")
 '''
 
 
@@ -321,7 +346,7 @@ class InventoryAwareFabricSession(FabricSession):
             and self._capability_inventory == "persistent-service"
         )
 
-    def initialize(self) -> None:
+    def initialize(self, *, refresh_inventory: bool = True) -> None:
         super().initialize()
         if self.enabled and self.client is not None:
             if _supports_request_id(self.client) and not isinstance(self.client, _FreshDispatchClient):
@@ -333,7 +358,9 @@ class InventoryAwareFabricSession(FabricSession):
                 )
                 and callable(getattr(self.client, "ingest_capability_observation", None))
             )
-            if self.config.controller_mode == "embedded" or self._service_execution_supported():
+            if refresh_inventory and (
+                self.config.controller_mode == "embedded" or self._service_execution_supported()
+            ):
                 self._refresh_model_inventories()
 
     def refresh(self) -> FabricStatus:
@@ -398,7 +425,7 @@ class InventoryAwareFabricSession(FabricSession):
                     "working_directory": ".",
                     "timeout_seconds": 20,
                     "output_limit_bytes": 512 * 1024,
-                    "environment": {"PYTHONHASHSEED": "0"},
+                    "environment": {"PYTHONHASHSEED": "0", "PYTHONUNBUFFERED": "1"},
                     "required_capabilities": ["python"],
                     "result_paths": [],
                     "network_policy": "UNRESTRICTED",
@@ -537,7 +564,7 @@ class InventoryAwareFabricSession(FabricSession):
                     "working_directory": ".",
                     "timeout_seconds": timeout_seconds + 5.0,
                     "output_limit_bytes": 256 * 1024,
-                    "environment": {"PYTHONHASHSEED": "0"},
+                    "environment": {"PYTHONHASHSEED": "0", "PYTHONUNBUFFERED": "1"},
                     "required_capabilities": ["python"],
                     "result_paths": [],
                     "network_policy": "UNRESTRICTED",

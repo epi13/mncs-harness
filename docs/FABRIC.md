@@ -154,6 +154,15 @@ connection, fleet availability, execution transport, capability inventory, and
 generation availability. Worker-initiated rendezvous is a separate planned
 Fabric feature and is never inferred from a package version.
 
+`elh ask` does not warm the whole fleet before dispatch. Exact `--worker` /
+`--model-name` pins go straight to persistent Fabric. Resident warming remains
+`elh residency warm` and the TUI startup path.
+
+Worker-local Ollama invocation emits `ELH_FABRIC_STAGE` lines
+(`worker-started`, `provider-connecting`, `inference-started`,
+`inference-completed`, `completed` / `failed`) so a still-running job is not an
+empty `stdout=""`. `PYTHONUNBUFFERED=1` is set on those jobs.
+
 `elh fabric refresh` records installed and currently loaded Ollama models from
 the worker loopback API, including `/api/show` capabilities. A model appearing
 in `ollama list` is not proof that it is loadable: use `elh residency warm

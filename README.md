@@ -104,7 +104,14 @@ Create a user configuration:
 
 ```bash
 elh init
+elh install-cli
 ```
+
+`elh install-cli` rewrites the virtualenv launchers so `elh` execs the
+interpreter next to the script. That keeps the canonical CLI working inside
+MNCS Control, where the workspace is mounted at `/workspace` and the
+host-absolute shebang from `pip install` is not visible. `scripts/elh` is the
+same relocatable launcher for a source checkout.
 
 The default file is written to:
 

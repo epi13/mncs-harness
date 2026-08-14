@@ -2,11 +2,15 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
+import signal
 import subprocess
 import sys
+import urllib.error
+import urllib.request
 from pathlib import Path
-from typing import Sequence
+from typing import Any, Callable, Sequence
 
 from . import __version__
 from .agent import LocalAgent
@@ -54,6 +58,10 @@ def build_parser() -> argparse.ArgumentParser:
     init_parser = subparsers.add_parser("init", help="Create a user configuration")
     init_parser.add_argument("--force", action="store_true", help="Replace an existing config")
     init_parser.add_argument("--path", type=_path, help="Destination path")
+    subparsers.add_parser(
+        "install-cli",
+        help="Install relocatable elh wrappers that do not embed a host Python shebang",
+    )
 
     doctor_parser = subparsers.add_parser(
         "doctor", help="Check router, controller, Fabric, Commons, models, and tools"
@@ -213,11 +221,16 @@ def _emit(value: object, *, json_output: bool = False) -> None:
     )
 
 
-def _fleet(config, *, refresh: bool = False) -> tuple[InventoryAwareFabricSession, FleetService]:
+def _fleet(
+    config,
+    *,
+    refresh: bool = False,
+    refresh_inventory: bool = True,
+) -> tuple[InventoryAwareFabricSession, FleetService]:
     session = InventoryAwareFabricSession(
         config.fabric, residency_config=config.model_residency
     )
-    session.initialize()
+    session.initialize(refresh_inventory=refresh_inventory)
     fleet = FleetService(config, session)
     if refresh:
         fleet.refresh(reconcile=False)
@@ -276,55 +289,168 @@ def _plan_payload(plan) -> dict[str, object]:
 
 
 def cmd_init(args: argparse.Namespace) -> int:
+    from .portable_cli import install_portable_cli
+
     destination = initialize_config(args.path, args.force)
     print(destination)
+    for path in install_portable_cli():
+        print(path)
     return 0
 
 
+def cmd_install_cli(args: argparse.Namespace) -> int:
+    del args
+    from .portable_cli import install_portable_cli
+
+    for path in install_portable_cli():
+        print(path)
+    return 0
+
+
+def _bounded_probe(
+    name: str,
+    fn: Callable[[], Any],
+    *,
+    timeout_seconds: float,
+) -> dict[str, Any]:
+    """Run one doctor probe with a real wall-clock bound.
+
+    Thread-pool timeouts cannot interrupt a CPython thread blocked in a
+    socket recv that holds progress in another library. SIGALRM can.
+    """
+
+    if os.name != "posix":
+        try:
+            detail = fn()
+        except Exception as exc:
+            return {"name": name, "status": "ERROR", "detail": str(exc)}
+        return {"name": name, "status": "PASS", "detail": detail}
+
+    timed_out = False
+
+    def _alarm(_signum: int, _frame: object) -> None:
+        nonlocal timed_out
+        timed_out = True
+        raise TimeoutError(name)
+
+    previous = signal.signal(signal.SIGALRM, _alarm)
+    signal.setitimer(signal.ITIMER_REAL, float(timeout_seconds))
+    try:
+        detail = fn()
+        return {"name": name, "status": "PASS", "detail": detail}
+    except TimeoutError:
+        return {
+            "name": name,
+            "status": "TIMEOUT",
+            "detail": f"{name} probe exceeded {timeout_seconds:.0f}s",
+        }
+    except Exception as exc:
+        if timed_out:
+            return {
+                "name": name,
+                "status": "TIMEOUT",
+                "detail": f"{name} probe exceeded {timeout_seconds:.0f}s",
+            }
+        return {"name": name, "status": "ERROR", "detail": str(exc)}
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0.0)
+        signal.signal(signal.SIGALRM, previous)
+
+
 def cmd_doctor(args: argparse.Namespace) -> int:
+    print("elh doctor: probing subsystems", flush=True)
     config = load_config(args.config)
     config_path = args.config or default_config_path()
-    commons_service = _commons(config)
-    commons_status = commons_service.status()
-    session, fleet = _fleet(config)
-    snapshot = fleet.snapshot()
-    route_availability: list[dict[str, object]] = []
-    failures = 0
-    if commons_status["enabled"] and not commons_status["ready"]:
-        failures += 1
-    local_names = {
-        str(item.get("name") or item.get("model"))
-        for item in snapshot["controller"]["installed_models"]
+    subsystems: list[dict[str, Any]] = []
+
+    def commons_probe() -> dict[str, Any]:
+        return _commons(config).status()
+
+    def fabric_probe() -> dict[str, Any]:
+        session, fleet = _fleet(config, refresh_inventory=False)
+        snapshot = fleet.snapshot()
+        status = session.status()
+        return {
+            "state": status.state,
+            "execution_transport": status.execution_transport,
+            "detail": status.detail,
+            "workers": snapshot["fabric"]["workers"],
+            "controller": snapshot["controller"],
+        }
+
+    def ollama_probe() -> dict[str, Any]:
+        url = config.ollama.base_url.rstrip("/") + "/api/tags"
+        with urllib.request.urlopen(url, timeout=5) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+        models = payload.get("models") if isinstance(payload, dict) else None
+        if not isinstance(models, list):
+            raise RuntimeError("controller Ollama returned a malformed tags document")
+        return {"model_count": len(models)}
+
+    commons_result = _bounded_probe("Commons", commons_probe, timeout_seconds=8)
+    fabric_result = _bounded_probe("Fabric", fabric_probe, timeout_seconds=35)
+    ollama_result = _bounded_probe("Ollama", ollama_probe, timeout_seconds=6)
+    subsystems.extend((commons_result, fabric_result, ollama_result))
+
+    commons_status = commons_result.get("detail") if commons_result["status"] == "PASS" else {}
+    if not isinstance(commons_status, dict):
+        commons_status = {"code": commons_result["status"], "detail": commons_result["detail"]}
+    fabric_detail = fabric_result.get("detail") if fabric_result["status"] == "PASS" else {}
+    snapshot = {
+        "controller": fabric_detail.get("controller", {}) if isinstance(fabric_detail, dict) else {},
+        "fabric": {"workers": fabric_detail.get("workers", []) if isinstance(fabric_detail, dict) else []},
     }
-    for role, model in config.models.items():
-        if model.provider == "fabric" and config.fabric.enabled:
-            _effective, selection = session.resolve_model(role, model)
-            available = bool(selection and selection.available)
-            route_availability.append(
-                {
-                    "role": role,
-                    "provider": "fabric",
-                    "configured_model": model.name,
-                    "resolved_model": selection.selected_model if selection else None,
-                    "worker": selection.worker_id if selection else None,
-                    "available": available,
-                    "reason": selection.reason if selection else "no Fabric selection",
-                }
-            )
-        else:
-            available = model.name in local_names
-            route_availability.append(
-                {
-                    "role": role,
-                    "provider": "controller-ollama",
-                    "configured_model": model.name,
-                    "resolved_model": model.name,
-                    "worker": "controller",
-                    "available": available,
-                    "reason": "controller-local installed inventory",
-                }
-            )
-        failures += int(not available)
+    session = None
+    for worker in snapshot["fabric"]["workers"]:
+        worker_id = str(worker.get("worker_id") or "unknown-worker")
+        availability = str(worker.get("availability") or "UNKNOWN")
+        status = "PASS" if availability == "AVAILABLE" else "ERROR"
+        subsystems.append(
+            {
+                "name": f"Worker {worker_id}",
+                "status": status,
+                "detail": {
+                    "availability": availability,
+                    "installed_model_count": worker.get("installed_model_count"),
+                    "loaded_model_names": worker.get("loaded_model_names"),
+                },
+            }
+        )
+
+    route_availability: list[dict[str, object]] = []
+    if session is not None:
+        local_names = {
+            str(item.get("name") or item.get("model"))
+            for item in snapshot["controller"].get("installed_models", [])
+        }
+        for role, model in config.models.items():
+            if model.provider == "fabric" and config.fabric.enabled:
+                _effective, selection = session.resolve_model(role, model)
+                available = bool(selection and selection.available)
+                route_availability.append(
+                    {
+                        "role": role,
+                        "provider": "fabric",
+                        "configured_model": model.name,
+                        "resolved_model": selection.selected_model if selection else None,
+                        "worker": selection.worker_id if selection else None,
+                        "available": available,
+                        "reason": selection.reason if selection else "no Fabric selection",
+                    }
+                )
+            else:
+                available = model.name in local_names
+                route_availability.append(
+                    {
+                        "role": role,
+                        "provider": "controller-ollama",
+                        "configured_model": model.name,
+                        "resolved_model": model.name,
+                        "worker": "controller",
+                        "available": available,
+                        "reason": "controller-local installed inventory",
+                    }
+                )
 
     tools = {
         executable: shutil.which(executable)
@@ -334,13 +460,32 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         store = MetricsStore(config.metrics.path, config.metrics.store_prompt_text)
         store.recent(1)
         metrics = "writable"
+        subsystems.append({"name": "Metrics", "status": "PASS", "detail": metrics})
     except OSError as exc:
         metrics = f"ERROR: {exc}"
-        failures += 1
+        subsystems.append({"name": "Metrics", "status": "ERROR", "detail": str(exc)})
+
+    failed = [item for item in subsystems if item["status"] != "PASS"]
+    outcome = "PASS" if not failed else "UNKNOWN"
+
+    def _public_detail(item: dict[str, Any]) -> Any:
+        detail = item.get("detail")
+        if item["name"] == "Fabric" and isinstance(detail, dict):
+            return {
+                "state": detail.get("state"),
+                "execution_transport": detail.get("execution_transport"),
+                "detail": detail.get("detail"),
+            }
+        return detail
+
     payload = {
-        "outcome": "PASS" if not failures else "UNKNOWN",
+        "outcome": outcome,
         "python": sys.version.split()[0],
         "config": str(config_path),
+        "subsystems": [
+            {"name": item["name"], "status": item["status"], "detail": _public_detail(item)}
+            for item in subsystems
+        ],
         "metrics": {"path": str(config.metrics.path), "status": metrics},
         "routing": {
             "mode": "deterministic",
@@ -358,22 +503,18 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         print(f"Python: {payload['python']}")
         print(f"Config: {config_path}")
         print("Routing: deterministic policy + current Fabric inventory (semantic router removed)")
-        print(
-            f"Commons: {commons_status['code']} profile={commons_status['profile']} "
-            f"records={commons_status['record_count']}"
-        )
-        controller = snapshot["controller"]
-        print(
-            f"Controller: generation={controller['generation_policy']} "
-            f"loaded={','.join(controller['loaded_generation_models']) or 'none'}"
-        )
-        for worker in snapshot["fabric"]["workers"]:
-            print(
-                f"Fabric {worker['worker_id']}: {worker.get('availability', 'UNKNOWN')} "
-                f"version={worker.get('worker_service_version') or 'UNKNOWN'} "
-                f"installed={worker.get('installed_model_count', 0)} "
-                f"loaded={','.join(worker.get('loaded_model_names', [])) or 'none'}"
-            )
+        for item in subsystems:
+            detail = item["detail"]
+            if item["name"] == "Fabric" and isinstance(detail, dict):
+                summary = f"{detail.get('state')} transport={detail.get('execution_transport')}"
+            elif item["name"] == "Commons" and isinstance(detail, dict):
+                summary = f"{detail.get('code')} records={detail.get('record_count')}"
+            elif item["name"].startswith("Worker ") and isinstance(detail, dict):
+                loaded = ",".join(detail.get("loaded_model_names") or []) or "none"
+                summary = f"{detail.get('availability')} installed={detail.get('installed_model_count', 0)} loaded={loaded}"
+            else:
+                summary = detail if isinstance(detail, str) else json.dumps(detail, default=str)
+            print(f"{item['name']:<22} {item['status']:<8} {summary}")
         for item in route_availability:
             print(
                 f"Role {item['role']:8} {item['provider']:18} "
@@ -384,7 +525,8 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         for executable, location in tools.items():
             print(f"Tool {executable:10} {location or 'not installed (optional)'}")
         print(f"Metrics database: {metrics}")
-    return 1 if failures else 0
+        print(f"Overall: {outcome}")
+    return 1 if failed else 0
 
 
 def cmd_models(args: argparse.Namespace) -> int:
@@ -524,7 +666,8 @@ def cmd_ask(args: argparse.Namespace) -> int:
     if not workspace.is_dir():
         raise ValueError(f"Workspace is not a directory: {workspace}")
     images = _validate_images(args.image)
-    result = LocalAgent(config).run(
+    print("elh: dispatching", flush=True)
+    result = LocalAgent(config, refresh_inventory=False, warm_residency=False).run(
         task,
         workspace=workspace,
         images=images,
@@ -539,7 +682,7 @@ def cmd_ask(args: argparse.Namespace) -> int:
 def cmd_chat(args: argparse.Namespace) -> int:
     config = load_config(args.config)
     workspace = args.workspace.resolve()
-    agent = LocalAgent(config)
+    agent = LocalAgent(config, refresh_inventory=False, warm_residency=False)
     routing_override = _routing_override(args)
     print("Local harness chat. Each message is routed independently. Type /quit to exit.")
     while True:
@@ -765,6 +908,7 @@ def cmd_commons(args: argparse.Namespace) -> int:
 
 COMMANDS = {
     "init": cmd_init,
+    "install-cli": cmd_install_cli,
     "doctor": cmd_doctor,
     "models": cmd_models,
     "pull": cmd_pull,
