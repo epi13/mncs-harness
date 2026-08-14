@@ -30,7 +30,13 @@ from .verifiers import Verifier
 
 
 class LocalAgent:
-    def __init__(self, config: HarnessConfig):
+    def __init__(
+        self,
+        config: HarnessConfig,
+        *,
+        refresh_inventory: bool = True,
+        warm_residency: bool | None = None,
+    ):
         self.config = config
         # ``client`` remains a compatibility seam used by existing callers and
         # tests. Provider selection is performed per model role below.
@@ -38,13 +44,21 @@ class LocalAgent:
         self.fabric_session = InventoryAwareFabricSession(
             config.fabric, residency_config=config.model_residency
         )
-        self.fabric_session.initialize()
+        self.fabric_session.initialize(refresh_inventory=refresh_inventory)
         self.commons_session = CommonsSession(config.commons)
         self.commons_session.initialize()
         self.metrics = MetricsStore(config.metrics.path, config.metrics.store_prompt_text)
         self.fleet = FleetService(config, self.fabric_session)
         self._last_residency_results: tuple[dict[str, Any], ...] = ()
-        if config.model_residency.enabled and config.model_residency.warm_on_startup:
+        should_warm = (
+            config.model_residency.enabled
+            and (
+                config.model_residency.warm_on_startup
+                if warm_residency is None
+                else warm_residency
+            )
+        )
+        if should_warm:
             self._last_residency_results = self.fleet.residency.reconcile()
 
     def fabric_status(self) -> FabricStatus:

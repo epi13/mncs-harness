@@ -206,6 +206,24 @@ def _loopback_url(value: str) -> str:
     return value.rstrip("/")
 
 
+_STAGE_PREFIX = "ELH_FABRIC_STAGE "
+_RESPONSE_PREFIX = "ELH_FABRIC_RESPONSE "
+
+
+def _parse_stage_lines(stdout: str) -> list[dict[str, Any]]:
+    stages: list[dict[str, Any]] = []
+    for line in stdout.splitlines():
+        if not line.startswith(_STAGE_PREFIX):
+            continue
+        try:
+            payload = json.loads(line.removeprefix(_STAGE_PREFIX))
+        except json.JSONDecodeError:
+            continue
+        if isinstance(payload, dict) and isinstance(payload.get("stage"), str):
+            stages.append(payload)
+    return stages
+
+
 def _invocation_script() -> str:
     return '''from __future__ import annotations
 
@@ -215,9 +233,17 @@ import urllib.error
 import urllib.request
 
 
+def stage(name, **fields):
+    payload = {"stage": name}
+    payload.update(fields)
+    print("ELH_FABRIC_STAGE " + json.dumps(payload, separators=(",", ":"), ensure_ascii=True), flush=True)
+
+
+stage("worker-started")
 request = json.loads(Path("request.json").read_text(encoding="utf-8"))
 payload = request["payload"]
 url = request["base_url"] + "/api/chat"
+stage("provider-connecting", url=url, model=payload.get("model"))
 encoded = json.dumps(payload).encode("utf-8")
 http_request = urllib.request.Request(
     url,
@@ -226,15 +252,20 @@ http_request = urllib.request.Request(
     headers={"Content-Type": "application/json"},
 )
 try:
+    stage("inference-started", model=payload.get("model"))
     with urllib.request.urlopen(http_request, timeout=request["timeout_seconds"]) as response:
         body = response.read().decode("utf-8")
 except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError) as exc:
+    stage("failed", subsystem="ollama", error=str(exc))
     raise SystemExit(f"worker-local Ollama invocation failed: {exc}") from exc
 try:
     result = json.loads(body)
 except json.JSONDecodeError as exc:
+    stage("failed", subsystem="ollama", error="invalid-json")
     raise SystemExit(f"worker-local Ollama returned invalid JSON: {body[:500]}") from exc
-print("ELH_FABRIC_RESPONSE " + json.dumps(result, separators=(",", ":"), ensure_ascii=True))
+stage("inference-completed", model=payload.get("model"))
+print("ELH_FABRIC_RESPONSE " + json.dumps(result, separators=(",", ":"), ensure_ascii=True), flush=True)
+stage("completed")
 '''
 
 
@@ -854,7 +885,7 @@ class FabricSession:
                             + self.config.job_timeout_overhead_seconds
                         ),
                         "output_limit_bytes": 2 * 1024 * 1024,
-                        "environment": {"PYTHONHASHSEED": "0"},
+                        "environment": {"PYTHONHASHSEED": "0", "PYTHONUNBUFFERED": "1"},
                         "required_capabilities": list(
                             dict.fromkeys(("python", *model.required_capabilities))
                         ),
@@ -894,6 +925,8 @@ class FabricSession:
         record = result.get("record") or {}
         self.last_execution_record = dict(record) if isinstance(record, dict) and record else None
         admission = result.get("placement_admission") or {}
+        captured = (record.get("stdout") or {}).get("captured_utf8") or ""
+        stages = _parse_stage_lines(captured)
         self.last_inference = {
             "worker": result.get("worker_identity"),
             "placement": admission.get("admission_mode"),
@@ -901,16 +934,22 @@ class FabricSession:
             "disposition": result.get("disposition"),
             "reason": result.get("reason") or admission.get("reason"),
             "request_identity": result.get("request_identity"),
+            "inference_stage": stages[-1]["stage"] if stages else None,
+            "inference_stages": [item["stage"] for item in stages],
         }
         if result.get("disposition") != "EXECUTED" or record.get("outcome") != "PASS":
+            last_stage = stages[-1]["stage"] if stages else "dispatching"
             reason = result.get("reason") or record.get("termination_reason") or "Fabric execution failed"
-            raise FabricExecutionError(str(reason))
-        stdout = ((record.get("stdout") or {}).get("captured_utf8") or "").splitlines()
-        response_line = next((line for line in stdout if line.startswith("ELH_FABRIC_RESPONSE ")), None)
+            raise FabricExecutionError(f"{reason} (last_stage={last_stage})")
+        stdout = captured.splitlines()
+        response_line = next((line for line in stdout if line.startswith(_RESPONSE_PREFIX)), None)
         if response_line is None:
-            raise FabricExecutionError("Fabric execution returned no provider response")
+            last_stage = stages[-1]["stage"] if stages else "dispatching"
+            raise FabricExecutionError(
+                f"Fabric execution returned no provider response (last_stage={last_stage})"
+            )
         try:
-            response = json.loads(response_line.removeprefix("ELH_FABRIC_RESPONSE "))
+            response = json.loads(response_line.removeprefix(_RESPONSE_PREFIX))
         except json.JSONDecodeError as exc:
             raise FabricExecutionError("Fabric provider response was invalid JSON") from exc
         metadata = {
@@ -948,5 +987,7 @@ class FabricSession:
             ).get("binding_identity"),
             "fabric_dispatch_ms": elapsed_ms,
             "request_identity": request_identity,
+            "inference_stage": stages[-1]["stage"] if stages else "completed",
+            "inference_stages": [item["stage"] for item in stages],
         }
         return response, metadata
