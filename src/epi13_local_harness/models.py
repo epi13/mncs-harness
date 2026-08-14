@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any, Literal
 
@@ -158,6 +158,53 @@ class ModelConfig:
     runtime_supports_sequential_cpu_offload: bool | None = None
     required_capabilities: tuple[str, ...] = ()
     resource_max_age_seconds: float = 300.0
+
+
+def unmanaged_model_profile(model_name: str) -> ModelConfig:
+    """Deterministic defaults for a model that is not a configured role."""
+
+    return ModelConfig(
+        role="unmanaged",
+        name=model_name,
+        keep_alive="10m",
+        num_ctx=8192,
+        think=False,
+        temperature=1.0,
+        top_p=0.95,
+        top_k=64,
+        tools=(),
+        provider="fabric",
+    )
+
+
+def resolve_execution_profile(
+    models: dict[str, ModelConfig],
+    *,
+    model_name: str,
+    role: str | None = None,
+) -> tuple[str, ModelConfig]:
+    """Resolve an exact model name to a configured role profile.
+
+    A unique configured name uses that role's context/sampling settings. An
+    explicit ``role`` wins. Unconfigured names use unmanaged defaults instead
+    of cloning e2b.
+    """
+
+    if role is not None:
+        if role not in models:
+            raise ValueError(f"unknown model role {role}")
+        profile = models[role]
+        if profile.name != model_name:
+            return role, replace(profile, name=model_name)
+        return role, profile
+    matches = [name for name, profile in models.items() if profile.name == model_name]
+    if len(matches) == 1:
+        return matches[0], models[matches[0]]
+    if len(matches) > 1:
+        raise ValueError(
+            f"model {model_name} matches multiple roles {', '.join(matches)}; pass --profile"
+        )
+    return "unmanaged", unmanaged_model_profile(model_name)
 
 
 @dataclass(frozen=True)

@@ -256,8 +256,15 @@ class ResidentRoutingTests(unittest.TestCase):
         )
         self.assertFalse(unavailable.available)
         self.assertIn("PINNED_WORKER_UNAVAILABLE", unavailable.reason)
-        _effective, stale = session.resolve_model(
+        _effective, stale_worker = session.resolve_model(
             "e4b", self.config.models["e4b"], RoutingOverride.from_values(worker="arm")
+        )
+        self.assertFalse(stale_worker.available)
+        self.assertIn("PINNED_INVENTORY_NOT_CURRENT", stale_worker.reason)
+        _effective, stale = session.resolve_model(
+            "e4b",
+            self.config.models["e4b"],
+            RoutingOverride.from_values(worker="arm", model="gemma4:e2b"),
         )
         self.assertTrue(stale.available)
         self.assertEqual(stale.worker_id, "arm")

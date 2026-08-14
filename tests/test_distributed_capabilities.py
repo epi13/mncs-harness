@@ -185,6 +185,19 @@ class DistributedCapabilityTests(unittest.TestCase):
         self.assertTrue(pinned.available)
         self.assertEqual(pinned.worker_id, "stale")
 
+        _effective, worker_only = session.resolve_model(
+            "e4b",
+            configured,
+            RoutingOverride.from_values(worker="stale"),
+        )
+        self.assertFalse(worker_only.available)
+        _effective, model_only = session.resolve_model(
+            "e4b",
+            configured,
+            RoutingOverride.from_values(model="gemma4:e4b"),
+        )
+        self.assertFalse(model_only.available)
+
     def test_resolve_model_from_status_does_not_reread_controller(self) -> None:
         session = self._session([_worker("worker-a", [_entry("gemma4:e4b")])])
         captured = session.status()

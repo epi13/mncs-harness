@@ -758,15 +758,17 @@ class InventoryAwareFabricSession(FabricSession):
     ) -> tuple[ModelConfig, ModelSelection | None]:
         """Resolve a role against one already-captured Fabric status.
 
-        Automatic/role placement uses CURRENT inventory only. Explicit
-        operator pins may consume STALE persistent inventory when the
-        requested worker is AVAILABLE and the model is represented.
+        Automatic and role-based placement use CURRENT inventory only.
+        Worker-only and model-only pins still require CURRENT inventory
+        because Fabric must choose the missing placement dimension. Only an
+        explicit WORKER_MODEL pin may consume STALE inventory when the
+        worker is AVAILABLE and the exact model was previously observed.
         """
 
         if model.provider != "fabric":
             return model, None
         requested = routing_override or RoutingOverride()
-        allow_stale = requested.mode in {"WORKER", "WORKER_MODEL", "MODEL"}
+        allow_stale = requested.mode == "WORKER_MODEL"
         accepted_freshness = {"CURRENT", "STALE"} if allow_stale else {"CURRENT"}
         workers = [dict(worker) for worker in status.workers]
         current_candidates = [
@@ -856,7 +858,9 @@ class InventoryAwareFabricSession(FabricSession):
                     worker_id=requested.worker,
                     selected_model=requested.model,
                 )
-            elif self._inventory_freshness(target) not in {"CURRENT", "STALE"}:
+            elif self._inventory_freshness(target) not in (
+                {"CURRENT", "STALE"} if requested.mode == "WORKER_MODEL" else {"CURRENT"}
+            ):
                 failure = unavailable(
                     "PINNED_INVENTORY_NOT_CURRENT",
                     f"selected worker {requested.worker} has no current model inventory",
@@ -864,7 +868,9 @@ class InventoryAwareFabricSession(FabricSession):
                     selected_model=requested.model,
                 )
             else:
-                inventory = self._worker_inventory(target, allow_stale=True)
+                inventory = self._worker_inventory(
+                    target, allow_stale=requested.mode == "WORKER_MODEL"
+                )
                 if requested.mode == "WORKER_MODEL":
                     if named(inventory, str(requested.model)) is None:
                         failure = unavailable(

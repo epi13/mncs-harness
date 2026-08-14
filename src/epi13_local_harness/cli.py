@@ -22,7 +22,7 @@ from .evals import evaluate_routes, load_cases
 from .fabric_inventory_session import InventoryAwareFabricSession
 from .fleet import FleetService
 from .metrics import MetricsStore
-from .models import RoutingOverride
+from .models import RoutingOverride, resolve_execution_profile
 from .router import plan_route
 from .verifiers import Verifier
 
@@ -101,6 +101,10 @@ def build_parser() -> argparse.ArgumentParser:
     submit_parser.add_argument("task", nargs="?", help="Task text; reads stdin when omitted")
     _add_routing_arguments(submit_parser)
     submit_parser.add_argument("--idempotency-key")
+    submit_parser.add_argument(
+        "--profile",
+        help="Configured model role whose context/sampling profile should be applied",
+    )
     submit_parser.add_argument("--json", action="store_true")
 
     work_parser = subparsers.add_parser("work", help="Inspect detached persistent Fabric inference work")
@@ -380,27 +384,30 @@ def doctor_outcome(
     subsystems: list[dict[str, Any]],
     route_availability: list[dict[str, Any]],
 ) -> str:
-    """Summarize doctor health without treating optional route gaps as transport failure."""
+    """Summarize doctor health without treating optional unused subsystems as fatal."""
 
-    core_failed = [
+    def required(item: dict[str, Any]) -> bool:
+        return item.get("required", True) is not False
+
+    core = [
         item
         for item in subsystems
-        if item.get("status") != "PASS" and not str(item.get("name", "")).startswith("Worker ")
+        if required(item) and not str(item.get("name", "")).startswith("Worker ")
     ]
-    worker_failed = [
+    workers = [
         item
         for item in subsystems
-        if str(item.get("name", "")).startswith("Worker ") and item.get("status") != "PASS"
+        if str(item.get("name", "")).startswith("Worker ")
     ]
     fabric_roles = [item for item in route_availability if item.get("provider") == "fabric"]
     unavailable_routes = [item for item in fabric_roles if not item.get("available")]
-    if any(item.get("status") == "ERROR" for item in core_failed):
+    if any(item.get("status") == "ERROR" for item in core):
         return "ERROR"
-    if any(item.get("status") == "TIMEOUT" for item in core_failed):
+    if any(item.get("status") == "TIMEOUT" for item in core):
         return "UNKNOWN"
-    if worker_failed or unavailable_routes:
+    if any(item.get("status") != "PASS" for item in workers) or unavailable_routes:
         return "DEGRADED"
-    if core_failed:
+    if any(item.get("status") != "PASS" for item in core):
         return "UNKNOWN"
     return "PASS"
 
@@ -423,14 +430,20 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         session, fleet = _fleet(config, refresh_inventory=False)
         status = session.status()
         snapshot = fleet.snapshot(status)
-        return {
+        payload = {
             "state": status.state,
+            "reachable": status.state == "available",
             "execution_transport": status.execution_transport,
             "detail": status.detail,
+            "controller_version": status.controller_version,
+            "service_contract": status.service_contract,
             "workers": snapshot["fabric"]["workers"],
             "controller": snapshot["controller"],
             "role_availability": fleet.role_availability(snapshot, status=status),
         }
+        if status.state != "available":
+            raise RuntimeError(status.detail or "Fabric is unavailable")
+        return payload
 
     def ollama_probe() -> dict[str, Any]:
         url = config.ollama.base_url.rstrip("/") + "/api/tags"
@@ -441,9 +454,13 @@ def cmd_doctor(args: argparse.Namespace) -> int:
             raise RuntimeError("controller Ollama returned a malformed tags document")
         return {"model_count": len(models)}
 
+    ollama_required = any(model.provider != "fabric" for model in config.models.values())
     commons_result = _bounded_probe("Commons", commons_probe, timeout_seconds=8)
     fabric_result = _bounded_probe("Fabric", fabric_probe, timeout_seconds=35)
     ollama_result = _bounded_probe("Ollama", ollama_probe, timeout_seconds=6)
+    ollama_result["required"] = ollama_required
+    if not ollama_required and ollama_result["status"] != "PASS":
+        ollama_result["status"] = "DEGRADED"
     subsystems.extend((commons_result, fabric_result, ollama_result))
 
     commons_status = commons_result.get("detail") if commons_result["status"] == "PASS" else {}
@@ -457,7 +474,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     for worker in snapshot["fabric"]["workers"]:
         worker_id = str(worker.get("worker_id") or "unknown-worker")
         availability = str(worker.get("availability") or "UNKNOWN")
-        status = "PASS" if availability == "AVAILABLE" else "ERROR"
+        status = "PASS" if availability == "AVAILABLE" else "DEGRADED"
         subsystems.append(
             {
                 "name": f"Worker {worker_id}",
@@ -726,15 +743,16 @@ def cmd_submit(args: argparse.Namespace) -> int:
         raise ValueError("elh submit requires exact --worker and --model-name pins")
     config = load_config(args.config)
     task = _task_text(args.task)
-    agent = LocalAgent(config, refresh_inventory=False, warm_residency=False)
-    model, selection = agent.fabric_session.resolve_model(
-        "e2b",
-        replace(config.models["e2b"], name=str(override.model), think=False),
-        override,
+    role, model = resolve_execution_profile(
+        config.models,
+        model_name=str(override.model),
+        role=args.profile,
     )
+    agent = LocalAgent(config, refresh_inventory=False, warm_residency=False)
+    model, selection = agent.fabric_session.resolve_model(role, model, override)
     if selection is None or not selection.available or not selection.worker_id:
         raise ValueError(selection.reason if selection else "exact pin could not be resolved")
-    agent._configure_fabric_provenance(task, "e2b", model)
+    agent._configure_fabric_provenance(task, role, model)
     accepted = agent.fabric_session.submit_chat(
         model,
         [{"role": "user", "content": task}],
@@ -747,6 +765,16 @@ def cmd_submit(args: argparse.Namespace) -> int:
         "work_id": accepted.get("work_id"),
         "worker": selection.worker_id,
         "model": model.name,
+        "role": role,
+        "profile": {
+            "role": role,
+            "num_ctx": model.num_ctx,
+            "think": model.think,
+            "temperature": model.temperature,
+            "top_p": model.top_p,
+            "top_k": model.top_k,
+            "keep_alive": model.keep_alive,
+        },
         "routing_mode": override.mode,
         "execution_transport": accepted.get("execution_transport"),
         "authority": "persistent-fabric",

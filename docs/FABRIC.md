@@ -166,9 +166,11 @@ backend is ignored during normal execution. Only the explicit heuristic
 compatibility backend may still annotate a lane.
 
 Automatic and role-based placement use CURRENT capability inventory only.
-UNKNOWN, unavailable workers, and STALE inventory fail closed for AUTO/ROLE.
-An exact operator pin (`--worker` plus `--model-name`) may still use STALE
-persistent inventory when the worker is AVAILABLE and the model is represented.
+UNKNOWN, unavailable workers, and STALE inventory fail closed for AUTO, ROLE,
+worker-only, and model-only pins. Those still require Fabric to choose a
+worker or a model. Only an explicit WORKER_MODEL pin (`--worker` plus
+`--model-name`) may use STALE persistent inventory when the worker is
+AVAILABLE and that exact model was previously observed.
 The distributed capability graph projects CURRENT model facts only; a stale
 worker may appear with `capability_inventory_status = STALE` and no model
 entries.
