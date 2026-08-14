@@ -4,14 +4,7 @@ import re
 from dataclasses import replace
 from pathlib import Path
 
-from .models import (
-    HarnessConfig,
-    RoutePlan,
-    RoutingOverride,
-    SemanticRouteResult,
-    TaskProfile,
-)
-from .semantic_router import route_with_backend
+from .models import HarnessConfig, RoutePlan, RoutingOverride, SemanticRouteResult, TaskProfile
 
 CODE_TERMS = {
     "code", "coding", "function", "class", "method", "script", "python", "bash",
@@ -228,21 +221,27 @@ def plan_route(
             routing_override=requested,
         )
 
-    # Every operator pin is authoritative. In particular, exact worker/model
-    # requests must never initialize compatibility routing or consult unrelated
-    # roles before Fabric validates the pair.
+    # Every operator pin is authoritative. Exact worker/model requests must
+    # not initialize compatibility routing or walk the escalation cascade.
+    if requested.mode in {"MODEL", "WORKER", "WORKER_MODEL"}:
+        plan = _deterministic_route(profile, config)
+        return replace(plan, escalation_roles=(), routing_override=requested)
     if requested.mode != "AUTO":
         return replace(_deterministic_route(profile, config), routing_override=requested)
 
     plan = _deterministic_route(profile, config)
-    # Legacy config compatibility only: no external model is loaded and the
-    # deprecated Transformer backend is reduced to a no-op fallback.
+    # Legacy config compatibility only. The Transformer backend is ignored
+    # during normal execution; only the explicit heuristic compatibility
+    # path may still annotate a lane.
     semantic = None
     compatibility_reason: str | None = None
     if config.router.enable_semantic_routing and config.router.backend == "heuristic":
         semantic = _compatibility_lane_route(text, config, profile)
-    elif config.router.enable_semantic_routing and config.router.backend == "transformers":
-        semantic, compatibility_reason = route_with_backend(text, config, profile)
+    elif config.router.enable_semantic_routing:
+        compatibility_reason = (
+            "semantic router is compatibility-only; "
+            f"backend={config.router.backend} is ignored during normal execution"
+        )
     if semantic and semantic.selected_lane in config.lanes:
         lane = config.lanes[semantic.selected_lane]
         if lane.enabled and lane.worker_role in config.models:

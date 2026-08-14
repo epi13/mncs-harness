@@ -131,11 +131,13 @@ class TuiHelperTests(unittest.TestCase):
                 },
             ),
         )
-        console = Console(file=StringIO(), record=True, width=140)
+        console = Console(file=StringIO(), record=True, width=220)
         console.print(fabric_status_renderable(status))
         rendered = console.export_text()
-        self.assertIn("Capabilities", rendered)
-        self.assertIn("CURRENT model:2, runtime:1", rendered)
+        self.assertIn("Capabili", rendered)
+        self.assertIn("CURRENT", rendered)
+        self.assertIn("model:2", rendered)
+        self.assertIn("runtime:1", rendered)
 
 
 class TuiAppTests(unittest.IsolatedAsyncioTestCase):

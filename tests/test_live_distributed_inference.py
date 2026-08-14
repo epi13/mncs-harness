@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
+import sys
 import time
 import unittest
 from dataclasses import replace
@@ -154,3 +156,61 @@ class LiveDistributedInferenceTests(unittest.TestCase):
         for item in evidence:
             self.assertEqual(item["stage"], "completed")
             self.assertTrue(item["fabric_record_identity"])
+
+
+def _cli_enabled() -> bool:
+    if os.environ.get("MNCS_SKIP_LIVE_CLI") == "1":
+        return False
+    return _live_configured()
+
+
+@unittest.skipUnless(_cli_enabled(), "persistent Fabric controller socket is not present")
+class LiveCliAskTests(unittest.TestCase):
+    """Full LocalAgent path: elh ask → exact pin → Fabric → Ollama."""
+
+    def _ask(self, worker: str, model: str, marker: str) -> subprocess.CompletedProcess[str]:
+        last: subprocess.CompletedProcess[str] | None = None
+        for _attempt in range(3):
+            last = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "epi13_local_harness.cli",
+                    "ask",
+                    f"Reply with exactly: {marker}",
+                    "--worker",
+                    worker,
+                    "--model-name",
+                    model,
+                    "--yes",
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=120,
+            )
+            if last.returncode == 0 and marker in last.stdout:
+                return last
+            time.sleep(2)
+        assert last is not None
+        return last
+
+    def test_elh_ask_linux_exact_pin(self) -> None:
+        completed = self._ask("fabric-worker-01", "granite3.3:2b", "MNCS_CLI_LINUX_OK")
+        self.assertEqual(completed.returncode, 0, completed.stderr + completed.stdout)
+        self.assertIn("MNCS_CLI_LINUX_OK", completed.stdout)
+        self.assertNotIn("inventory-refresh", completed.stderr)
+        self.assertNotIn("residency-reconciliation", completed.stderr)
+        self.assertIn("exact-pin", completed.stderr)
+        self.assertIn("fabric-worker-01", completed.stderr)
+        self.assertIn("granite3.3:2b", completed.stderr)
+
+    def test_elh_ask_windows_exact_pin(self) -> None:
+        completed = self._ask("collamore02-windows", "gemma4:e4b", "MNCS_CLI_WINDOWS_OK")
+        self.assertEqual(completed.returncode, 0, completed.stderr + completed.stdout)
+        self.assertIn("MNCS_CLI_WINDOWS_OK", completed.stdout)
+        self.assertNotIn("inventory-refresh", completed.stderr)
+        self.assertNotIn("residency-reconciliation", completed.stderr)
+        self.assertIn("exact-pin", completed.stderr)
+        self.assertIn("collamore02-windows", completed.stderr)
+        self.assertIn("gemma4:e4b", completed.stderr)

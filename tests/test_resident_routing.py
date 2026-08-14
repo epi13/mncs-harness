@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import unittest
 from dataclasses import replace
+from pathlib import Path
 from types import SimpleNamespace
 
 from epi13_local_harness.agent import LocalAgent
@@ -112,6 +113,73 @@ class ResidentRoutingTests(unittest.TestCase):
         session.status = lambda: self.status
         return session
 
+    def test_exact_pin_uses_persistent_capability_inventory(self) -> None:
+        worker = {
+            "worker_id": "fabric-worker-01",
+            "source": "remote",
+            "availability": "AVAILABLE",
+            "capability_inventory_status": "CURRENT",
+            "capability_observation": {
+                "availability": "AVAILABLE",
+                "capabilities": [
+                    {
+                        "kind": "model",
+                        "name": "granite3.3:2b",
+                        "namespace": "ollama",
+                        "attributes": {"size_bytes": 1_500_000_000, "loaded": True},
+                    }
+                ],
+            },
+        }
+        session = object.__new__(InventoryAwareFabricSession)
+        session.residency_config = self.residency
+        session.capability_api_available = True
+        session.model_inventory_errors = {}
+        session.model_inventories = {}
+        session.config = replace(self.config.fabric, enabled=True)
+        session.status = lambda: FabricStatus(True, "available", "controller", workers=(worker,))
+        _effective, selection = session.resolve_model(
+            "e2b",
+            self.config.models["e2b"],
+            RoutingOverride.from_values(worker="fabric-worker-01", model="granite3.3:2b"),
+        )
+        self.assertTrue(selection.available)
+        self.assertEqual(selection.worker_id, "fabric-worker-01")
+        self.assertEqual(selection.selected_model, "granite3.3:2b")
+
+    def test_exact_pin_accepts_stale_persistent_capability_inventory(self) -> None:
+        worker = {
+            "worker_id": "fabric-worker-01",
+            "source": "remote",
+            "availability": "AVAILABLE",
+            "capability_inventory_status": "STALE",
+            "capability_observation": {
+                "availability": "AVAILABLE",
+                "capabilities": [
+                    {
+                        "kind": "model",
+                        "name": "granite3.3:2b",
+                        "namespace": "ollama",
+                        "attributes": {"size_bytes": 1_500_000_000, "loaded": True},
+                    }
+                ],
+            },
+        }
+        session = object.__new__(InventoryAwareFabricSession)
+        session.residency_config = self.residency
+        session.capability_api_available = True
+        session.model_inventory_errors = {}
+        session.model_inventories = {}
+        session.config = replace(self.config.fabric, enabled=True)
+        session.status = lambda: FabricStatus(True, "available", "controller", workers=(worker,))
+        _effective, selection = session.resolve_model(
+            "e2b",
+            self.config.models["e2b"],
+            RoutingOverride.from_values(worker="fabric-worker-01", model="granite3.3:2b"),
+        )
+        self.assertTrue(selection.available)
+        self.assertEqual(selection.selected_model, "granite3.3:2b")
+
     def test_manual_worker_model_pair_is_exact_and_fail_closed(self) -> None:
         session = self._inventory_session()
         model = self.config.models["e4b"]
@@ -191,8 +259,9 @@ class ResidentRoutingTests(unittest.TestCase):
         _effective, stale = session.resolve_model(
             "e4b", self.config.models["e4b"], RoutingOverride.from_values(worker="arm")
         )
-        self.assertFalse(stale.available)
-        self.assertIn("PINNED_INVENTORY_NOT_CURRENT", stale.reason)
+        self.assertTrue(stale.available)
+        self.assertEqual(stale.worker_id, "arm")
+        self.assertEqual(stale.selected_model, "gemma4:e2b")
 
     def test_model_and_worker_modes_use_per_worker_inventory(self) -> None:
         session = self._inventory_session()
@@ -229,7 +298,9 @@ class ResidentRoutingTests(unittest.TestCase):
         agent = object.__new__(LocalAgent)
         agent.config = self.config
         agent._last_residency_results = ()
+        agent._lifecycle_stages = []
         refreshes: list[str] = []
+        reconciled: list[str | None] = []
 
         class Session:
             def refresh_model_inventory(self) -> None:
@@ -239,7 +310,8 @@ class ResidentRoutingTests(unittest.TestCase):
                 return None
 
         class Residency:
-            def reconcile(self) -> tuple[dict[str, object], ...]:
+            def reconcile(self, *, force_worker: str | None = None) -> tuple[dict[str, object], ...]:
+                reconciled.append(force_worker)
                 return (
                     {
                         "worker_id": "gpu",
@@ -265,12 +337,85 @@ class ResidentRoutingTests(unittest.TestCase):
 
         agent._restore_residency_after_attempt(attempt)
 
-        self.assertEqual(refreshes, ["refresh"])
+        self.assertEqual(refreshes, [])
+        self.assertEqual(reconciled, ["gpu"])
         self.assertEqual(
             attempt.metrics["residency_reconciliation"][0]["code"],
             "RESIDENCY_WARMED",
         )
         self.assertTrue(attempt.metrics["residency_reconciliation"][0]["loaded"])
+
+    def test_restore_skips_when_exact_route_used_declared_resident(self) -> None:
+        agent = object.__new__(LocalAgent)
+        agent.config = self.config
+        agent._last_residency_results = ()
+        agent._lifecycle_stages = []
+        calls: list[str] = []
+
+        class Residency:
+            def reconcile(self, *, force_worker: str | None = None) -> tuple[dict[str, object], ...]:
+                calls.append(force_worker or "*")
+                return ()
+
+        agent.fleet = SimpleNamespace(residency=Residency())
+        attempt = ModelAttempt(
+            role="e4b",
+            model="gemma4:e4b",
+            content="done",
+            thinking="",
+            metrics={},
+            tool_executions=[],
+            verification=VerificationResult(True, (), ()),
+            session_targets=SessionTargets.remote_inference("gpu"),
+        )
+        agent._restore_residency_after_attempt(attempt)
+        self.assertEqual(calls, [])
+        self.assertEqual(
+            attempt.metrics["residency_reconciliation"][0]["code"],
+            "RESIDENCY_UNCHANGED",
+        )
+
+    def test_exact_pin_run_does_not_refresh_or_warm_fleet(self) -> None:
+        agent = object.__new__(LocalAgent)
+        agent.config = replace(self.config, fabric=replace(self.config.fabric, enabled=True))
+        agent._lifecycle_stages = []
+        calls: list[str] = []
+
+        def refresh(**kwargs: object) -> None:
+            calls.append(f"refresh:{kwargs}")
+
+        def restore(attempt: ModelAttempt) -> None:
+            del attempt
+            calls.append("restore")
+
+        agent.refresh_fabric_inventory = refresh  # type: ignore[method-assign]
+        agent._restore_residency_after_attempt = restore  # type: ignore[method-assign]
+        agent.metrics = SimpleNamespace(
+            begin_run=lambda *args, **kwargs: "run",
+            record_attempt=lambda *args, **kwargs: None,
+        )
+        attempt = ModelAttempt(
+            role="e2b",
+            model="granite3.3:2b",
+            content="MNCS_PIN_OK",
+            thinking="",
+            metrics={},
+            tool_executions=[],
+            verification=VerificationResult(True, (), ()),
+            session_targets=SessionTargets.remote_inference("fabric-worker-01"),
+        )
+        agent._run_attempt = lambda *args, **kwargs: attempt  # type: ignore[method-assign]
+        result = LocalAgent.run(
+            agent,
+            "Reply with exactly: MNCS_PIN_OK",
+            workspace=Path("."),
+            routing_override=RoutingOverride.from_values(
+                worker="fabric-worker-01", model="granite3.3:2b"
+            ),
+        )
+        self.assertEqual(result.final_content, "MNCS_PIN_OK")
+        self.assertFalse(any(item.startswith("refresh:") for item in calls))
+        self.assertEqual(calls, ["restore"])
 
 
 if __name__ == "__main__":

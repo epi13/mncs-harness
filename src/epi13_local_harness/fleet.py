@@ -22,6 +22,45 @@ class FleetService:
     def _name(model: dict[str, Any]) -> str:
         return str(model.get("name") or model.get("model") or "")
 
+    def role_availability(self, snapshot: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+        """Resolve configured roles against the current persistent inventory."""
+
+        view = snapshot if snapshot is not None else self.snapshot()
+        local_names = {
+            self._name(item)
+            for item in (view.get("controller") or {}).get("installed_models", [])
+        }
+        rows: list[dict[str, Any]] = []
+        resolve = getattr(self.fabric_session, "resolve_model", None)
+        for role, model in self.config.models.items():
+            if model.provider == "fabric" and self.config.fabric.enabled and callable(resolve):
+                _effective, selection = resolve(role, model)
+                rows.append(
+                    {
+                        "role": role,
+                        "provider": "fabric",
+                        "configured_model": model.name,
+                        "resolved_model": selection.selected_model if selection else None,
+                        "worker": selection.worker_id if selection else None,
+                        "available": bool(selection and selection.available),
+                        "reason": selection.reason if selection else "no Fabric selection",
+                    }
+                )
+            else:
+                available = model.name in local_names
+                rows.append(
+                    {
+                        "role": role,
+                        "provider": "controller-ollama",
+                        "configured_model": model.name,
+                        "resolved_model": model.name,
+                        "worker": "controller",
+                        "available": available,
+                        "reason": "controller-local installed inventory",
+                    }
+                )
+        return rows
+
     def snapshot(self) -> dict[str, Any]:
         fabric = self.fabric_session.status()
         try:
