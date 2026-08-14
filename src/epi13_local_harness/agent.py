@@ -205,7 +205,19 @@ class LocalAgent:
             return
         worker_id = attempt.session_targets.inference.worker_identity
         declared = self._declared_resident(worker_id)
-        if declared is None or declared == attempt.model:
+        if declared is None:
+            attempt.metrics["residency_reconciliation"] = [
+                {
+                    "worker_id": worker_id,
+                    "resident_model": None,
+                    "outcome": "PASS",
+                    "code": "RESIDENCY_NOT_CONFIGURED",
+                    "loaded": None,
+                    "detail": "no declared resident model for this worker",
+                }
+            ]
+            return
+        if declared == attempt.model:
             attempt.metrics["residency_reconciliation"] = [
                 {
                     "worker_id": worker_id,

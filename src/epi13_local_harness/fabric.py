@@ -210,6 +210,32 @@ _STAGE_PREFIX = "ELH_FABRIC_STAGE "
 _RESPONSE_PREFIX = "ELH_FABRIC_RESPONSE "
 
 
+def _execution_record(payload: dict[str, Any] | None) -> dict[str, Any] | None:
+    """Locate the Fabric execution record inside sync or detached payloads."""
+
+    if not isinstance(payload, dict):
+        return None
+    direct = payload.get("record")
+    if isinstance(direct, dict):
+        return direct
+    nested = payload.get("result")
+    if isinstance(nested, dict):
+        record = nested.get("record")
+        if isinstance(record, dict):
+            return record
+        results = nested.get("results")
+        if isinstance(results, list) and results and isinstance(results[0], dict):
+            record = results[0].get("record")
+            if isinstance(record, dict):
+                return record
+    results = payload.get("results")
+    if isinstance(results, list) and results and isinstance(results[0], dict):
+        record = results[0].get("record")
+        if isinstance(record, dict):
+            return record
+    return None
+
+
 def _parse_stage_lines(stdout: str) -> list[dict[str, Any]]:
     stages: list[dict[str, Any]] = []
     for line in stdout.splitlines():
@@ -991,3 +1017,138 @@ class FabricSession:
             "inference_stages": [item["stage"] for item in stages],
         }
         return response, metadata
+
+    def submit_chat(
+        self,
+        model: ModelConfig,
+        messages: list[dict[str, Any]],
+        *,
+        worker_id: str,
+        idempotency_key: str | None = None,
+    ) -> dict[str, Any]:
+        """Enqueue exact-pin inference on persistent Fabric and return immediately."""
+
+        if self.client is None or self._state != "available":
+            raise FabricUnavailable(self._detail or "Fabric is unavailable")
+        submit = getattr(self.client, "submit_execution", None)
+        if not callable(submit):
+            raise FabricExecutionError(
+                "FABRIC_DETACHED_UNSUPPORTED: persistent client does not expose submit_execution"
+            )
+        payload = {
+            "model": model.name,
+            "messages": [dict(message) for message in messages],
+            "stream": False,
+            "keep_alive": model.keep_alive,
+            "think": model.think,
+            "options": {
+                "num_ctx": model.num_ctx,
+                "temperature": model.temperature,
+                "top_p": model.top_p,
+                "top_k": model.top_k,
+            },
+        }
+        request = {
+            "base_url": _loopback_url(self.config.provider_ollama_base_url),
+            "timeout_seconds": self.config.provider_timeout_seconds,
+            "payload": payload,
+        }
+        self.config.state_path.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(prefix="elh-fabric-submit-", dir=self.config.state_path.parent) as directory:
+            source_root = Path(directory)
+            (source_root / "invoke.py").write_text(_invocation_script(), encoding="utf-8")
+            (source_root / "request.json").write_text(
+                json.dumps(request, ensure_ascii=True, separators=(",", ":")), encoding="utf-8"
+            )
+            from mncs_fabric.artifacts import build_manifest
+            from mncs_fabric.bundles import build_bundle_archive
+            from mncs_fabric.models import validate_job_plan
+
+            manifest = build_manifest(source_root)
+            archive = source_root / "execution-bundle.zip"
+            build_bundle_archive(source_root, archive)
+            plan = validate_job_plan(
+                {
+                    "schema_version": "mncs-fabric.job-plan.v0.1",
+                    "job_id": "elh-fabric-inference",
+                    "candidate_identity": _identity(request),
+                    "evaluator_identity": None,
+                    "artifact_manifest_identity": manifest["manifest_identity"],
+                    "argv": ["@python", "invoke.py"],
+                    "working_directory": ".",
+                    "timeout_seconds": (
+                        self.config.provider_timeout_seconds
+                        + self.config.job_timeout_overhead_seconds
+                    ),
+                    "output_limit_bytes": 2 * 1024 * 1024,
+                    "environment": {"PYTHONHASHSEED": "0", "PYTHONUNBUFFERED": "1"},
+                    "required_capabilities": list(
+                        dict.fromkeys(("python", *model.required_capabilities))
+                    ),
+                    "result_paths": [],
+                    "network_policy": "UNRESTRICTED",
+                }
+            )
+            consumer_context = None
+            if self._consumer_context is not None:
+                from mncs_fabric import ConsumerContext
+
+                consumer_context = ConsumerContext(
+                    "epi13-local-harness",
+                    self._consumer_context["workload_identity"],
+                    provider_identity=self._consumer_context["provider_identity"],
+                    partition_identity=self._consumer_context["partition_identity"],
+                )
+            accepted = submit(
+                plan,
+                manifest,
+                worker_id=worker_id,
+                execution_bundle_archive=archive,
+                placement=self._placement(model),
+                consumer_context=consumer_context,
+                idempotency_key=idempotency_key,
+            )
+        work_id = accepted.get("work_id") if isinstance(accepted, dict) else None
+        return {
+            "stage": "accepted",
+            "work_id": work_id,
+            "worker": worker_id,
+            "model": model.name,
+            "execution_transport": "persistent-detached",
+            "accepted": accepted,
+        }
+
+    def work_status(self, work_id: str) -> dict[str, Any]:
+        if self.client is None:
+            raise FabricUnavailable(self._detail or "Fabric is unavailable")
+        reader = getattr(self.client, "execution_status", None)
+        if not callable(reader):
+            raise FabricExecutionError("FABRIC_DETACHED_UNSUPPORTED: execution_status is unavailable")
+        payload = reader(work_id)
+        state = payload.get("state") if isinstance(payload, dict) else None
+        return {"stage": str(state or "unknown").lower(), "work_id": work_id, "status": payload}
+
+    def work_result(self, work_id: str) -> dict[str, Any]:
+        if self.client is None:
+            raise FabricUnavailable(self._detail or "Fabric is unavailable")
+        reader = getattr(self.client, "execution_result", None)
+        if not callable(reader):
+            raise FabricExecutionError("FABRIC_DETACHED_UNSUPPORTED: execution_result is unavailable")
+        payload = reader(work_id)
+        record = _execution_record(payload if isinstance(payload, dict) else None)
+        captured = ((record or {}).get("stdout") or {}).get("captured_utf8") or ""
+        stages = _parse_stage_lines(captured)
+        response_line = next(
+            (line for line in captured.splitlines() if line.startswith(_RESPONSE_PREFIX)),
+            None,
+        )
+        response = None
+        if response_line is not None:
+            response = json.loads(response_line.removeprefix(_RESPONSE_PREFIX))
+        return {
+            "stage": stages[-1]["stage"] if stages else str((payload or {}).get("state") or "unknown").lower(),
+            "work_id": work_id,
+            "result": payload,
+            "response": response,
+            "inference_stages": [item["stage"] for item in stages],
+        }

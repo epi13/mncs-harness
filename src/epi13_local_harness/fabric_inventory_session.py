@@ -677,13 +677,30 @@ class InventoryAwareFabricSession(FabricSession):
             if worker_id != "*" and worker_id not in observed_remote_ids:
                 self.model_inventory_errors.pop(worker_id, None)
 
-    def _worker_inventory(self, worker: dict[str, Any]) -> tuple[dict[str, Any], ...]:
+    @staticmethod
+    def _inventory_freshness(worker: dict[str, Any]) -> str:
+        return str(
+            worker.get("model_inventory_status")
+            or worker.get("capability_inventory_status")
+            or "UNKNOWN"
+        )
+
+    def _worker_inventory(
+        self,
+        worker: dict[str, Any],
+        *,
+        allow_stale: bool = False,
+    ) -> tuple[dict[str, Any], ...]:
         worker_id = str(worker.get("worker_id") or "")
         if worker_id in self.model_inventory_errors:
             return ()
         if self.capability_api_available:
             freshness = str(worker.get("capability_inventory_status") or "UNKNOWN")
-            if freshness not in {"CURRENT", "STALE"}:
+            if freshness == "CURRENT":
+                pass
+            elif allow_stale and freshness == "STALE":
+                pass
+            else:
                 return ()
             observation = worker.get("capability_observation")
             if not isinstance(observation, dict) or observation.get("availability") != "AVAILABLE":
@@ -720,29 +737,47 @@ class InventoryAwareFabricSession(FabricSession):
         role: str,
         model: ModelConfig,
         routing_override: RoutingOverride | None = None,
+        *,
+        status: FabricStatus | None = None,
     ) -> tuple[ModelConfig, ModelSelection | None]:
-        """Select a worker-installed model for one Fabric-backed role.
+        """Select a worker-installed model for one Fabric-backed role."""
 
-        The Fabric execution bundle only performs a loopback HTTP request to
-        worker-local Ollama. Therefore the bundle itself is a CPU job. Ollama,
-        not Fabric's Python runner, owns model loading and GPU/CPU placement.
+        if model.provider != "fabric":
+            return model, None
+        captured = status if status is not None else self.status()
+        return self.resolve_model_from_status(
+            captured, role, model, routing_override=routing_override
+        )
+
+    def resolve_model_from_status(
+        self,
+        status: FabricStatus,
+        role: str,
+        model: ModelConfig,
+        routing_override: RoutingOverride | None = None,
+    ) -> tuple[ModelConfig, ModelSelection | None]:
+        """Resolve a role against one already-captured Fabric status.
+
+        Automatic/role placement uses CURRENT inventory only. Explicit
+        operator pins may consume STALE persistent inventory when the
+        requested worker is AVAILABLE and the model is represented.
         """
 
         if model.provider != "fabric":
             return model, None
         requested = routing_override or RoutingOverride()
-        status = self.status()
+        allow_stale = requested.mode in {"WORKER", "WORKER_MODEL", "MODEL"}
+        accepted_freshness = {"CURRENT", "STALE"} if allow_stale else {"CURRENT"}
         workers = [dict(worker) for worker in status.workers]
         current_candidates = [
-            (str(worker.get("worker_id")), self._worker_inventory(worker))
+            (
+                str(worker.get("worker_id")),
+                self._worker_inventory(worker, allow_stale=allow_stale),
+            )
             for worker in workers
             if worker.get("source") in {None, "", "remote", "registry"}
             and worker.get("availability") == "AVAILABLE"
-            and str(
-                worker.get("model_inventory_status")
-                or worker.get("capability_inventory_status")
-                or "UNKNOWN"
-            ) in {"CURRENT", "STALE"}
+            and self._inventory_freshness(worker) in accepted_freshness
         ]
         candidates = [
             (worker_id, inventory)
@@ -821,11 +856,7 @@ class InventoryAwareFabricSession(FabricSession):
                     worker_id=requested.worker,
                     selected_model=requested.model,
                 )
-            elif str(
-                target.get("model_inventory_status")
-                or target.get("capability_inventory_status")
-                or "UNKNOWN"
-            ) not in {"CURRENT", "STALE"}:
+            elif self._inventory_freshness(target) not in {"CURRENT", "STALE"}:
                 failure = unavailable(
                     "PINNED_INVENTORY_NOT_CURRENT",
                     f"selected worker {requested.worker} has no current model inventory",
@@ -833,7 +864,7 @@ class InventoryAwareFabricSession(FabricSession):
                     selected_model=requested.model,
                 )
             else:
-                inventory = self._worker_inventory(target)
+                inventory = self._worker_inventory(target, allow_stale=True)
                 if requested.mode == "WORKER_MODEL":
                     if named(inventory, str(requested.model)) is None:
                         failure = unavailable(

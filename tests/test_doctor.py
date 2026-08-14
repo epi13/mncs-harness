@@ -9,7 +9,7 @@ from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 
-from epi13_local_harness.cli import _bounded_probe
+from epi13_local_harness.cli import _bounded_probe, doctor_outcome
 from epi13_local_harness.config import load_config
 from epi13_local_harness.fleet import FleetService
 
@@ -42,7 +42,17 @@ class DoctorProbeTests(unittest.TestCase):
         config = replace(config, models=models, fabric=replace(config.fabric, enabled=True))
 
         class Session:
-            def resolve_model(self, role: str, model: object) -> tuple[object, object]:
+            def __init__(self) -> None:
+                self.status_calls = 0
+
+            def status(self) -> object:
+                self.status_calls += 1
+                raise AssertionError("role availability must not re-read Fabric status")
+
+            def resolve_model_from_status(
+                self, status: object, role: str, model: object, routing_override=None
+            ) -> tuple[object, object]:
+                del status, role, routing_override
                 return model, SimpleNamespace(
                     selected_model=getattr(model, "name"),
                     worker_id="fabric-worker-01",
@@ -50,15 +60,38 @@ class DoctorProbeTests(unittest.TestCase):
                     reason="persistent inventory",
                 )
 
-        fleet = FleetService(config, Session())
+        session = Session()
+        fleet = FleetService(config, session)
         snapshot = {
             "controller": {"installed_models": []},
             "fabric": {"workers": []},
         }
-        rows = fleet.role_availability(snapshot)
+        rows = fleet.role_availability(snapshot, status=object())
+        self.assertEqual(session.status_calls, 0)
         self.assertGreaterEqual(len(rows), 1)
         self.assertTrue(all(row["available"] for row in rows))
         self.assertTrue(all(row["worker"] == "fabric-worker-01" for row in rows))
+
+    def test_doctor_outcome_is_degraded_when_a_configured_role_is_unusable(self) -> None:
+        subsystems = [
+            {"name": "Commons", "status": "PASS"},
+            {"name": "Fabric", "status": "PASS"},
+            {"name": "Ollama", "status": "PASS"},
+            {"name": "Worker fabric-worker-01", "status": "PASS"},
+        ]
+        roles = [
+            {"role": "e2b", "provider": "fabric", "available": True},
+            {"role": "e4b", "provider": "fabric", "available": False, "reason": "STALE"},
+        ]
+        self.assertEqual(doctor_outcome(subsystems, roles), "DEGRADED")
+        self.assertEqual(
+            doctor_outcome(subsystems, [{"role": "e2b", "provider": "fabric", "available": True}]),
+            "PASS",
+        )
+        self.assertEqual(
+            doctor_outcome([{"name": "Fabric", "status": "ERROR"}], roles),
+            "ERROR",
+        )
 
     def test_doctor_json_stdout_is_pure_json(self) -> None:
         completed = subprocess.run(
