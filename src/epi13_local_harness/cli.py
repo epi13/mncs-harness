@@ -68,6 +68,16 @@ def build_parser() -> argparse.ArgumentParser:
         "doctor", help="Check router, controller, Fabric, Commons, models, and tools"
     )
     doctor_parser.add_argument("--json", action="store_true")
+    readiness_parser = subparsers.add_parser(
+        "experiment-readiness",
+        help="Inspect whether this stack may start experiments without repairing it",
+    )
+    readiness_parser.add_argument("--json", action="store_true")
+    readiness_parser.add_argument(
+        "--profile",
+        default="base-inference",
+        choices=("base-inference", "code-analysis", "multi-agent", "MNEL", "RAVEL"),
+    )
     models_parser = subparsers.add_parser(
         "models", help="Show controller-local and per-worker model state"
     )
@@ -588,6 +598,23 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     return 1 if failed else 0
 
 
+def cmd_experiment_readiness(args: argparse.Namespace) -> int:
+    from .experiment_readiness import BLOCKED, UNKNOWN, inspect_live_config
+
+    config = load_config(args.config)
+    payload = inspect_live_config(config, profile=args.profile)
+    if args.json:
+        _emit(payload, json_output=True)
+    else:
+        print(f"Profile: {payload['profile']}")
+        print(f"Claim boundary: {payload['claim_boundary']}")
+        print(f"Stack identity: {payload['experiment_stack']['experiment_stack_identity']}")
+        for name, layer in payload["layers"].items():
+            print(f"{name:<22} {layer['status']:<8} {layer.get('evidence') or ''}")
+        print(f"Overall: {payload['status']}")
+    return 1 if payload["status"] in {BLOCKED, UNKNOWN} else 0
+
+
 def cmd_models(args: argparse.Namespace) -> int:
     config = load_config(args.config)
     _session, fleet = _fleet(config)
@@ -1099,6 +1126,7 @@ COMMANDS = {
     "init": cmd_init,
     "install-cli": cmd_install_cli,
     "doctor": cmd_doctor,
+    "experiment-readiness": cmd_experiment_readiness,
     "models": cmd_models,
     "pull": cmd_pull,
     "route": cmd_route,
