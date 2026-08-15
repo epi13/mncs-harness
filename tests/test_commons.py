@@ -16,8 +16,10 @@ from epi13_local_harness.commons import (
     CommonsError,
     CommonsExchange,
     CommonsSession,
+    CommonsStatus,
     _model_facing_schemas,
 )
+from epi13_local_harness.commons_operator import CommonsOperatorService
 from epi13_local_harness.config import load_config
 from epi13_local_harness.fabric import FabricStatus
 from epi13_local_harness.tools import ToolRegistry
@@ -153,6 +155,34 @@ class CommonsIntegrationTests(unittest.TestCase):
             payload = json.loads(queried.output)
             self.assertIn("rm -rf /", payload["records"][0]["statement"]["summary"])
             self.assertFalse((root / "escaped").exists())
+
+    def test_operator_publish_is_independent_of_model_publication_policy(self) -> None:
+        class _FakeAdmin:
+            def __init__(self) -> None:
+                self.published: list[dict[str, object]] = []
+
+            def publish(self, record, participant=None):
+                self.published.append(dict(record))
+                return {"outcome": "PASS", "digest": "sha256:operator-publish"}
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            session = CommonsSession(self._config(root, allow_model_publication=False))
+            session._status = CommonsStatus(
+                True, True, "COMMONS_READY", "test", controller_mode="service"
+            )
+            admin = _FakeAdmin()
+            session._admin_client = admin
+            service = CommonsOperatorService(session)
+            payload = service.publish(_malicious_observation())
+            self.assertEqual(payload["outcome"], "PASS")
+            self.assertEqual(admin.published[0]["kind"], "Observation")
+            with self.assertRaisesRegex(CommonsError, "COMMONS_UNKNOWN_TOOL"):
+                session.call(
+                    "commons_publish_record",
+                    {"record": _malicious_observation()},
+                    allow_write=True,
+                )
 
     def test_mcp_termination_mismatch_and_tool_collision_fail_closed(self) -> None:
         try:
