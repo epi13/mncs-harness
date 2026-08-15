@@ -335,6 +335,17 @@ def evaluate_worker_experiment_eligibility(
         blockers.extend(str(item) for item in (ready_decision.get("blockers") or []) if item)
     elif isinstance(ready_decision, Mapping) and ready_decision.get("ready") is True:
         pass
+    elif management_state in SCHEDULABLE_STATES and certification == "CERTIFIED":
+        # Project Fabric's ledger READY decision. A freshly collected inspect
+        # inventory must not be treated as the certified inventory identity.
+        if schedulable is False:
+            blockers.append("not_schedulable")
+        if blocking:
+            blockers.append("conformance_blocking")
+        if unresolved is not None:
+            blockers.append(f"unresolved_update:{unresolved.get('state')}")
+        if service_compatible is False:
+            blockers.append("incompatible_worker_service")
     else:
         if management_state is None:
             blockers.append("management_evidence_missing")
@@ -346,7 +357,13 @@ def evaluate_worker_experiment_eligibility(
             blockers.append("certification_evidence_missing")
         elif certification != "CERTIFIED":
             blockers.append(f"certification:{certification}")
-        if certification == "CERTIFIED" and inventory_identity and cert_inventory and cert_inventory != inventory_identity:
+        if (
+            certification == "CERTIFIED"
+            and cert_inventory
+            and inventory_identity
+            and not worker.get("inventory_is_inspect_observation")
+            and cert_inventory != inventory_identity
+        ):
             blockers.append("certification_inventory_mismatch")
         if blocking:
             blockers.append("conformance_blocking")
@@ -851,7 +868,8 @@ def _enrich_workers_from_inspect(client: Any, workers: list[dict[str, Any]]) -> 
             merged["conformance_disposition"] = management.get("conformance_disposition")
             merged["update_transaction"] = management.get("update_transaction")
             if inventory:
-                merged["inventory"] = inventory
+                merged["inspect_inventory"] = inventory
+                merged["inventory_is_inspect_observation"] = True
                 fabric = inventory.get("fabric") if isinstance(inventory.get("fabric"), Mapping) else {}
                 merged["worker_service_version"] = merged.get("worker_service_version") or fabric.get(
                     "worker_version"
@@ -923,12 +941,14 @@ def inspect_live_config(config: Any, *, profile: str = "base-inference") -> dict
             ravel_limitation = {"disposition": "KNOWN_HISTORICAL_LIMITATION"}
     fabric_identity = controller_status.get("runtime_identity") if isinstance(controller_status, dict) else None
     if not isinstance(fabric_identity, dict):
-        fabric_identity = runtime_build_identity(
-            "mncs_fabric",
-            version=fabric_status.controller_version,
-            source_commit=controller_status.get("source_commit") if isinstance(controller_status, dict) else None,
-            artifact_digest=controller_status.get("artifact_digest") if isinstance(controller_status, dict) else None,
-        )
+        fabric_identity = {
+            "package": "mncs-fabric",
+            "version": fabric_status.controller_version,
+            "source_commit": controller_status.get("source_commit") if isinstance(controller_status, dict) else None,
+            "artifact_digest": controller_status.get("artifact_digest") if isinstance(controller_status, dict) else None,
+            "build_identity": None,
+            "note": "imported package checkout is not the running controller",
+        }
     return evaluate_layers(
         harness={
             "available": True,

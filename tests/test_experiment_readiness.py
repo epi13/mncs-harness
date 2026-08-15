@@ -153,6 +153,16 @@ class WorkerEligibilityTests(unittest.TestCase):
         self.assertEqual(result["status"], READY)
         self.assertTrue(result["experiment_eligible"])
 
+    def test_inspect_observation_does_not_invalidate_fabric_ready(self) -> None:
+        result = evaluate_worker_experiment_eligibility(
+            _ready_worker(
+                inventory={"inventory_identity": "sha256:fresh-inspect"},
+                inventory_is_inspect_observation=True,
+            )
+        )
+        self.assertTrue(result["fabric_eligible"])
+        self.assertTrue(result["experiment_eligible"])
+
 
 class ModelEligibilityTests(unittest.TestCase):
     def test_available_worker_with_zero_models_is_not_model_ready(self) -> None:
