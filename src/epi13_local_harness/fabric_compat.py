@@ -95,11 +95,15 @@ def evaluate_experiment_fabric(
     capabilities: Mapping[str, Any] | None = None,
     *,
     commit: str | None = None,
+    artifact_digest: str | None = None,
+    certified_artifact_digest: str | None = None,
 ) -> dict[str, Any]:
     """Classify a Fabric runtime for experiment use.
 
-    Version metadata cannot override a missing required capability. A commit
-    match to the certified revision is stronger than a version string alone.
+    Version metadata cannot override a missing required capability. Exact
+    experiment certification requires an immutable identity (source commit or
+    package artifact digest). A matching version string alone is
+    COMPATIBLE_VERSION_ONLY.
     """
 
     advertised = dict(capabilities or {})
@@ -120,6 +124,12 @@ def evaluate_experiment_fabric(
     certified_commit = bool(
         commit and commit.lower() == EXPERIMENT_CERTIFIED_FABRIC_COMMIT.lower()
     )
+    certified_digest = bool(
+        artifact_digest
+        and certified_artifact_digest
+        and artifact_digest.lower() == certified_artifact_digest.lower()
+    )
+    exact = certified_commit or certified_digest
     if missing:
         classification = "INCOMPATIBLE"
         action = "dispatch_blocked"
@@ -135,10 +145,17 @@ def evaluate_experiment_fabric(
             f"Fabric {version} is older than minimum supported "
             f"{MIN_SUPPORTED_FABRIC_VERSION}"
         )
-    elif certified_commit or version == EXPERIMENT_CERTIFIED_FABRIC_VERSION:
-        classification = "EXPERIMENT_CERTIFIED"
+    elif exact:
+        classification = "EXPERIMENT_CERTIFIED_EXACT"
         action = "dispatch_allowed"
-        reason = "Fabric matches the experiment-certified revision"
+        reason = "Fabric matches the experiment-certified immutable identity"
+    elif version == EXPERIMENT_CERTIFIED_FABRIC_VERSION:
+        classification = "COMPATIBLE_VERSION_ONLY"
+        action = "dispatch_allowed"
+        reason = (
+            "Fabric version matches the certified revision but no source "
+            "commit or artifact digest is bound"
+        )
     else:
         classification = "COMPATIBLE_NEWER"
         action = "dispatch_allowed"
@@ -152,6 +169,8 @@ def evaluate_experiment_fabric(
         "reason": reason,
         "version": version,
         "commit": commit,
+        "artifact_digest": artifact_digest,
+        "exact": exact,
         "missing_capabilities": missing,
         "required_capabilities": list(EXPERIMENT_REQUIRED_CAPABILITIES),
         **fabric_compatibility_pins(),

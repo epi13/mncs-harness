@@ -607,10 +607,16 @@ def cmd_experiment_readiness(args: argparse.Namespace) -> int:
         _emit(payload, json_output=True)
     else:
         print(f"Profile: {payload['profile']}")
+        print(f"Profile status: {payload.get('profile_status') or payload['status']}")
         print(f"Claim boundary: {payload['claim_boundary']}")
+        print(f"Schema: {payload.get('schema')}")
+        print(f"Fabric classification: {payload.get('fabric_classification')}")
         print(f"Stack identity: {payload['experiment_stack']['experiment_stack_identity']}")
+        print(f"Provenance: {payload['experiment_stack'].get('provenance_status')}")
         for name, layer in payload["layers"].items():
             print(f"{name:<22} {layer['status']:<8} {layer.get('evidence') or ''}")
+        for warning in payload.get("optional_warnings") or []:
+            print(f"optional warning      {warning.get('layer')}: {warning.get('status')}")
         print(f"Overall: {payload['status']}")
     return 1 if payload["status"] in {BLOCKED, UNKNOWN} else 0
 
