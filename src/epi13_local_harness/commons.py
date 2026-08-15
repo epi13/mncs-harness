@@ -508,41 +508,62 @@ class CommonsSession:
             result,
         )
 
-    def _admin_publish(self, arguments: dict[str, Any]) -> dict[str, Any]:
-        if self._admin_client is None:
+    def operator_publish(self, record: dict[str, Any]) -> dict[str, Any]:
+        """Publish through the operator socket.
+
+        This is independent of ``allow_model_publication``, which only
+        projects write tools onto the model-facing Commons surface.
+        """
+
+        if not self.ready:
+            raise CommonsError(self._status.code, self._status.detail)
+        if not isinstance(record, dict):
+            raise CommonsError("COMMONS_INVALID_ARGUMENTS", "record must be an object")
+        return self._admin_publish({"record": record})
+
+    def _ensure_admin_client(self) -> Any:
+        if self._admin_client is not None:
+            return self._admin_client
+        if self.config.controller_mode != "service":
             raise CommonsError(
                 "COMMONS_TOOL_DENIED", "Commons publication is not configured"
             )
+        from mncs_commons.local_service import CommonsAdminClient
+
+        admin = CommonsAdminClient.connect(
+            self.config.operator_socket,
+            timeout=float(self.config.call_timeout_seconds),
+        )
+        admin.status()
+        self._admin_client = admin
+        return admin
+
+    def _admin_publish(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        admin = self._ensure_admin_client()
         record = arguments.get("record")
         if not isinstance(record, dict):
             raise CommonsError("COMMONS_INVALID_ARGUMENTS", "record must be an object")
         participant = arguments.get("participant")
         if participant is not None and not isinstance(participant, dict):
             raise CommonsError("COMMONS_INVALID_ARGUMENTS", "participant must be an object")
-        return self._admin_client.publish(record, participant=participant)
+        return admin.publish(record, participant=participant)
 
     def _admin_submit_work(self, arguments: dict[str, Any]) -> dict[str, Any]:
-        if self._admin_client is None:
-            raise CommonsError(
-                "COMMONS_TOOL_DENIED", "Commons work publication is not configured"
-            )
+        admin = self._ensure_admin_client()
         request = arguments.get("request")
         if not isinstance(request, dict):
             raise CommonsError("COMMONS_INVALID_ARGUMENTS", "request must be an object")
-        return self._admin_client.submit_work(request)
+        return admin.submit_work(request)
 
     def _admin_transition_work(self, arguments: dict[str, Any]) -> dict[str, Any]:
-        if self._admin_client is None:
-            raise CommonsError(
-                "COMMONS_TOOL_DENIED", "Commons work publication is not configured"
-            )
+        admin = self._ensure_admin_client()
         work_id = arguments.get("workId")
         transition = arguments.get("transition")
         if not isinstance(work_id, str) or not isinstance(transition, dict):
             raise CommonsError(
                 "COMMONS_INVALID_ARGUMENTS", "workId and transition are required"
             )
-        return self._admin_client.transition_work(work_id, transition)
+        return admin.transition_work(work_id, transition)
 
     def _native_exchange(self, name: str, arguments: dict[str, Any]) -> CommonsExchange:
         try:
