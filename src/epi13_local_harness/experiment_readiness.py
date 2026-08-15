@@ -20,7 +20,6 @@ UNKNOWN = "UNKNOWN"
 PROFILES = {
     "base-inference": {
         "required": (
-            "control",
             "harness",
             "fabric_controller",
             "fleet",
@@ -29,11 +28,10 @@ PROFILES = {
             "commons_consumer",
             "artifact_write",
         ),
-        "optional": ("commons_operator", "joern", "forge", "scheduler"),
+        "optional": ("control", "commons_operator", "joern", "forge", "scheduler"),
     },
     "code-analysis": {
         "required": (
-            "control",
             "harness",
             "fabric_controller",
             "fleet",
@@ -44,11 +42,10 @@ PROFILES = {
             "joern",
             "forge",
         ),
-        "optional": ("commons_operator", "scheduler"),
+        "optional": ("control", "commons_operator", "scheduler"),
     },
     "multi-agent": {
         "required": (
-            "control",
             "harness",
             "fabric_controller",
             "fleet",
@@ -58,11 +55,10 @@ PROFILES = {
             "commons_consumer",
             "artifact_write",
         ),
-        "optional": ("commons_operator", "joern", "forge", "scheduler"),
+        "optional": ("control", "commons_operator", "joern", "forge", "scheduler"),
     },
     "MNEL": {
         "required": (
-            "control",
             "harness",
             "fabric_controller",
             "fleet",
@@ -74,11 +70,10 @@ PROFILES = {
             "reference_studies",
             "artifact_write",
         ),
-        "optional": ("joern", "forge", "scheduler"),
+        "optional": ("control", "joern", "forge", "scheduler"),
     },
     "RAVEL": {
         "required": (
-            "control",
             "harness",
             "fabric_controller",
             "fleet",
@@ -89,7 +84,7 @@ PROFILES = {
             "forge",
             "artifact_write",
         ),
-        "optional": ("commons_operator", "joern", "scheduler"),
+        "optional": ("control", "commons_operator", "joern", "scheduler"),
     },
 }
 
@@ -370,12 +365,13 @@ def inspect_live_config(config: Any, *, profile: str = "base-inference") -> dict
     workers = list(fabric_status.workers or (snapshot.get("fabric") or {}).get("workers") or [])
     capabilities: dict[str, Any] = {}
     try:
-        import mncs_fabric as fabric_pkg
-
-        contract = fabric_pkg.FabricClient.contract()
-        features = contract.get("features", {}) if isinstance(contract, dict) else {}
         from .fabric_compat import EXPERIMENT_REQUIRED_CAPABILITIES
 
+        client = getattr(fabric_session, "client", None)
+        status = client.controller_status() if client is not None else {}
+        features = status.get("service_features") if isinstance(status, dict) else {}
+        if not isinstance(features, dict):
+            features = {}
         capabilities = {
             name: features.get(name) is True for name in EXPERIMENT_REQUIRED_CAPABILITIES
         }
