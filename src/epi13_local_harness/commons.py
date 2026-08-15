@@ -13,7 +13,9 @@ from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any, Callable
 
-EXPECTED_TOOLS = frozenset(
+# Capability-driven Commons tool contract. Commons may advertise additional
+# operator-admin tools; the model-facing surface accepts only these classes.
+CONSUMER_READ_TOOLS = frozenset(
     {
         "commons_describe",
         "commons_validate_record",
@@ -25,18 +27,39 @@ EXPECTED_TOOLS = frozenset(
         "commons_work_status",
         "commons_durable_work_list",
         "commons_evidence_trace",
-        "commons_publish_record",
-        "commons_submit_work_record",
-        "commons_transition_work_record",
     }
 )
-WRITE_TOOLS = frozenset(
+REQUIRED_CONSUMER_TOOLS = frozenset(
+    {
+        "commons_describe",
+        "commons_validate_record",
+        "commons_get_record",
+        "commons_query",
+        "commons_sync",
+        "commons_conversation",
+        "commons_work_list",
+        "commons_evidence_trace",
+    }
+)
+MODEL_PUBLICATION_TOOLS = frozenset(
     {
         "commons_publish_record",
         "commons_submit_work_record",
         "commons_transition_work_record",
     }
 )
+REQUIRED_PUBLICATION_TOOLS = frozenset({"commons_publish_record"})
+OPERATOR_ADMIN_TOOLS = frozenset(
+    {
+        "commons_retention_status",
+        "commons_compact_store",
+    }
+)
+# Intentional aliases for retired names. Empty until a rename needs a
+# documented compatibility window; do not scatter legacy names elsewhere.
+TOOL_ALIASES: dict[str, str] = {}
+EXPECTED_TOOLS = CONSUMER_READ_TOOLS | MODEL_PUBLICATION_TOOLS
+WRITE_TOOLS = MODEL_PUBLICATION_TOOLS
 DURABLE_WORK_TOOLS = frozenset(
     {
         "commons_work_status",
@@ -45,6 +68,51 @@ DURABLE_WORK_TOOLS = frozenset(
         "commons_transition_work_record",
     }
 )
+
+
+def _canonical_tool_name(name: str) -> str:
+    return TOOL_ALIASES.get(name, name)
+
+
+def _schema_name(schema: dict[str, Any]) -> str:
+    return _canonical_tool_name(str(schema.get("function", {}).get("name") or ""))
+
+
+def _model_facing_schemas(
+    consumer_schemas: Any,
+    operator_schemas: Any = (),
+) -> list[dict[str, Any]]:
+    """Project Commons service tools onto the model-facing capability surface."""
+
+    accepted: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for schema in (*tuple(consumer_schemas or ()), *tuple(operator_schemas or ())):
+        if not isinstance(schema, dict):
+            continue
+        name = _schema_name(schema)
+        if name in OPERATOR_ADMIN_TOOLS or name in seen:
+            continue
+        if name not in EXPECTED_TOOLS:
+            raise CommonsError(
+                "COMMONS_TOOLSET_MISMATCH",
+                f"Commons advertised an unexpected model-facing tool: {name}",
+            )
+        function = dict(schema.get("function") or {})
+        function["name"] = name
+        accepted.append({**schema, "function": function})
+        seen.add(name)
+    _validate_model_facing_names(seen, publication=bool(MODEL_PUBLICATION_TOOLS & seen))
+    return accepted
+
+
+def _validate_model_facing_names(names: set[str], *, publication: bool = False) -> None:
+    del publication
+    canonical = {_canonical_tool_name(name) for name in names} - OPERATOR_ADMIN_TOOLS
+    if canonical - EXPECTED_TOOLS or not REQUIRED_CONSUMER_TOOLS <= canonical:
+        raise CommonsError(
+            "COMMONS_TOOLSET_MISMATCH",
+            "Commons MCP tool set is missing or unexpected",
+        )
 
 
 class CommonsError(RuntimeError):
@@ -199,7 +267,10 @@ class CommonsSession:
                 raise CommonsError(
                     "COMMONS_PROTOCOL_MISMATCH", "Commons service tool projection is invalid"
                 )
-            schemas = list(consumer_schemas)
+            schemas = _model_facing_schemas(
+                consumer_schemas,
+                operator_schemas if self.config.allow_model_publication else (),
+            )
             publication_capable = status.get("operatorPublicationCapable") is True
             if self.config.allow_model_publication:
                 admin = CommonsAdminClient.connect(
@@ -208,7 +279,6 @@ class CommonsSession:
                 )
                 admin.status()
                 self._admin_client = admin
-                schemas.extend(operator_schemas)
             self._service_client = client
             exchange = CommonsExchange(
                 "mncs-commons",
@@ -635,25 +705,15 @@ class CommonsSession:
 
     def _accept_exchange(self, exchange: CommonsExchange) -> None:
         self._validate_exchange(exchange)
-        self._schemas = {
-            str(schema["function"]["name"]): schema for schema in exchange.schemas
-        }
+        accepted = _model_facing_schemas(exchange.schemas)
+        self._schemas = {str(schema["function"]["name"]): schema for schema in accepted}
         self._descriptor = dict(exchange.descriptor)
 
     def _validate_exchange(self, exchange: CommonsExchange) -> None:
         if exchange.server_name != "mncs-commons":
             raise CommonsError("COMMONS_PROTOCOL_MISMATCH", "unexpected MCP server identity")
-        names = {str(item.get("function", {}).get("name")) for item in exchange.schemas}
-        allowed_toolsets = {
-            EXPECTED_TOOLS,
-            EXPECTED_TOOLS - WRITE_TOOLS,
-            EXPECTED_TOOLS - DURABLE_WORK_TOOLS,
-            EXPECTED_TOOLS - DURABLE_WORK_TOOLS - WRITE_TOOLS,
-        }
-        if names not in allowed_toolsets:
-            raise CommonsError(
-                "COMMONS_TOOLSET_MISMATCH", "Commons MCP tool set is missing or unexpected"
-            )
+        names = {_schema_name(item) if isinstance(item, dict) else "" for item in exchange.schemas}
+        _validate_model_facing_names(names)
         descriptor = exchange.descriptor
         profile = descriptor.get("profile")
         interface = descriptor.get("interface")

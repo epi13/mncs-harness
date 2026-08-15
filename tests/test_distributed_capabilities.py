@@ -180,13 +180,13 @@ class DistributedCapabilityTests(unittest.TestCase):
         self.assertIn("provider-reported tools", selection.reason)
         self.assertNotIn("code-hinted", selection.reason)
 
-    def test_exact_pin_may_use_stale_inventory_while_auto_fails_closed(self) -> None:
+    def test_stale_last_known_inventory_remains_routable(self) -> None:
         worker = _worker("stale", [_entry("gemma4:e4b")], inventory_status="STALE")
         session = self._session([worker])
         configured = load_config(None).models["e4b"]
         _effective, auto = session.resolve_model("e4b", configured)
-        self.assertFalse(auto.available)
-        self.assertEqual(auto.inventory_status, "STALE")
+        self.assertTrue(auto.available)
+        self.assertEqual(auto.worker_id, "stale")
         from epi13_local_harness.models import RoutingOverride
 
         _effective, pinned = session.resolve_model(
@@ -213,9 +213,8 @@ class DistributedCapabilityTests(unittest.TestCase):
         session.resolve_model_from_status(captured, "coder", configured)
         self.assertEqual(calls["status"], 0)
 
-    def test_stale_unknown_and_unavailable_inventories_fail_closed(self) -> None:
+    def test_unknown_and_unavailable_inventories_fail_closed(self) -> None:
         cases = (
-            (_worker("stale", [_entry("gemma4:e4b")], inventory_status="STALE"), "STALE"),
             (_worker("unknown", [_entry("gemma4:e4b")], inventory_status="UNKNOWN"), "UNKNOWN"),
             (
                 _worker("down", [_entry("gemma4:e4b")], availability="UNAVAILABLE"),
