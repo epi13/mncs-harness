@@ -14,8 +14,12 @@ REQUIRED_FABRIC_VERSION = "0.2.0a15"
 MIN_SUPPORTED_FABRIC_VERSION = "0.2.0a17"
 MIN_SUPPORTED_FABRIC_COMMIT = "6285f7d3f49994e926aa0468a6cc2b644f9a3e85"
 # Exact Fabric revision the experiment stack is certified against.
-EXPERIMENT_CERTIFIED_FABRIC_VERSION = "0.2.0a28"
-EXPERIMENT_CERTIFIED_FABRIC_COMMIT = "4f657c4d0441073902ebcbae823c11af43c09535"
+# Live-proven on controller + fabric-worker-01 + collamore02-windows.
+EXPERIMENT_CERTIFIED_FABRIC_VERSION = "0.2.0a30"
+EXPERIMENT_CERTIFIED_FABRIC_COMMIT = "02fea5b5571e3b43a532d904f56468f99c75e482"
+EXPERIMENT_CERTIFIED_FABRIC_ARTIFACT_DIGEST = (
+    "sha256:188d6b6a64d215871147c157b60a5d066776505b1c7d5d6d52434de45db9c940"
+)
 # Forward-compatibility canary only; never the sole experiment guarantee.
 FABRIC_MAIN_CANARY_REF = "main"
 
@@ -86,6 +90,7 @@ def fabric_compatibility_pins() -> dict[str, str]:
         "minimum_supported_commit": MIN_SUPPORTED_FABRIC_COMMIT,
         "experiment_certified_version": EXPERIMENT_CERTIFIED_FABRIC_VERSION,
         "experiment_certified_commit": EXPERIMENT_CERTIFIED_FABRIC_COMMIT,
+        "experiment_certified_artifact_digest": EXPERIMENT_CERTIFIED_FABRIC_ARTIFACT_DIGEST,
         "forward_compatibility_ref": FABRIC_MAIN_CANARY_REF,
     }
 
@@ -121,6 +126,8 @@ def evaluate_experiment_fabric(
         too_old = True
         parseable = False
 
+    if certified_artifact_digest is None:
+        certified_artifact_digest = EXPERIMENT_CERTIFIED_FABRIC_ARTIFACT_DIGEST
     certified_commit = bool(
         commit and commit.lower() == EXPERIMENT_CERTIFIED_FABRIC_COMMIT.lower()
     )
