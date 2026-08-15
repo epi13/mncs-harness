@@ -1,6 +1,6 @@
 # Dynamic worker model discovery
 
-Local Harness can live-scan every Ollama model currently installed on an explicitly managed Windows worker. The inventory is not a fixed project list: if an operator installs, removes, or retags a model on the worker, the next scan reports the new worker-local state.
+MNCS Harness can live-scan every Ollama model currently installed on an explicitly managed Windows worker. The inventory is not a fixed project list: if an operator installs, removes, or retags a model on the worker, the next scan reports the new worker-local state.
 
 ```bash
 elh-fabric scan-models-windows \

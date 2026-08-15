@@ -17,3 +17,10 @@ dist/
 .DS_Store
 .idea/
 .vscode/
+.joern-agent/
+extensions/vscode/node_modules/
+extensions/vscode/dist/
+*.vsix
+development-evidence/*.sqlite3
+development-evidence/*.db
+*.sock

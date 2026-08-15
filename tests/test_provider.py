@@ -22,7 +22,7 @@ class _CapturingSession:
 
 class _FailingSession:
     last_inference = {
-        "worker": "collamore02-windows",
+        "worker": "worker-01-windows",
         "placement": "cpu",
         "reason": "INTEGRITY_FAILURE",
         "request_identity": "request-123",
@@ -37,7 +37,7 @@ class _FailingSession:
             "available",
             "fixture-controller",
             detail=(
-                "collamore02-windows: model inventory failed: INTEGRITY_FAILURE: "
+                "worker-01-windows: model inventory failed: INTEGRITY_FAILURE: "
                 "artifact identity mismatch: inventory.py"
             ),
         )
@@ -72,7 +72,7 @@ class ProviderTests(unittest.TestCase):
             provider.chat(model, [{"role": "user", "content": "hello"}])
         self.assertEqual(provider.last_metadata["provider"], "ollama-via-mncs-fabric")
         self.assertEqual(provider.last_metadata["execution_source"], "remote")
-        self.assertEqual(provider.last_metadata["fabric_worker"], "collamore02-windows")
+        self.assertEqual(provider.last_metadata["fabric_worker"], "worker-01-windows")
         self.assertEqual(provider.last_metadata["placement_mode"], "cpu")
         self.assertFalse(provider.last_metadata["fabric_fallback"])
         self.assertIn("INTEGRITY_FAILURE", provider.last_metadata["fabric_failure_reason"])

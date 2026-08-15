@@ -295,8 +295,8 @@ class DistributedCapabilityTests(unittest.TestCase):
         self.assertNotIn("capabilities", stale_graph["workers"][0])
 
     def test_remote_inference_targets_do_not_grant_workspace_or_tool_authority(self) -> None:
-        targets = SessionTargets.remote_inference("collamore02-windows")
-        self.assertEqual(targets.inference.label, "fabric-worker:collamore02-windows")
+        targets = SessionTargets.remote_inference("worker-01-windows")
+        self.assertEqual(targets.inference.label, "fabric-worker:worker-01-windows")
         self.assertEqual(targets.workspace.label, "controller")
         self.assertEqual(targets.tools.label, "controller")
         with self.assertRaises(ValueError):
@@ -751,7 +751,7 @@ class DistributedSessionIntegrationTests(unittest.TestCase):
                 self.assertTrue(
                     all(
                         row["payload"]["consumer_context"]["source_project"]
-                        == "epi13-local-harness"
+                        == "mncs-harness"
                         for row in inference_dispatches
                     )
                 )

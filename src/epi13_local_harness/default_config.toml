@@ -123,7 +123,7 @@ unit_test_command = ["python", "-m", "unittest", "discover", "-s", "tests"]
 use_shellcheck_when_available = true
 
 [metrics]
-path = "~/.local/state/epi13-local-harness/metrics.sqlite3"
+path = "~/.local/state/mncs-harness/metrics.sqlite3"
 store_prompt_text = false
 
 [commons]
@@ -157,21 +157,21 @@ role_preference = ["e4b", "e2b", "coder", "reviewer"]
 [fabric]
 enabled = false
 controller_mode = "service"
-controller_id = "epi13-local-harness"
+controller_id = "mncs-harness"
 service_socket = "~/.local/state/mncs-fabric/controller.sock"
 service_timeout_seconds = 30.0
-consumer_identity = "epi13-local-harness"
+consumer_identity = "mncs-harness"
 # Embedded/transitional compatibility only:
 # controller_mode = "embedded"
 # registry_path = "~/.local/state/mncs-fabric/workers.json"
-state_path = "~/.local/state/epi13-local-harness/fabric.jsonl"
+state_path = "~/.local/state/mncs-harness/fabric.jsonl"
 fallback_to_local = true
 refresh_on_startup = true
 refresh_timeout_seconds = 5.0
 runtime_probe_on_refresh = true
 runtime_probe_timeout_seconds = 45.0
 runtime_probe_max_age_seconds = 1800.0
-worker_bundle_root = "~/.local/state/epi13-local-harness/fabric-worker-bundle"
+worker_bundle_root = "~/.local/state/mncs-harness/fabric-worker-bundle"
 provider_ollama_base_url = "http://127.0.0.1:11434"
 provider_timeout_seconds = 600
 job_timeout_overhead_seconds = 5

@@ -20,7 +20,7 @@
     ]
   },
   "worker": {
-    "worker_id": "collamore02-windows",
+    "worker_id": "worker-01-windows",
     "availability": "AVAILABLE",
     "architecture": "amd64",
     "cpu_logical_count": 16,
@@ -43,16 +43,16 @@
   },
   "routing": {
     "exact_pair": {
-      "worker": "collamore02-windows",
+      "worker": "worker-01-windows",
       "model": "gemma4:e4b",
       "fallback": false,
       "outcome": "PASS",
-      "inference_target": "fabric-worker:collamore02-windows",
+      "inference_target": "fabric-worker:worker-01-windows",
       "workspace_target": "controller",
       "tool_target": "controller"
     },
     "automatic": {
-      "worker": "collamore02-windows",
+      "worker": "worker-01-windows",
       "model": "qwen3:8b",
       "outcome": "PASS",
       "post_attempt_resident_restored": true
@@ -98,7 +98,7 @@
     "No LAN scan, SSH runtime, remote Commons store, remote filesystem authority, or controller Ollama generation fallback was used."
   ],
   "limitations": [
-    "Only collamore02-windows has complete current endpoint and trust references in operator state; historical Fedora and Pi nodes remain UNKNOWN rather than guessed.",
+    "Only worker-01-windows has complete current endpoint and trust references in operator state; historical Fedora and Pi nodes remain UNKNOWN rather than guessed.",
     "The worker service remains 0.2.0a10 because no complete current out-of-band commissioning configuration was found for a safe package-only upgrade.",
     "Physical evidence is operator-controlled and does not establish independent custody, semantic correctness, or attestation."
   ]

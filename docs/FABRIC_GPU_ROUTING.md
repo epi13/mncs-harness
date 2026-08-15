@@ -23,13 +23,13 @@ The command requires an explicit SSH endpoint and existing strict host-key entry
 uses public-key-only SSH/SCP for **provisioning only**, then:
 
 1. creates or reuses a persistent local enrollment under
-   `~/.local/state/epi13-local-harness/fabric-enrollment/<worker-id>`;
+   `~/.local/state/mncs-harness/fabric-enrollment/<worker-id>`;
 2. creates a dedicated Fabric CA, controller certificate/key, worker certificate/key,
    and append-only controller/worker trust ledgers;
 3. stages the installed `mncs-fabric` package and worker trust material to the explicit
    Windows host under `C:/Users/<ssh-user>/mncs-fabric-worker` by default;
 4. starts a detached, bounded Fabric worker listening on the requested Fabric port;
-5. updates the normal Local Harness TOML with the matching controller identity and trust
+5. updates the normal MNCS Harness TOML with the matching controller identity and trust
    paths;
 6. refreshes the worker through mTLS; and
 7. dispatches a synchronized CUDA execution probe **through Fabric itself** before the

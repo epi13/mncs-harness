@@ -18,7 +18,7 @@ verification, escalation, and metrics all remain in the Python harness.
 ## Start it
 
 ```bash
-cd ~/epi13-local-harness
+cd /path/to/mncs-harness
 source .venv/bin/activate
 python -m pip install -e .
 elh-tui --workspace .

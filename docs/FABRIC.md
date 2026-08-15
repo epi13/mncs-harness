@@ -73,7 +73,7 @@ controller_id = "epi13-local-harness"
 service_socket = "~/.local/state/mncs-fabric/controller.sock"
 service_timeout_seconds = 5.0
 consumer_identity = "epi13-local-harness"
-state_path = "~/.local/state/epi13-local-harness/fabric.jsonl"
+state_path = "~/.local/state/mncs-harness/fabric.jsonl"
 fallback_to_local = true
 refresh_on_startup = true
 refresh_timeout_seconds = 5.0
@@ -284,7 +284,7 @@ suite.
 # Persistent Fabric consumer boundary
 
 Fabric is persistent infrastructure owned by `mncs-fabric-controller.service`.
-Local Harness is an ordinary `FabricClient` consumer and never uses
+MNCS Harness is an ordinary `FabricClient` consumer and never uses
 `FabricAdminClient`. Service mode reads the shared consumer AF_UNIX socket and
 closes only its own connection; Harness shutdown is not worker disconnect and
 does not stop Fabric.

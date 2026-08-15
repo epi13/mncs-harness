@@ -1,7 +1,7 @@
 {
   "name": "epi13-local-harness-vscode",
-  "displayName": "Epi13 Local Harness",
-  "description": "Use the existing Epi13 Local Harness from the VS Code Chat window via a trusted Python sidecar.",
+  "displayName": "MNCS Harness",
+  "description": "Use the existing MNCS Harness from the VS Code Chat window via a trusted Python sidecar.",
   "version": "0.1.0",
   "publisher": "epi13",
   "engines": {
@@ -30,62 +30,62 @@
     "commands": [
       {
         "command": "epi13-local-harness.startBackend",
-        "title": "Epi13 Local Harness: Start Backend"
+        "title": "MNCS Harness: Start Backend"
       },
       {
         "command": "epi13-local-harness.stopBackend",
-        "title": "Epi13 Local Harness: Stop Backend"
+        "title": "MNCS Harness: Stop Backend"
       },
       {
         "command": "epi13-local-harness.restartBackend",
-        "title": "Epi13 Local Harness: Restart Backend"
+        "title": "MNCS Harness: Restart Backend"
       },
       {
         "command": "epi13-local-harness.runDoctor",
-        "title": "Epi13 Local Harness: Run Doctor"
+        "title": "MNCS Harness: Run Doctor"
       },
       {
         "command": "epi13-local-harness.previewRoute",
-        "title": "Epi13 Local Harness: Preview Route"
+        "title": "MNCS Harness: Preview Route"
       },
       {
         "command": "epi13-local-harness.showModels",
-        "title": "Epi13 Local Harness: Show Models"
+        "title": "MNCS Harness: Show Models"
       },
       {
         "command": "epi13-local-harness.showLanes",
-        "title": "Epi13 Local Harness: Show Lanes"
+        "title": "MNCS Harness: Show Lanes"
       },
       {
         "command": "epi13-local-harness.showMetrics",
-        "title": "Epi13 Local Harness: Show Metrics"
+        "title": "MNCS Harness: Show Metrics"
       },
       {
         "command": "epi13-local-harness.openConfig",
-        "title": "Epi13 Local Harness: Open Harness Configuration"
+        "title": "MNCS Harness: Open Harness Configuration"
       },
       {
         "command": "epi13-local-harness.openSettings",
-        "title": "Epi13 Local Harness: Open Extension Settings"
+        "title": "MNCS Harness: Open Extension Settings"
       },
       {
         "command": "epi13-local-harness.showLogs",
-        "title": "Epi13 Local Harness: Show Logs"
+        "title": "MNCS Harness: Show Logs"
       },
       {
         "command": "epi13-local-harness.selectPythonInterpreter",
-        "title": "Epi13 Local Harness: Select Python Interpreter"
+        "title": "MNCS Harness: Select Python Interpreter"
       },
       {
         "command": "epi13-local-harness.selectRepository",
-        "title": "Epi13 Local Harness: Select Repository"
+        "title": "MNCS Harness: Select Repository"
       }
     ],
     "chatParticipants": [
       {
         "id": "epi13.localHarness",
         "name": "epi13",
-        "fullName": "Epi13 Local Harness",
+        "fullName": "MNCS Harness",
         "isDefault": false,
         "commands": [
           { "name": "route" },
@@ -104,11 +104,11 @@
       {
         "vendor": "epi13-local",
         "id": "epi13-local",
-        "name": "Epi13 Local Harness"
+        "name": "MNCS Harness"
       }
     ],
     "configuration": {
-      "title": "Epi13 Local Harness",
+      "title": "MNCS Harness",
       "properties": {
         "epi13LocalHarness.pythonPath": {
           "type": "string",

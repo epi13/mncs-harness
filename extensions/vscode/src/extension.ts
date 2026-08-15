@@ -8,7 +8,7 @@ let provider: Epi13ModelProvider | undefined;
 let participant: Epi13Participant | undefined;
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
-  const output = vscode.window.createOutputChannel('Epi13 Local Harness');
+  const output = vscode.window.createOutputChannel('MNCS Harness');
   context.subscriptions.push(output);
 
   const config = vscode.workspace.getConfiguration('epi13LocalHarness');

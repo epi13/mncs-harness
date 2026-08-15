@@ -311,7 +311,7 @@ def build_parser() -> argparse.ArgumentParser:
         "configure-remote",
         help="Enable one explicit mTLS Fabric worker and GPU routing policy",
     )
-    configure.add_argument("--controller-id", default="epi13-local-harness")
+    configure.add_argument("--controller-id", default="mncs-harness")
     configure.add_argument("--worker-id", required=True)
     configure.add_argument("--host", required=True)
     configure.add_argument("--port", type=int, default=7443)

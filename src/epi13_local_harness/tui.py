@@ -521,7 +521,7 @@ def residency_table(config: HarnessConfig, status: FabricStatus) -> Table:
 class HarnessTui(App[None]):
     """Interactive terminal interface for the policy-aware local harness."""
 
-    TITLE = "Epi13 Local Harness"
+    TITLE = "MNCS Harness"
     SUB_TITLE = "Policy-aware local AI"
     BINDINGS = [
         Binding("ctrl+q", "quit", "Quit"),
@@ -705,7 +705,7 @@ class HarnessTui(App[None]):
         self._log(
             Panel(
                 Markdown(
-                    "**Epi13 Local Harness TUI**\n\n"
+                    "**MNCS Harness TUI**\n\n"
                     "Each prompt is routed independently. Select a role to force it, "
                     "or leave **Automatic routing** selected. Exact worker/model pins "
                     "remain active across prompts until changed and fail closed unless "
@@ -1120,8 +1120,8 @@ def run_tui(
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        prog="elh-tui",
-        description="Epi13 Local Harness TUI",
+        prog="mncs-harness-tui",
+        description="MNCS Harness TUI",
     )
     parser.add_argument("--config", type=Path, help="Path to a TOML configuration file")
     parser.add_argument("--workspace", type=Path, default=Path.cwd())

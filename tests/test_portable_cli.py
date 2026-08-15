@@ -20,7 +20,18 @@ class PortableCliTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             written = install_portable_cli(Path(directory))
             names = {path.name for path in written}
-            self.assertTrue({"elh", "elh-tui", "elh-fabric", "epi13-harness"} <= names)
+            self.assertTrue(
+                {
+                    "mncs-harness",
+                    "mncs-harness-tui",
+                    "mncs-harness-fabric",
+                    "elh",
+                    "elh-tui",
+                    "elh-fabric",
+                    "epi13-harness",
+                }
+                <= names
+            )
             for path in written:
                 mode = path.stat().st_mode
                 self.assertTrue(mode & stat.S_IXUSR)

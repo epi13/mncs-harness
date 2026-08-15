@@ -29,7 +29,7 @@ export async function detectModelsFromConfig(): Promise<BackendModelInfo[]> {
   const models: BackendModelInfo[] = [
     {
       id: 'auto',
-      name: 'Epi13 Local Harness — Auto',
+      name: 'MNCS Harness — Auto',
       family: 'epi13-local',
       version: '0.1.0',
       workerRole: 'auto',
@@ -41,7 +41,7 @@ export async function detectModelsFromConfig(): Promise<BackendModelInfo[]> {
     },
     {
       id: 'lane:chat',
-      name: 'Epi13 Local Harness — Chat',
+      name: 'MNCS Harness — Chat',
       family: 'epi13-local',
       version: '0.1.0',
       workerRole: 'e2b',
@@ -54,7 +54,7 @@ export async function detectModelsFromConfig(): Promise<BackendModelInfo[]> {
     },
     {
       id: 'lane:ocr',
-      name: 'Epi13 Local Harness — OCR',
+      name: 'MNCS Harness — OCR',
       family: 'epi13-local',
       version: '0.1.0',
       workerRole: 'reviewer',
@@ -67,7 +67,7 @@ export async function detectModelsFromConfig(): Promise<BackendModelInfo[]> {
     },
     {
       id: 'lane:tool_worker',
-      name: 'Epi13 Local Harness — Tool Worker',
+      name: 'MNCS Harness — Tool Worker',
       family: 'epi13-local',
       version: '0.1.0',
       workerRole: 'e4b',
@@ -80,7 +80,7 @@ export async function detectModelsFromConfig(): Promise<BackendModelInfo[]> {
     },
     {
       id: 'lane:coding',
-      name: 'Epi13 Local Harness — Coding',
+      name: 'MNCS Harness — Coding',
       family: 'epi13-local',
       version: '0.1.0',
       workerRole: 'coder',
@@ -93,7 +93,7 @@ export async function detectModelsFromConfig(): Promise<BackendModelInfo[]> {
     },
     {
       id: 'lane:vision',
-      name: 'Epi13 Local Harness — Vision',
+      name: 'MNCS Harness — Vision',
       family: 'epi13-local',
       version: '0.1.0',
       workerRole: 'reviewer',
@@ -106,7 +106,7 @@ export async function detectModelsFromConfig(): Promise<BackendModelInfo[]> {
     },
     {
       id: 'lane:review',
-      name: 'Epi13 Local Harness — Review',
+      name: 'MNCS Harness — Review',
       family: 'epi13-local',
       version: '0.1.0',
       workerRole: 'reviewer',

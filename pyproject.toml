@@ -3,14 +3,14 @@ requires = ["hatchling>=1.26"]
 build-backend = "hatchling.build"
 
 [project]
-name = "epi13-local-harness"
+name = "mncs-harness"
 version = "0.6.6"
-description = "A local, policy-aware AI harness that routes tasks across local models and verifies tool-driven work."
+description = "MNCS Harness: a policy-aware operator harness that routes tasks across configured models and verifies tool-driven work."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "Apache-2.0" }
-authors = [{ name = "Alexander Collamore" }]
-keywords = ["ollama", "local-ai", "agents", "tool-calling", "tui", "routing"]
+authors = [{ name = "MNCS Contributors" }, { name = "Alexander Collamore" }]
+keywords = ["mncs", "ollama", "local-ai", "agents", "tool-calling", "tui", "routing"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "License :: OSI Approved :: Apache Software License",
@@ -33,23 +33,29 @@ distributed = [
 dev = ["pytest>=8.0", "ruff>=0.9"]
 
 [project.scripts]
+mncs-harness = "epi13_local_harness.cli:main"
+mncs-harness-tui = "epi13_local_harness.tui:main"
+mncs-harness-fabric = "epi13_local_harness.fabric_controller_light:main"
 epi13-harness = "epi13_local_harness.cli:main"
 elh = "epi13_local_harness.cli:main"
 elh-tui = "epi13_local_harness.tui:main"
 elh-fabric = "epi13_local_harness.fabric_controller_light:main"
 
 [project.urls]
-Repository = "https://github.com/epi13/epi13-local-harness"
-Issues = "https://github.com/epi13/epi13-local-harness/issues"
+Homepage = "https://github.com/epi13/mncs-harness"
+Repository = "https://github.com/epi13/mncs-harness"
+Issues = "https://github.com/epi13/mncs-harness/issues"
+Atlas = "https://github.com/epi13/mncs-atlas"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/epi13_local_harness"]
+packages = ["src/epi13_local_harness", "src/mncs_harness"]
 
 [tool.hatch.build]
 include = [
   "src/epi13_local_harness/**/*.py",
   "src/epi13_local_harness/default_config.toml",
   "src/epi13_local_harness/default_evals.jsonl",
+  "src/mncs_harness/**/*.py",
 ]
 
 [tool.ruff]

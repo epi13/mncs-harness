@@ -44,7 +44,7 @@ def require_execution_bundle_archive_api() -> dict[str, object]:
     if _REQUIRED_EXECUTE_PARAMETER not in parameters or missing_methods or version_too_old:
         raise RuntimeError(
             "incompatible mncs-fabric consumer runtime: "
-            f"loaded version {version} from {module_path}; Local Harness requires "
+            f"loaded version {version} from {module_path}; MNCS Harness requires "
             f"mncs-fabric >= {REQUIRED_FABRIC_VERSION} with worker capability observations, "
             "canonical transferred-bundle dispatch binding, published-cache recovery, and "
             f"FabricClient.execute(..., {_REQUIRED_EXECUTE_PARAMETER}=...) and "

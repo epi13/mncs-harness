@@ -49,7 +49,7 @@ are controller-local workspace and controller-local tools. Remote inference chan
 only the inference target:
 
 ```text
-inference = fabric-worker:collamore02-windows
+inference = fabric-worker:worker-01-windows
 workspace = controller
 tools     = controller
 ```

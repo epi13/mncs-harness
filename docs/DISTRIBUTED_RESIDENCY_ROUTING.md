@@ -1,6 +1,6 @@
 # Distributed residency and manual routing
 
-Local Harness 0.6 consumes the persistent Fabric fleet, observes each worker's
+MNCS Harness 0.6 consumes the persistent Fabric fleet, observes each worker's
 installed and loaded Ollama models, selects at most one preferred resident
 generation model per worker, and keeps semantic selection and operator policy
 above Fabric.
@@ -22,7 +22,7 @@ keep_alive = -1
 warm_timeout_seconds = 300
 maximum_model_memory_fraction = 0.5
 
-[model_residency.workers.collamore02-windows]
+[model_residency.workers.worker-01-windows]
 model = "gemma4:e4b"
 ```
 

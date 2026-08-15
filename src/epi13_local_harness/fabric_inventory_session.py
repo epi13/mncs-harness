@@ -184,7 +184,7 @@ class _FreshDispatchClient:
     """Delegate Fabric calls while making observation/inference dispatches fresh.
 
     The underlying Fabric API keeps deterministic request identities by default.
-    This wrapper uses the public ``request_id`` seam so Local Harness does not
+    This wrapper uses the public ``request_id`` seam so MNCS Harness does not
     replay an old model inventory or an old failed inference simply because the
     semantic payload is identical to a prior attempt.
     """
