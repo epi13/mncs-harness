@@ -20,8 +20,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: epi13/mncs-fabric
-          # EXPERIMENT_CERTIFIED_FABRIC 0.2.0a28 — exact certified revision
-          ref: 4f657c4d0441073902ebcbae823c11af43c09535
+          # EXPERIMENT_CERTIFIED_FABRIC 0.2.0a30 — exact certified revision
+          ref: 02fea5b5571e3b43a532d904f56468f99c75e482
           path: .dependencies/mncs-fabric
       - uses: actions/setup-python@v5
         with:

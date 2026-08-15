@@ -48,7 +48,8 @@ Service-mode consumers require a Fabric public contract that advertises
 
 ```text
 MIN_SUPPORTED_FABRIC          0.2.0a17  6285f7d3f49994e926aa0468a6cc2b644f9a3e85
-EXPERIMENT_CERTIFIED_FABRIC   0.2.0a28  4f657c4d0441073902ebcbae823c11af43c09535
+EXPERIMENT_CERTIFIED_FABRIC   0.2.0a30  02fea5b5571e3b43a532d904f56468f99c75e482
+                                      sha256:188d6b6a64d215871147c157b60a5d066776505b1c7d5d6d52434de45db9c940
 FABRIC_MAIN_CANARY            main      forward-compatibility only
 ```
 

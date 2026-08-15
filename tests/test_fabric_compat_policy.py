@@ -5,6 +5,7 @@ import unittest
 from pathlib import Path
 
 from epi13_local_harness.fabric_compat import (
+    EXPERIMENT_CERTIFIED_FABRIC_ARTIFACT_DIGEST,
     EXPERIMENT_CERTIFIED_FABRIC_COMMIT,
     EXPERIMENT_CERTIFIED_FABRIC_VERSION,
     EXPERIMENT_REQUIRED_CAPABILITIES,
@@ -28,6 +29,10 @@ class FabricCompatibilityPolicyTests(unittest.TestCase):
         self.assertEqual(pins["minimum_supported_commit"], MIN_SUPPORTED_FABRIC_COMMIT)
         self.assertEqual(pins["experiment_certified_version"], EXPERIMENT_CERTIFIED_FABRIC_VERSION)
         self.assertEqual(pins["experiment_certified_commit"], EXPERIMENT_CERTIFIED_FABRIC_COMMIT)
+        self.assertEqual(
+            pins["experiment_certified_artifact_digest"],
+            EXPERIMENT_CERTIFIED_FABRIC_ARTIFACT_DIGEST,
+        )
         self.assertEqual(pins["forward_compatibility_ref"], "main")
         self.assertNotEqual(
             pins["minimum_supported_commit"], pins["experiment_certified_commit"]
@@ -42,6 +47,10 @@ class FabricCompatibilityPolicyTests(unittest.TestCase):
         self.assertEqual(declared["fabric"]["minimum_supported_commit"], pins["minimum_supported_commit"])
         self.assertEqual(
             declared["fabric"]["experiment_certified_commit"], pins["experiment_certified_commit"]
+        )
+        self.assertEqual(
+            declared["fabric"]["experiment_certified_artifact_digest"],
+            pins["experiment_certified_artifact_digest"],
         )
         self.assertEqual(declared["claim_boundary"], "infrastructure validation")
 
@@ -74,8 +83,17 @@ class FabricCompatibilityPolicyTests(unittest.TestCase):
         self.assertEqual(result["classification"], "COMPATIBLE_VERSION_ONLY")
         self.assertEqual(result["action"], "dispatch_allowed")
 
+    def test_matching_artifact_digest_is_exact_without_commit(self) -> None:
+        result = evaluate_experiment_fabric(
+            EXPERIMENT_CERTIFIED_FABRIC_VERSION,
+            _caps(),
+            artifact_digest=EXPERIMENT_CERTIFIED_FABRIC_ARTIFACT_DIGEST,
+        )
+        self.assertEqual(result["classification"], "EXPERIMENT_CERTIFIED_EXACT")
+        self.assertEqual(result["action"], "dispatch_allowed")
+
     def test_newer_compatible_fabric_can_pass(self) -> None:
-        result = evaluate_experiment_fabric("0.2.0a29", _caps())
+        result = evaluate_experiment_fabric("0.2.0a31", _caps())
         self.assertEqual(result["classification"], "COMPATIBLE_NEWER")
         self.assertEqual(result["action"], "dispatch_allowed")
 

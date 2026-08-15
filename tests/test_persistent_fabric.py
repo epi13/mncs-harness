@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import shutil
+import socket
 import ssl
 import subprocess
 import tempfile
@@ -226,6 +227,17 @@ class PersistentFabricTests(unittest.TestCase):
             daemon=True,
         )
         worker_thread.start()
+        # a17 does not separate TLS connect readiness from the job deadline.
+        # Wait for the listener to accept before the persistent-service request.
+        worker_ready = False
+        for _ in range(50):
+            try:
+                with socket.create_connection(("127.0.0.1", worker_port), timeout=0.1):
+                    worker_ready = True
+                    break
+            except OSError:
+                time.sleep(0.05)
+        self.assertTrue(worker_ready, "worker TLS listener did not become ready")
 
         lifecycle = LifecycleStore(self.root / "lifecycle.jsonl")
         authorization = lifecycle.create_authorization(
