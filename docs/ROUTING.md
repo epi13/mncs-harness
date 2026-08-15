@@ -28,8 +28,11 @@ ordinary repository work.
 For coding tasks with the specialist enabled:
 
 ```text
-E4B -> Qwen3 8B coder -> 12B reviewer
+E4B -> coder role (Fabric-discovered implementation) -> reviewer role
 ```
+
+Model tags are operator preferences. Automatic placement uses provider claims,
+observed evidence, resources, and policy. See [MODEL_AGNOSTICISM.md](MODEL_AGNOSTICISM.md).
 
 For non-code tool tasks:
 

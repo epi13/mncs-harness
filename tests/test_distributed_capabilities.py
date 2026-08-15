@@ -26,12 +26,20 @@ from epi13_local_harness.models import (
 )
 
 
-def _entry(name: str, size: int = 1) -> dict[str, object]:
+def _entry(
+    name: str,
+    size: int = 1,
+    *,
+    capabilities: list[str] | None = None,
+) -> dict[str, object]:
+    attributes: dict[str, object] = {"size_bytes": size}
+    if capabilities:
+        attributes["ollama_capabilities"] = list(capabilities)
     return {
         "kind": "model",
         "namespace": "ollama",
         "name": name,
-        "attributes": {"size_bytes": size},
+        "attributes": attributes,
     }
 
 
@@ -158,15 +166,19 @@ class DistributedCapabilityTests(unittest.TestCase):
     def test_compatible_fallback_selects_only_a_worker_that_reports_it(self) -> None:
         session = self._session(
             [
-                _worker("worker-a", [_entry("general:3b", 3)]),
-                _worker("worker-b", [_entry("devstral-small:8b", 8)]),
+                _worker("worker-a", [_entry("general:3b", 3, capabilities=["completion"])]),
+                _worker(
+                    "worker-b",
+                    [_entry("arbitrary-tool-model:8b", 8, capabilities=["completion", "tools"])],
+                ),
             ]
         )
         model = load_config(None).models["coder"]
         effective, selection = session.resolve_model("coder", model)
-        self.assertEqual(effective.name, "devstral-small:8b")
+        self.assertEqual(effective.name, "arbitrary-tool-model:8b")
         self.assertEqual(selection.worker_id, "worker-b")
-        self.assertIn("code-hinted", selection.reason)
+        self.assertIn("provider-reported tools", selection.reason)
+        self.assertNotIn("code-hinted", selection.reason)
 
     def test_exact_pin_may_use_stale_inventory_while_auto_fails_closed(self) -> None:
         worker = _worker("stale", [_entry("gemma4:e4b")], inventory_status="STALE")

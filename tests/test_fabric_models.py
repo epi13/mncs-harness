@@ -99,7 +99,7 @@ class FabricCompatibilityTests(unittest.TestCase):
 
 
 class WorkerLocalModelTests(unittest.TestCase):
-    def test_default_model_set_is_accelerator_roles_only(self) -> None:
+    def test_configured_preferences_are_an_operator_preset_not_architecture(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             models = _configured_models(Path(directory) / "missing.toml")
         self.assertEqual(models, ("gemma4:e4b", "qwen3:8b", "gemma4:12b"))

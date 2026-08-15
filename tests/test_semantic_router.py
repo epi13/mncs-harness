@@ -72,6 +72,7 @@ class SemanticRouterTests(unittest.TestCase):
                 enable_semantic_routing=True,
                 backend="transformers",
                 mode="hybrid",
+                model="LiquidAI/LFM2.5-Encoder-350M-Prompt-Router",
                 revision=REVISION,
                 local_files_only=True,
             ),

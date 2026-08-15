@@ -14,9 +14,10 @@ class ConfigTests(unittest.TestCase):
         config = load_config(Path("/definitely/not/a/real/config.toml"))
         self.assertTrue({"e2b", "e4b", "coder", "reviewer"}.issubset(config.models))
         self.assertEqual(config.models["e2b"].name, "gemma4:e2b")
-        self.assertEqual(config.router.backend, "transformers")
-        self.assertEqual(config.router.revision, PINNED_REVISION)
+        self.assertEqual(config.router.backend, "deterministic")
+        self.assertEqual(config.router.revision, "")
         self.assertFalse(config.router.enable_semantic_routing)
+        self.assertEqual(config.router.model, "")
 
     def test_initialize_config_refuses_overwrite_without_force(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -27,7 +28,8 @@ class ConfigTests(unittest.TestCase):
             initialize_config(destination, force=True)
             text = destination.read_text(encoding="utf-8")
             self.assertIn("[models.e2b]", text)
-            self.assertIn(PINNED_REVISION, text)
+            self.assertIn("enable_semantic_routing = false", text)
+            self.assertNotIn("LiquidAI/LFM2.5-Encoder-350M-Prompt-Router", text)
 
     def test_lane_config_is_loaded_from_toml(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

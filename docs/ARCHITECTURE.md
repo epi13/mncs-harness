@@ -31,9 +31,9 @@ DeterministicRouter
    |
    +---- E4B: primary workspace worker
    |
-   +---- Qwen3 8B: optional independent coding specialist
+   +---- coder role: optional mutation specialist (selected from Fabric inventory)
    |
-   `---- 12B: difficult, ambiguous, multimodal, or high-risk review
+   `---- reviewer role: difficult, ambiguous, multimodal, or high-risk review
              |
              v
        inference provider boundary

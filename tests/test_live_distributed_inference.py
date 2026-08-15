@@ -2,9 +2,8 @@
 
 This is not a mock. It requires the persistent controller socket and two
 operator-selected enrolled workers. Set ``MNCS_E2E_LINUX_WORKER`` and
-``MNCS_E2E_WINDOWS_WORKER`` (and optional model overrides) before running.
-Each placement is an exact pin and expects an unmistakable marker back from
-worker-local Ollama.
+``MNCS_E2E_WINDOWS_WORKER``. Models are discovered from Fabric unless
+``MNCS_E2E_LINUX_MODEL`` / ``MNCS_E2E_WINDOWS_MODEL`` are explicit pins.
 """
 
 from __future__ import annotations
@@ -24,12 +23,8 @@ from epi13_local_harness.fabric_inventory_session import InventoryAwareFabricSes
 
 LINUX_WORKER = os.environ.get("MNCS_E2E_LINUX_WORKER")
 WINDOWS_WORKER = os.environ.get("MNCS_E2E_WINDOWS_WORKER")
-LINUX_MODEL = os.environ.get("MNCS_E2E_LINUX_MODEL", "granite3.3:2b")
-WINDOWS_MODEL = os.environ.get("MNCS_E2E_WINDOWS_MODEL", "gemma4:e4b")
-PLACEMENTS = (
-    (LINUX_WORKER or "worker-01-linux", LINUX_MODEL, "MNCS_E2E_LINUX_OK"),
-    (WINDOWS_WORKER or "worker-01-windows", WINDOWS_MODEL, "MNCS_E2E_WINDOWS_OK"),
-)
+LINUX_MODEL = os.environ.get("MNCS_E2E_LINUX_MODEL")
+WINDOWS_MODEL = os.environ.get("MNCS_E2E_WINDOWS_MODEL")
 CONTROLLER_SOCKET = Path("~/.local/state/mncs-fabric/controller.sock").expanduser()
 
 
@@ -78,23 +73,57 @@ class LiveDistributedInferenceTests(unittest.TestCase):
                     names.add(str(name))
         return names
 
+    def _discovered_model(self, worker_id: str) -> str | None:
+        worker = self.workers.get(worker_id)
+        if worker is None:
+            return None
+        names = sorted(self._installed_models(worker))
+        return names[0] if names else None
+
+    def _placements(self) -> list[tuple[str, str, str]]:
+        rows: list[tuple[str, str, str]] = []
+        if LINUX_WORKER:
+            model = LINUX_MODEL or self._discovered_model(LINUX_WORKER)
+            if model:
+                rows.append((LINUX_WORKER, model, "MNCS_E2E_LINUX_OK"))
+        if WINDOWS_WORKER:
+            model = WINDOWS_MODEL or self._discovered_model(WINDOWS_WORKER)
+            if model:
+                rows.append((WINDOWS_WORKER, model, "MNCS_E2E_WINDOWS_OK"))
+        return rows
+
     def test_worker_and_model_discovery_covers_required_placements(self) -> None:
         missing = []
-        for worker_id, model, _marker in PLACEMENTS:
+        for worker_id in (LINUX_WORKER, WINDOWS_WORKER):
+            if not worker_id:
+                continue
             worker = self.workers.get(worker_id)
             if worker is None or worker.get("availability") != "AVAILABLE":
                 missing.append(f"{worker_id} unavailable")
                 continue
-            if model not in self._installed_models(worker):
-                missing.append(f"{worker_id} missing {model}")
+            if not self._installed_models(worker):
+                missing.append(f"{worker_id} has no CURRENT models")
         if missing:
             raise unittest.SkipTest("; ".join(missing))
 
-    def test_exact_linux_and_windows_inference_returns_markers(self) -> None:
+    def test_generic_discovered_inference_returns_markers(self) -> None:
+        placements = self._placements()
+        if len(placements) < 2:
+            raise unittest.SkipTest("need two AVAILABLE workers with at least one discovered model each")
+        self._run_placements(placements)
+
+    def test_exact_pins_require_explicit_environment(self) -> None:
+        if not (LINUX_MODEL and WINDOWS_MODEL):
+            raise unittest.SkipTest(
+                "exact-pin E2E requires MNCS_E2E_LINUX_MODEL and MNCS_E2E_WINDOWS_MODEL"
+            )
+        self._run_placements(self._placements())
+
+    def _run_placements(self, placements: list[tuple[str, str, str]]) -> None:
         failures: list[str] = []
         evidence: list[dict[str, object]] = []
         template = self.config.models["e2b"]
-        for worker_id, model_name, marker in PLACEMENTS:
+        for worker_id, model_name, marker in placements:
             worker = self.workers.get(worker_id)
             stage = "worker-discovery"
             if worker is None or worker.get("availability") != "AVAILABLE":
@@ -158,7 +187,7 @@ class LiveDistributedInferenceTests(unittest.TestCase):
             )
         if failures:
             self.fail("distributed inference E2E failed: " + " | ".join(failures))
-        self.assertEqual(len(evidence), len(PLACEMENTS), json.dumps(evidence, default=str))
+        self.assertEqual(len(evidence), len(placements), json.dumps(evidence, default=str))
         for item in evidence:
             self.assertEqual(item["stage"], "completed")
             self.assertTrue(item["fabric_record_identity"])
@@ -202,7 +231,8 @@ class LiveCliAskTests(unittest.TestCase):
         return last
 
     def test_elh_ask_linux_exact_pin(self) -> None:
-        assert LINUX_WORKER is not None
+        if not (LINUX_WORKER and LINUX_MODEL):
+            raise unittest.SkipTest("CLI exact-pin requires MNCS_E2E_LINUX_WORKER and MNCS_E2E_LINUX_MODEL")
         completed = self._ask(LINUX_WORKER, LINUX_MODEL, "MNCS_CLI_LINUX_OK")
         self.assertEqual(completed.returncode, 0, completed.stderr + completed.stdout)
         self.assertIn("MNCS_CLI_LINUX_OK", completed.stdout)
@@ -213,7 +243,10 @@ class LiveCliAskTests(unittest.TestCase):
         self.assertIn(LINUX_MODEL, completed.stderr)
 
     def test_elh_ask_windows_exact_pin(self) -> None:
-        assert WINDOWS_WORKER is not None
+        if not (WINDOWS_WORKER and WINDOWS_MODEL):
+            raise unittest.SkipTest(
+                "CLI exact-pin requires MNCS_E2E_WINDOWS_WORKER and MNCS_E2E_WINDOWS_MODEL"
+            )
         completed = self._ask(WINDOWS_WORKER, WINDOWS_MODEL, "MNCS_CLI_WINDOWS_OK")
         self.assertEqual(completed.returncode, 0, completed.stderr + completed.stdout)
         self.assertIn("MNCS_CLI_WINDOWS_OK", completed.stdout)
