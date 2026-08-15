@@ -44,8 +44,19 @@ quantization, KV cache, and actual layer movement.
 ## Configuration
 
 Service-mode consumers require a Fabric public contract that advertises
-`persistent_fleet_read`; the current package floor is `0.2.0a17` or newer in
-the `0.2.x` line. Persistent execution and capability ingestion are selected
+`persistent_fleet_read`. Fabric compatibility is three distinct identities:
+
+```text
+MIN_SUPPORTED_FABRIC          0.2.0a17  6285f7d3f49994e926aa0468a6cc2b644f9a3e85
+EXPERIMENT_CERTIFIED_FABRIC   0.2.0a28  4f657c4d0441073902ebcbae823c11af43c09535
+FABRIC_MAIN_CANARY            main      forward-compatibility only
+```
+
+The package floor remains `0.2.0a17` or newer in the `0.2.x` line. Experiments
+are certified against the exact `EXPERIMENT_CERTIFIED_FABRIC` commit, not a
+floating `main` or a label such as `latest`. Version metadata cannot override
+a missing required persistent-service capability. Persistent execution and
+capability ingestion are selected
 from public feature metadata rather than inferred from a package version. The
 current contract retains provider-neutral worker capability observations,
 ensures each explicitly supplied request bundle is staged after placement, and
