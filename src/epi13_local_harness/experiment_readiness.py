@@ -357,7 +357,7 @@ def inspect_live_config(config: Any, *, profile: str = "base-inference") -> dict
     from .fabric import FabricSession
     from .fleet import FleetService
 
-    fabric_session = FabricSession(config)
+    fabric_session = FabricSession(config.fabric)
     fabric_status = fabric_session.status()
     fleet = FleetService(config, fabric_session)
     snapshot = fleet.snapshot(fabric_status)

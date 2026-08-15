@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import unittest
+from pathlib import Path
 
+from epi13_local_harness.config import load_config
 from epi13_local_harness.experiment_readiness import (
     BLOCKED,
     DEGRADED,
     READY,
     evaluate_layers,
+    inspect_live_config,
 )
 from epi13_local_harness.experiment_stack import CLAIM_BOUNDARY, digest_record
 from epi13_local_harness.fabric_compat import (
@@ -116,6 +119,12 @@ class ExperimentReadinessTests(unittest.TestCase):
         )
         self.assertEqual(result["layers"]["fabric_controller"]["status"], BLOCKED)
         self.assertEqual(result["status"], BLOCKED)
+
+    def test_inspect_live_config_uses_fabric_section_not_root_config(self) -> None:
+        config = load_config(Path("/missing/config.toml"))
+        result = inspect_live_config(config, profile="base-inference")
+        self.assertIn(result["status"], {READY, DEGRADED, BLOCKED, "UNKNOWN"})
+        self.assertEqual(result["profile"], "base-inference")
 
     def test_stack_digest_is_stable_for_same_identity_body(self) -> None:
         first = {"schema": "mncs.experiment-stack.v1", "mncs_fabric_commit": "abc"}
