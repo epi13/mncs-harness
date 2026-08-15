@@ -27,9 +27,9 @@ export class Epi13Backend implements vscode.Disposable {
 
   constructor(private readonly options: Epi13BackendOptions) {
     this.output = options.output;
-    this.repositoryPath = options.repositoryPath || path.join(homedir(), 'Documents', 'Projects', 'epi13-local-harness');
+    this.repositoryPath = options.repositoryPath || path.join(homedir(), 'Documents', 'Projects', 'mncs-harness');
     this.pythonPath = options.pythonPath || path.join(this.repositoryPath, '.venv', 'bin', 'python');
-    this.configPath = options.configPath || path.join(homedir(), '.config', 'epi13-local-harness', 'config.toml');
+    this.configPath = options.configPath || path.join(homedir(), '.config', 'mncs-harness', 'config.toml');
   }
 
   private getResolvedPythonPath(): string {

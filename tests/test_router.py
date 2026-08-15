@@ -112,7 +112,7 @@ class RouterTests(unittest.TestCase):
                 "Explain this without network access",
                 config,
                 routing_override=RoutingOverride.from_values(
-                    worker="collamore02-windows", model="gemma4:e4b"
+                    worker="worker-01-windows", model="gemma4:e4b"
                 ),
             )
         self.assertIsNone(plan.semantic)

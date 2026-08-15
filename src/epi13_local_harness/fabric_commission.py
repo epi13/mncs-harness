@@ -21,8 +21,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Sequence
 
-DEFAULT_CONTROLLER_ID = "epi13-local-harness"
-DEFAULT_WORKER_ID = "collamore02-windows"
+DEFAULT_CONTROLLER_ID = "mncs-harness"
+DEFAULT_WORKER_ID = "worker-01-windows"
 DEFAULT_PORT = 7443
 _ENROLLMENT_SCHEMA = "epi13-local-harness.fabric-enrollment.v0.1"
 _LAUNCHER_SCHEMA = "epi13-local-harness.fabric-launcher.v0.2"
@@ -79,7 +79,7 @@ def _local_enrollment_root(worker_id: str) -> Path:
         Path.home()
         / ".local"
         / "state"
-        / "epi13-local-harness"
+        / "mncs-harness"
         / "fabric-enrollment"
         / worker_id
     )
@@ -344,7 +344,7 @@ def _generate_enrollment(
             str(days),
             "-sha256",
             "-subj",
-            "/CN=Epi13 Local Harness Fabric CA",
+            "/CN=MNCS Harness Fabric CA",
             "-addext",
             "basicConstraints=critical,CA:TRUE",
             "-addext",

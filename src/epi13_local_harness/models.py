@@ -270,11 +270,11 @@ class FabricConfig:
     # Service mode is the architecture default for both TOML and direct API
     # construction. Compatibility callers must opt into embedded explicitly.
     controller_mode: str = "service"
-    controller_id: str = "epi13-local-harness"
+    controller_id: str = "mncs-harness"
     service_socket: Path = Path("~/.local/state/mncs-fabric/controller.sock")
     service_timeout_seconds: float = 5.0
-    consumer_identity: str = "epi13-local-harness"
-    state_path: Path = Path("~/.local/state/epi13-local-harness/fabric.jsonl")
+    consumer_identity: str = "mncs-harness"
+    state_path: Path = Path("~/.local/state/mncs-harness/fabric.jsonl")
     fallback_to_local: bool = True
     refresh_on_startup: bool = True
     refresh_timeout_seconds: float = 5.0
@@ -282,7 +282,7 @@ class FabricConfig:
     runtime_probe_timeout_seconds: float = 45.0
     runtime_probe_max_age_seconds: float = 1800.0
     worker_bundle_root: Path = Path(
-        "~/.local/state/epi13-local-harness/fabric-worker-bundle"
+        "~/.local/state/mncs-harness/fabric-worker-bundle"
     )
     provider_ollama_base_url: str = "http://127.0.0.1:11434"
     provider_timeout_seconds: int = 600

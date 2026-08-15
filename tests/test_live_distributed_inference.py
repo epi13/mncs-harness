@@ -1,8 +1,10 @@
 """Live distributed inference E2E against the persistent Fabric fleet.
 
-This is not a mock. It requires the persistent controller socket and the two
-currently enrolled workers. Each placement is an exact pin and expects an
-unmistakable marker back from worker-local Ollama.
+This is not a mock. It requires the persistent controller socket and two
+operator-selected enrolled workers. Set ``MNCS_E2E_LINUX_WORKER`` and
+``MNCS_E2E_WINDOWS_WORKER`` (and optional model overrides) before running.
+Each placement is an exact pin and expects an unmistakable marker back from
+worker-local Ollama.
 """
 
 from __future__ import annotations
@@ -20,9 +22,13 @@ from epi13_local_harness.commons import CommonsSession
 from epi13_local_harness.config import load_config
 from epi13_local_harness.fabric_inventory_session import InventoryAwareFabricSession
 
+LINUX_WORKER = os.environ.get("MNCS_E2E_LINUX_WORKER")
+WINDOWS_WORKER = os.environ.get("MNCS_E2E_WINDOWS_WORKER")
+LINUX_MODEL = os.environ.get("MNCS_E2E_LINUX_MODEL", "granite3.3:2b")
+WINDOWS_MODEL = os.environ.get("MNCS_E2E_WINDOWS_MODEL", "gemma4:e4b")
 PLACEMENTS = (
-    ("fabric-worker-01", "granite3.3:2b", "MNCS_E2E_LINUX_OK"),
-    ("collamore02-windows", "gemma4:e4b", "MNCS_E2E_WINDOWS_OK"),
+    (LINUX_WORKER or "worker-01-linux", LINUX_MODEL, "MNCS_E2E_LINUX_OK"),
+    (WINDOWS_WORKER or "worker-01-windows", WINDOWS_MODEL, "MNCS_E2E_WINDOWS_OK"),
 )
 CONTROLLER_SOCKET = Path("~/.local/state/mncs-fabric/controller.sock").expanduser()
 
@@ -30,7 +36,7 @@ CONTROLLER_SOCKET = Path("~/.local/state/mncs-fabric/controller.sock").expanduse
 def _live_configured() -> bool:
     if os.environ.get("MNCS_SKIP_LIVE_INFERENCE") == "1":
         return False
-    return CONTROLLER_SOCKET.exists()
+    return bool(CONTROLLER_SOCKET.exists() and LINUX_WORKER and WINDOWS_WORKER)
 
 
 @unittest.skipUnless(_live_configured(), "persistent Fabric controller socket is not present")
@@ -196,21 +202,23 @@ class LiveCliAskTests(unittest.TestCase):
         return last
 
     def test_elh_ask_linux_exact_pin(self) -> None:
-        completed = self._ask("fabric-worker-01", "granite3.3:2b", "MNCS_CLI_LINUX_OK")
+        assert LINUX_WORKER is not None
+        completed = self._ask(LINUX_WORKER, LINUX_MODEL, "MNCS_CLI_LINUX_OK")
         self.assertEqual(completed.returncode, 0, completed.stderr + completed.stdout)
         self.assertIn("MNCS_CLI_LINUX_OK", completed.stdout)
         self.assertNotIn("inventory-refresh", completed.stderr)
         self.assertNotIn("residency-reconciliation", completed.stderr)
         self.assertIn("exact-pin", completed.stderr)
-        self.assertIn("fabric-worker-01", completed.stderr)
-        self.assertIn("granite3.3:2b", completed.stderr)
+        self.assertIn(LINUX_WORKER, completed.stderr)
+        self.assertIn(LINUX_MODEL, completed.stderr)
 
     def test_elh_ask_windows_exact_pin(self) -> None:
-        completed = self._ask("collamore02-windows", "gemma4:e4b", "MNCS_CLI_WINDOWS_OK")
+        assert WINDOWS_WORKER is not None
+        completed = self._ask(WINDOWS_WORKER, WINDOWS_MODEL, "MNCS_CLI_WINDOWS_OK")
         self.assertEqual(completed.returncode, 0, completed.stderr + completed.stdout)
         self.assertIn("MNCS_CLI_WINDOWS_OK", completed.stdout)
         self.assertNotIn("inventory-refresh", completed.stderr)
         self.assertNotIn("residency-reconciliation", completed.stderr)
         self.assertIn("exact-pin", completed.stderr)
-        self.assertIn("collamore02-windows", completed.stderr)
-        self.assertIn("gemma4:e4b", completed.stderr)
+        self.assertIn(WINDOWS_WORKER, completed.stderr)
+        self.assertIn(WINDOWS_MODEL, completed.stderr)

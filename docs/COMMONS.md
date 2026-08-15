@@ -76,6 +76,6 @@ independently running Commons service, and scripted model tool calls. They do no
 physical remote-model result; physical evidence is reported separately.
 
 The operator-controlled Collamore02 acceptance run is recorded in
-`development-evidence/commons-fabric-collamore02-2026-08-10.json`. It demonstrates an
+`development-evidence/commons-fabric-worker-01-2026-08-10.json`. It demonstrates an
 actual worker-local model tool call and second Fabric turn; it is not independent
 certification.

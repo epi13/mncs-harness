@@ -797,7 +797,7 @@ class FabricSession:
         from mncs_fabric import ConsumerContext
 
         return ConsumerContext(
-            "epi13-local-harness",
+            "mncs-harness",
             self._consumer_context["workload_identity"],
             provider_identity=self._consumer_context["provider_identity"],
             partition_identity=self._consumer_context["partition_identity"],
@@ -926,7 +926,7 @@ class FabricSession:
                         from mncs_fabric import ConsumerContext
 
                         consumer_context = ConsumerContext(
-                            "epi13-local-harness",
+                            "mncs-harness",
                             self._consumer_context["workload_identity"],
                             provider_identity=self._consumer_context["provider_identity"],
                             partition_identity=self._consumer_context["partition_identity"],
@@ -1094,7 +1094,7 @@ class FabricSession:
                 from mncs_fabric import ConsumerContext
 
                 consumer_context = ConsumerContext(
-                    "epi13-local-harness",
+                    "mncs-harness",
                     self._consumer_context["workload_identity"],
                     provider_identity=self._consumer_context["provider_identity"],
                     partition_identity=self._consumer_context["partition_identity"],

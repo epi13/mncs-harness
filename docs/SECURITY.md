@@ -105,7 +105,7 @@ authorization or accepted truth.
   Use a disposable workspace or container for untrusted repositories.
 - The process runs with the permissions of the user who launches it.
 - Resource limits are currently timeout- and size-based, not cgroup-based.
-- Local Harness tool execution has no seccomp, Landlock, bubblewrap, container, or
+- MNCS Harness tool execution has no seccomp, Landlock, bubblewrap, container, or
   virtual-machine isolation. Remote Fabric target execution is isolated only when
   its returned record reports a concrete containment provider/enforcement state.
 - `--yes` is appropriate only for repositories and tasks the user already trusts.
@@ -137,7 +137,7 @@ preferably with:
 - signed audit records for tool decisions and results.
 # Fabric security boundary
 
-Local Harness uses only ordinary `FabricClient` consumer access in persistent
+MNCS Harness uses only ordinary `FabricClient` consumer access in persistent
 service mode. It never imports `FabricAdminClient`, opens the admin socket,
 creates enrollment tokens, approves/denies enrollment, revokes workers, or
 handles Fabric worker trust material. Worker endpoint and trust configuration

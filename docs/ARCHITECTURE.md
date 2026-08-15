@@ -1,6 +1,6 @@
 # Architecture
 
-Local Harness is a Fabric consumer/router. `service` connects to the existing
+MNCS Harness is a Fabric consumer/router. `service` connects to the existing
 consumer socket; `embedded` is explicit compatibility ownership for isolated
 deployments; `transitional` combines persistent fleet authority with a separate
 embedded execution path. The latter is temporary and every status projection
@@ -125,7 +125,7 @@ publication is a separate controller action and is conservative by default. Expl
 `stdio` mode remains a compatibility path. The capability graph therefore places
 Commons under `controller.mcp`; it is never copied into a Fabric worker observation.
 
-MNCS Control is the remote API surface; Local Harness owns semantic routing and
+MNCS Control is the remote API surface; MNCS Harness owns semantic routing and
 acceptance policy; Fabric owns persistent execution and worker observations; Commons
 owns durable shared coordination/history; Forge owns evaluation, evidence, and claim
 semantics. A submitting client may disconnect after Fabric acceptance without
@@ -259,7 +259,7 @@ The core interfaces are deliberately small:
 # Fabric ownership
 
 The persistent Fabric controller owns durable lifecycle, fleet membership,
-worker presence, and worker facts. Local Harness owns semantic model choice,
+worker presence, and worker facts. MNCS Harness owns semantic model choice,
 residency preference, task decomposition, verification, escalation, and agent
 policy. The split is factual fleet observation below and routing policy above.
 

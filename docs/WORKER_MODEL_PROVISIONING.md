@@ -1,6 +1,6 @@
 # Worker-local model provisioning
 
-Large model blobs should not be copied from the Local Harness controller to a Fabric
+Large model blobs should not be copied from the MNCS Harness controller to a Fabric
 worker over the LAN. The harness can instead stage a tiny Windows command file and run
 `ollama pull` on the worker itself. Ollama then downloads the model directly from the
 worker's configured registry/network connection.
@@ -67,7 +67,7 @@ The installer intentionally does not expose Ollama on the LAN.
 ## Fabric API compatibility before commissioning
 
 Persistent commissioning stages the `mncs_fabric` package that is actually imported by
-the active Local Harness Python environment. Editable installs can therefore be stale
+the active MNCS Harness Python environment. Editable installs can therefore be stale
 even when `pyproject.toml` declares a newer optional dependency.
 
 Before touching the worker, `elh-fabric commission-windows` now verifies that the active

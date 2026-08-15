@@ -40,7 +40,7 @@ class _WorkerListClient:
     def workers(self):
         return [
             {
-                "worker_id": "collamore02-windows",
+                "worker_id": "worker-01-windows",
                 "source": "remote",
                 "availability": "AVAILABLE",
             }
@@ -61,11 +61,11 @@ class LiveWorkerInventoryTests(unittest.TestCase):
         self.assertEqual(model["capabilities"], ["completion", "tools"])
 
     def test_fresh_request_ids_are_bounded_and_unique(self) -> None:
-        first = _fresh_request_id("elh-inventory:collamore02-windows")
-        second = _fresh_request_id("elh-inventory:collamore02-windows")
+        first = _fresh_request_id("elh-inventory:worker-01-windows")
+        second = _fresh_request_id("elh-inventory:worker-01-windows")
         self.assertNotEqual(first, second)
         self.assertLessEqual(len(first), 256)
-        self.assertTrue(first.startswith("elh-inventory:collamore02-windows:"))
+        self.assertTrue(first.startswith("elh-inventory:worker-01-windows:"))
 
     def test_dispatch_wrapper_does_not_replay_identical_semantic_work(self) -> None:
         client = _RecordingClient()

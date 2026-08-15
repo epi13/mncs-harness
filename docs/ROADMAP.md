@@ -77,9 +77,9 @@ invocation, worker-local Commons, federation, and automatic scheduling remain fu
 work.
 
 An operator-controlled physical run also placed `gemma4:e4b` on
-`collamore02-windows`, mediated `commons_describe` through the Fedora controller, and
+`worker-01-windows`, mediated `commons_describe` through the Fedora controller, and
 completed the second Fabric turn. Its sanitized evidence is in
-`development-evidence/commons-fabric-collamore02-2026-08-10.json`; this is physical
+`development-evidence/commons-fabric-worker-01-2026-08-10.json`; this is physical
 integration evidence, not independent assurance.
 
 ## 0.3 — repository intelligence

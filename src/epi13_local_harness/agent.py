@@ -88,7 +88,7 @@ class LocalAgent:
         if not callable(setter):
             return
         workload = self._provenance_identity(
-            {"source_project": "epi13-local-harness", "task_fingerprint": hashlib.sha256(task.encode("utf-8")).hexdigest()}
+            {"source_project": "mncs-harness", "task_fingerprint": hashlib.sha256(task.encode("utf-8")).hexdigest()}
         )
         setter(
             workload_identity=workload,
