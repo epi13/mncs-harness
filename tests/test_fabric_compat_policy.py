@@ -66,7 +66,12 @@ class FabricCompatibilityPolicyTests(unittest.TestCase):
             _caps(),
             commit=EXPERIMENT_CERTIFIED_FABRIC_COMMIT,
         )
-        self.assertEqual(result["classification"], "EXPERIMENT_CERTIFIED")
+        self.assertEqual(result["classification"], "EXPERIMENT_CERTIFIED_EXACT")
+        self.assertEqual(result["action"], "dispatch_allowed")
+
+    def test_version_without_immutable_identity_is_not_exact(self) -> None:
+        result = evaluate_experiment_fabric(EXPERIMENT_CERTIFIED_FABRIC_VERSION, _caps())
+        self.assertEqual(result["classification"], "COMPATIBLE_VERSION_ONLY")
         self.assertEqual(result["action"], "dispatch_allowed")
 
     def test_newer_compatible_fabric_can_pass(self) -> None:
