@@ -358,10 +358,13 @@ def inspect_live_config(config: Any, *, profile: str = "base-inference") -> dict
     from .fleet import FleetService
 
     fabric_session = FabricSession(config.fabric)
+    fabric_session.initialize()
     fabric_status = fabric_session.status()
     fleet = FleetService(config, fabric_session)
     snapshot = fleet.snapshot(fabric_status)
-    commons = CommonsSession(config.commons).status()
+    commons_session = CommonsSession(config.commons)
+    commons_session.initialize()
+    commons = commons_session.status()
     metrics_path = Path(config.metrics.path)
     writable = os_access_writable(metrics_path.parent)
     workers = list(fabric_status.workers or (snapshot.get("fabric") or {}).get("workers") or [])
