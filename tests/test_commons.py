@@ -10,9 +10,13 @@ from epi13_local_harness.capability_graph import build_capability_graph
 from epi13_local_harness.commons import (
     DURABLE_WORK_TOOLS,
     EXPECTED_TOOLS,
+    MODEL_PUBLICATION_TOOLS,
+    OPERATOR_ADMIN_TOOLS,
+    REQUIRED_CONSUMER_TOOLS,
     CommonsError,
     CommonsExchange,
     CommonsSession,
+    _model_facing_schemas,
 )
 from epi13_local_harness.config import load_config
 from epi13_local_harness.fabric import FabricStatus
@@ -232,6 +236,34 @@ class CommonsIntegrationTests(unittest.TestCase):
                 CommonsError, "COMMONS_SERVICE_RESPONSE_OVERSIZED"
             ):
                 session._service_exchange("commons_work_list", {"limit": 1})
+
+    def test_model_facing_surface_accepts_current_commons_service_projection(self) -> None:
+        try:
+            from mncs_commons.local_service import service_tool_schemas
+        except ImportError:
+            self.skipTest("optional Commons dependency is not installed")
+        consumer, operator = service_tool_schemas()
+        accepted = _model_facing_schemas(consumer, operator)
+        names = {schema["function"]["name"] for schema in accepted}
+        self.assertTrue(REQUIRED_CONSUMER_TOOLS <= names)
+        self.assertTrue(MODEL_PUBLICATION_TOOLS <= names)
+        self.assertFalse(names & OPERATOR_ADMIN_TOOLS)
+        self.assertIn("commons_work_list", names)
+        self.assertIn("commons_publish_record", names)
+
+    def test_future_commons_tool_rename_fails_closed_without_an_alias(self) -> None:
+        schemas = [
+            {
+                "type": "function",
+                "function": {
+                    "name": "commons_list_open_work",
+                    "description": "renamed",
+                    "parameters": {"type": "object", "properties": {}},
+                },
+            }
+        ]
+        with self.assertRaisesRegex(CommonsError, "COMMONS_TOOLSET_MISMATCH"):
+            _model_facing_schemas(schemas)
 
 
 if __name__ == "__main__":

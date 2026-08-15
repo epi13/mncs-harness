@@ -48,3 +48,10 @@ class RepoLauncherTests(unittest.TestCase):
         self.assertIn('.venv/bin/python', text)
         self.assertIn("epi13_local_harness.cli", text)
         self.assertNotIn("/home/epi13/", text)
+
+    def test_checked_in_scripts_mncs_harness_is_the_canonical_launcher(self) -> None:
+        root = Path(__file__).resolve().parents[1]
+        canonical = (root / "scripts" / "mncs-harness").read_text(encoding="utf-8")
+        compatibility = (root / "scripts" / "elh").read_text(encoding="utf-8")
+        self.assertEqual(canonical, compatibility)
+        self.assertIn("epi13_local_harness.cli", canonical)

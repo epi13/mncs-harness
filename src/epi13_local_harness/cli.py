@@ -450,10 +450,36 @@ def cmd_doctor(args: argparse.Namespace) -> int:
             raise RuntimeError("controller Ollama returned a malformed tags document")
         return {"model_count": len(models)}
 
+    def cli_probe() -> dict[str, Any]:
+        from .portable_cli import WRAPPERS, install_portable_cli
+
+        bin_dir = Path(sys.prefix) / ("Scripts" if os.name == "nt" else "bin")
+        missing = [
+            name
+            for name in ("mncs-harness", "mncs-harness-tui", "mncs-harness-fabric")
+            if not (bin_dir / name).exists()
+        ]
+        repaired: list[str] = []
+        if missing:
+            repaired = [str(path.name) for path in install_portable_cli(bin_dir)]
+        present = {
+            name: (bin_dir / name).exists()
+            for name in WRAPPERS
+        }
+        if not present.get("mncs-harness"):
+            raise RuntimeError("canonical mncs-harness launcher is still missing after repair")
+        return {
+            "canonical": "mncs-harness",
+            "compatibility": ["elh", "epi13-harness"],
+            "present": present,
+            "repaired": repaired,
+        }
+
     commons_result = _bounded_probe("Commons", commons_probe, timeout_seconds=8)
     fabric_result = _bounded_probe("Fabric", fabric_probe, timeout_seconds=35)
     ollama_result = _bounded_probe("Ollama", ollama_probe, timeout_seconds=6)
-    subsystems.extend((commons_result, fabric_result, ollama_result))
+    cli_result = _bounded_probe("CLI", cli_probe, timeout_seconds=4)
+    subsystems.extend((commons_result, fabric_result, ollama_result, cli_result))
 
     commons_status = commons_result.get("detail") if commons_result["status"] == "PASS" else {}
     if not isinstance(commons_status, dict):

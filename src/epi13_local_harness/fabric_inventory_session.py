@@ -480,6 +480,8 @@ class InventoryAwareFabricSession(FabricSession):
                         model[key] = loaded[key]
             if isinstance(version, str) and version:
                 model["provider_version"] = version
+                if version == "0.0.0":
+                    model["provider_version_trust"] = "untrusted-packaging"
             models.append(model)
         return tuple(models)
 
@@ -698,7 +700,7 @@ class InventoryAwareFabricSession(FabricSession):
             freshness = str(worker.get("capability_inventory_status") or "UNKNOWN")
             if freshness == "CURRENT":
                 pass
-            elif allow_stale and freshness == "STALE":
+            elif freshness == "STALE" and allow_stale:
                 pass
             else:
                 return ()
@@ -758,16 +760,17 @@ class InventoryAwareFabricSession(FabricSession):
     ) -> tuple[ModelConfig, ModelSelection | None]:
         """Resolve a role against one already-captured Fabric status.
 
-        Automatic/role placement uses CURRENT inventory only. Explicit
-        operator pins may consume STALE persistent inventory when the
-        requested worker is AVAILABLE and the model is represented.
+        Automatic/role placement uses last-known CURRENT or STALE inventory.
+        STALE remains usable last-known truth; it is not treated as empty.
+        UNKNOWN/UNAVAILABLE still cannot authorize a route. A newly installed
+        model requires an explicit inventory refresh, not a service restart.
         """
 
         if model.provider != "fabric":
             return model, None
         requested = routing_override or RoutingOverride()
-        allow_stale = requested.mode in {"WORKER", "WORKER_MODEL", "MODEL"}
-        accepted_freshness = {"CURRENT", "STALE"} if allow_stale else {"CURRENT"}
+        allow_stale = True
+        accepted_freshness = {"CURRENT", "STALE"}
         workers = [dict(worker) for worker in status.workers]
         current_candidates = [
             (
@@ -808,6 +811,10 @@ class InventoryAwareFabricSession(FabricSession):
         ) -> ModelSelection:
             item = named(inventory, selected_model) or {}
             size = item.get("size")
+            worker = next(
+                (row for row in workers if row.get("worker_id") == worker_id),
+                {},
+            )
             return ModelSelection(
                 role=role,
                 configured_model=model.name,
@@ -817,6 +824,7 @@ class InventoryAwareFabricSession(FabricSession):
                 ),
                 reason=reason,
                 worker_id=worker_id,
+                inventory_status=self._inventory_freshness(worker),
                 loaded=bool(item.get("loaded", False)),
                 resident=explicit_resident.get(worker_id) == selected_model,
                 route_mode=requested.mode,
@@ -1075,7 +1083,7 @@ class InventoryAwareFabricSession(FabricSession):
         for worker in base.workers:
             item = dict(worker)
             worker_id = str(item.get("worker_id") or "")
-            inventory = self._worker_inventory(item)
+            inventory = self._worker_inventory(item, allow_stale=True)
             if self.capability_api_available:
                 item["model_inventory_status"] = item.get(
                     "capability_inventory_status", "UNKNOWN"

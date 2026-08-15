@@ -1,6 +1,27 @@
 # Dynamic worker model discovery
 
-MNCS Harness can live-scan every Ollama model currently installed on an explicitly managed Windows worker. The inventory is not a fixed project list: if an operator installs, removes, or retags a model on the worker, the next scan reports the new worker-local state.
+Fabric is the authority for what models are actually installed across the
+fleet. Harness consumes Fabric capability inventory; it does not keep a
+second list of product-specific model names.
+
+Inventory freshness is explicit:
+
+| State | Meaning | Consumer reaction |
+|---|---|---|
+| `CURRENT` | observation is inside the Fabric freshness bound | route normally |
+| `STALE` | last-known inventory is still usable, but may omit newly installed models | route from last-known; refresh to discover additions |
+| `UNKNOWN` | no trusted observation | refresh before routing |
+| `UNAVAILABLE` | worker or provider cannot answer | do not route |
+
+A newly installed model does not require restarting Harness, Control, or the
+persistent Fabric controller. The standard path is `fleet.refresh` / Harness
+`refresh()`, which re-probes worker-local Ollama and ingests the observation.
+Exact pins that miss a model refresh once before failing closed.
+
+An `ollama` `/api/version` of `0.0.0` is recorded as untrusted packaging, not
+as a truthful runtime version.
+
+MNCS Harness can also live-scan every Ollama model currently installed on an explicitly managed Windows worker. The inventory is not a fixed project list: if an operator installs, removes, or retags a model on the worker, the next scan reports the new worker-local state.
 
 ```bash
 elh-fabric scan-models-windows \
