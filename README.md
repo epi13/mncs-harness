@@ -129,8 +129,9 @@ mncs-harness pull --role coder
 mncs-harness pull --role reviewer
 ```
 
-The bundled reference tags are `gemma4:e2b`, `gemma4:e4b`, `qwen3:8b`, and
-`gemma4:12b`. All model names and runtime settings are configurable.
+Bundled role tags are operator preferences, not architectural requirements.
+Automatic placement uses Fabric inventory, provider claims, observed evidence,
+and policy. See [docs/MODEL_AGNOSTICISM.md](docs/MODEL_AGNOSTICISM.md).
 
 ## Confirm the environment
 

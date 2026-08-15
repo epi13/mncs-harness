@@ -120,6 +120,15 @@ def build_parser() -> argparse.ArgumentParser:
     verify_parser = subparsers.add_parser("verify", help="Run deterministic file verifiers")
     verify_parser.add_argument("paths", nargs="*", type=_path, default=[Path.cwd()])
     verify_parser.add_argument("--workspace", type=_path, default=Path.cwd())
+    verify_models = subparsers.add_parser(
+        "verify-models",
+        help="Run generic verification probes against Fabric-discovered models",
+    )
+    verify_models.add_argument("--worker", help="Limit to one worker identity")
+    verify_models.add_argument("--model-name", help="Limit to one opaque model tag")
+    verify_models.add_argument("--tier", action="append", type=int, choices=(0, 1, 2, 3))
+    verify_models.add_argument("--persist", action="store_true", help="Append evidence records")
+    verify_models.add_argument("--json", action="store_true")
 
     eval_parser = subparsers.add_parser("eval", help="Evaluate routing cases")
     eval_parser.add_argument("--file", type=_path, help="JSONL evaluation file")
@@ -801,6 +810,64 @@ def cmd_chat(args: argparse.Namespace) -> int:
         print(result.final_content)
 
 
+def cmd_verify_models(args: argparse.Namespace) -> int:
+    from .model_verification import discover_candidates, verify_candidate
+
+    config = load_config(args.config)
+    session, _fleet_view = _fleet(config, refresh_inventory=False)
+    status = session.status()
+    workers = [
+        worker
+        for worker in status.workers
+        if not args.worker or worker.get("worker_id") == args.worker
+    ]
+    found = discover_candidates(workers)
+    if args.model_name:
+        found = [item for item in found if item[1].get("name") == args.model_name]
+    tiers = set(args.tier or [0, 1])
+    probes = {
+        "reachability": lambda _name, _item: (
+            "PASS",
+            "implementation identity is present in CURRENT Fabric inventory",
+        ),
+        "marker_response": lambda _name, _item: (
+            "UNKNOWN",
+            "marker probe requires an explicit live inference session",
+        ),
+        "tool_call": lambda _name, _item: (
+            "UNKNOWN",
+            "tool probe requires an explicit live inference session",
+        ),
+        "file_read": lambda _name, _item: (
+            "UNKNOWN",
+            "vision/file probe requires an explicit live inference session",
+        ),
+        "fabric_receipt": lambda _name, _item: (
+            "PASS" if status.state == "available" else "UNKNOWN",
+            f"fabric state={status.state}",
+        ),
+    }
+    payload = []
+    for worker_id, item in found:
+        result = verify_candidate(
+            worker_id,
+            item,
+            probes=probes,
+            tiers=tiers,
+            persist=bool(args.persist),
+        )
+        payload.append(
+            {
+                "worker": result.worker_id,
+                "model": result.model,
+                "summary": result.summary,
+                "records": [record.public() for record in result.records],
+            }
+        )
+    _emit({"candidates": payload, "count": len(payload)}, json_output=args.json)
+    return 0 if found else 1
+
+
 def cmd_verify(args: argparse.Namespace) -> int:
     config = load_config(args.config)
     workspace = args.workspace.resolve()
@@ -1014,6 +1081,7 @@ COMMANDS = {
     "work": cmd_work,
     "chat": cmd_chat,
     "verify": cmd_verify,
+    "verify-models": cmd_verify_models,
     "eval": cmd_eval,
     "metrics": cmd_metrics,
     "fabric": cmd_fabric,

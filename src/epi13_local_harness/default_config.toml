@@ -3,6 +3,11 @@ base_url = "http://127.0.0.1:11434"
 timeout_seconds = 600
 max_tool_steps = 8
 
+# Model names below are operator preferences / bootstrap examples, not
+# architectural requirements. Automatic routing treats them as exact
+# preference pins when installed and otherwise selects from Fabric inventory
+# using capabilities, evidence, resources, and policy.
+
 [models.e2b]
 name = "gemma4:e2b"
 provider = "fabric"
@@ -48,10 +53,11 @@ top_k = 64
 tools = ["read_file", "list_directory", "search_text", "write_file", "run_command", "git_diff", "system_info"]
 
 [router]
-mode = "hybrid" # deprecated compatibility keys; runtime routing is deterministic
-backend = "transformers"
-model = "LiquidAI/LFM2.5-Encoder-350M-Prompt-Router"
-revision = "35ca4a0469f180f1cf05a630df8842fa17ac18e3"
+# Semantic routing is removed. These keys remain only so older configs parse.
+mode = "deterministic"
+backend = "deterministic"
+model = ""
+revision = ""
 device = "cpu"
 minimum_score = 0.60
 minimum_margin = 0.12
@@ -95,9 +101,9 @@ max_attempts = 3
 simple_word_limit = 80
 complex_word_limit = 220
 semantic_enabled = false
-semantic_backend = "transformers"
-semantic_model = "LiquidAI/LFM2.5-Encoder-350M-Prompt-Router"
-semantic_revision = "35ca4a0469f180f1cf05a630df8842fa17ac18e3"
+semantic_backend = "deterministic"
+semantic_model = ""
+semantic_revision = ""
 semantic_device = "cpu"
 minimum_score = 0.60
 minimum_margin = 0.12

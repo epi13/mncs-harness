@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mncs-harness"
-version = "0.6.6"
+version = "0.6.7"
 description = "MNCS Harness: a policy-aware operator harness that routes tasks across configured models and verifies tool-driven work."
 readme = "README.md"
 requires-python = ">=3.11"

@@ -3,8 +3,7 @@
 Unlike the operator SSH inventory command, this runtime path uses Fabric itself
 to execute a tiny Python probe on the already-enrolled worker. The probe only
 queries the worker loopback Ollama API. This keeps SSH out of inference/runtime
-routing and lets the semantic router choose among models that are actually
-installed on the worker.
+routing so selection can rank models that are actually installed on the worker.
 """
 
 from __future__ import annotations
@@ -19,6 +18,7 @@ from pathlib import Path
 from typing import Any
 
 from .fabric import FabricExecutionError, FabricSession, FabricStatus
+from .model_evidence import load_evidence
 from .model_selection import ModelSelection, select_installed_model
 from .models import FabricConfig, ModelConfig, ModelResidencyConfig, RoutingOverride
 
@@ -881,7 +881,9 @@ class InventoryAwareFabricSession(FabricSession):
                             "operator pinned the exact Fabric worker/model pair",
                         )
                 else:
-                    resolved = select_installed_model(role, model.name, inventory)
+                    resolved = select_installed_model(
+                        role, model.name, inventory, evidence=load_evidence()
+                    )
                     if resolved is None:
                         failure = unavailable(
                             "PINNED_WORKER_HAS_NO_ELIGIBLE_MODEL",
@@ -961,7 +963,9 @@ class InventoryAwareFabricSession(FabricSession):
 
         if selection is None and auto_allowed and candidates:
             combined = [item for _worker_id, inventory in candidates for item in inventory]
-            fallback = select_installed_model(role, model.name, combined)
+            fallback = select_installed_model(
+                role, model.name, combined, evidence=load_evidence()
+            )
             if fallback is not None:
                 eligible = [
                     (worker_id, inventory)
