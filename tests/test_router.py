@@ -117,6 +117,22 @@ class RouterTests(unittest.TestCase):
             )
         self.assertIsNone(plan.semantic)
         self.assertEqual(plan.routing_override.mode, "WORKER_MODEL")
+
+    def test_exact_worker_model_pin_can_use_a_specific_tool_role(self) -> None:
+        override = RoutingOverride.from_values(
+            role="e2b", worker="worker-01-windows", model="qwen3:8b"
+        )
+        plan = plan_route(
+            "Design a complex multi-turn experiment with read-only tool checks.",
+            self.config,
+            routing_override=override,
+        )
+
+        self.assertEqual(plan.primary_role, "e2b")
+        self.assertEqual(plan.escalation_roles, ())
+        self.assertEqual(plan.routing_override.mode, "WORKER_MODEL_ROLE")
+        self.assertEqual(plan.routing_override.worker, "worker-01-windows")
+        self.assertEqual(plan.routing_override.model, "qwen3:8b")
         self.assertEqual(plan.escalation_roles, ())
 
 

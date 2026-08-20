@@ -32,7 +32,10 @@ def _path(value: str) -> Path:
 
 
 def _add_routing_arguments(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("--role", help="Force a configured semantic role")
+    parser.add_argument(
+        "--role",
+        help="Force a configured role; with --worker and --model-name, keep exact pins",
+    )
     parser.add_argument(
         "--model",
         dest="legacy_role",
@@ -790,7 +793,7 @@ def cmd_ask(args: argparse.Namespace) -> int:
 
 def cmd_submit(args: argparse.Namespace) -> int:
     override = _routing_override(args)
-    if override.mode != "WORKER_MODEL":
+    if override.mode not in {"WORKER_MODEL", "WORKER_MODEL_ROLE"}:
         raise ValueError("elh submit requires exact --worker and --model-name pins")
     config = load_config(args.config)
     task = _task_text(args.task)

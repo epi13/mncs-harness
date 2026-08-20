@@ -6,7 +6,9 @@ from typing import Any, Literal
 
 Risk = Literal["low", "medium", "high", "blocked"]
 TargetKind = Literal["controller", "fabric-worker", "unresolved"]
-RoutingMode = Literal["AUTO", "ROLE", "MODEL", "WORKER", "WORKER_MODEL"]
+RoutingMode = Literal[
+    "AUTO", "ROLE", "MODEL", "WORKER", "WORKER_MODEL", "WORKER_MODEL_ROLE"
+]
 
 
 @dataclass(frozen=True)
@@ -26,6 +28,7 @@ class RoutingOverride:
             "MODEL": (False, False, True),
             "WORKER": (False, True, False),
             "WORKER_MODEL": (False, True, True),
+            "WORKER_MODEL_ROLE": (True, True, True),
         }
         if self.mode not in expected:
             raise ValueError("routing override mode is invalid")
@@ -50,8 +53,16 @@ class RoutingOverride:
         model: str | None = None,
         allow_fallback: bool = False,
     ) -> "RoutingOverride":
+        if role is not None and worker is not None and model is not None:
+            return cls(
+                "WORKER_MODEL_ROLE",
+                role=role,
+                worker=worker,
+                model=model,
+                allow_fallback=allow_fallback,
+            )
         if role is not None and (worker is not None or model is not None):
-            raise ValueError("role cannot be combined with exact worker/model routing")
+            raise ValueError("role requires both worker and model for exact role routing")
         if role is not None:
             return cls("ROLE", role=role, allow_fallback=allow_fallback)
         if worker is not None and model is not None:

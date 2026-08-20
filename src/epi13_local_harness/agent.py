@@ -145,7 +145,9 @@ class LocalAgent:
 
     @staticmethod
     def _exact_manual_route(override: RoutingOverride | None) -> bool:
-        return override is not None and override.mode in {"MODEL", "WORKER", "WORKER_MODEL"}
+        return override is not None and override.mode in {
+            "MODEL", "WORKER", "WORKER_MODEL", "WORKER_MODEL_ROLE"
+        }
 
     def _declared_resident(self, worker_id: str | None) -> str | None:
         if not worker_id:

@@ -851,7 +851,7 @@ class InventoryAwareFabricSession(FabricSession):
 
         selection: ModelSelection | None = None
 
-        if requested.mode in {"WORKER", "WORKER_MODEL"}:
+        if requested.mode in {"WORKER", "WORKER_MODEL", "WORKER_MODEL_ROLE"}:
             target = next(
                 (worker for worker in workers if worker.get("worker_id") == requested.worker),
                 None,
@@ -873,7 +873,7 @@ class InventoryAwareFabricSession(FabricSession):
                 )
             else:
                 inventory = self._worker_inventory(target, allow_stale=True)
-                if requested.mode == "WORKER_MODEL":
+                if requested.mode in {"WORKER_MODEL", "WORKER_MODEL_ROLE"}:
                     if named(inventory, str(requested.model)) is None:
                         failure = unavailable(
                             "PINNED_MODEL_MISSING",

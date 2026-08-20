@@ -764,12 +764,12 @@ class HarnessTui(App[None]):
         role = self._selected_role() if mode == "ROLE" else None
         worker = (
             self._selection(self.query_one("#worker", Select))
-            if mode in {"WORKER", "WORKER_MODEL"}
+            if mode in {"WORKER", "WORKER_MODEL", "WORKER_MODEL_ROLE"}
             else None
         )
         model = (
             self._selection(self.query_one("#model-name", Select))
-            if mode in {"MODEL", "WORKER_MODEL"}
+            if mode in {"MODEL", "WORKER_MODEL", "WORKER_MODEL_ROLE"}
             else None
         )
         requested = RoutingOverride.from_values(
