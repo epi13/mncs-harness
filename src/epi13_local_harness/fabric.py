@@ -1050,6 +1050,7 @@ class FabricSession:
         *,
         worker_id: str,
         idempotency_key: str | None = None,
+        tools: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
         """Enqueue exact-pin inference on persistent Fabric and return immediately."""
 
@@ -1073,6 +1074,8 @@ class FabricSession:
                 "top_k": model.top_k,
             },
         }
+        if tools:
+            payload["tools"] = tools
         request = {
             "base_url": _loopback_url(self.config.provider_ollama_base_url),
             "timeout_seconds": self.config.provider_timeout_seconds,

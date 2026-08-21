@@ -798,19 +798,34 @@ def cmd_submit(args: argparse.Namespace) -> int:
     config = load_config(args.config)
     task = _task_text(args.task)
     agent = LocalAgent(config, refresh_inventory=False, warm_residency=False)
+    role = override.role if override.role in config.models else (
+        "coder" if "coder" in config.models else next(iter(config.models))
+    )
+    base = config.models[role]
     model, selection = agent.fabric_session.resolve_model(
-        "e2b",
-        replace(config.models["e2b"], name=str(override.model), think=False),
+        role,
+        replace(base, name=str(override.model)),
         override,
     )
     if selection is None or not selection.available or not selection.worker_id:
         raise ValueError(selection.reason if selection else "exact pin could not be resolved")
-    agent._configure_fabric_provenance(task, "e2b", model)
+    agent._configure_fabric_provenance(task, role, model)
+    from .tools import ToolRegistry
+
+    registry = ToolRegistry(
+        Path.cwd(),
+        config.policy,
+        auto_approve=True,
+        interactive=False,
+        commons=agent.commons_session,
+    )
+    tools = registry.available_schemas(tuple(dict.fromkeys((*model.tools, *agent.commons_session.tool_names))))
     accepted = agent.fabric_session.submit_chat(
         model,
         [{"role": "user", "content": task}],
         worker_id=selection.worker_id,
         idempotency_key=args.idempotency_key,
+        tools=tools or None,
     )
     payload = {
         "outcome": "ACCEPTED",
