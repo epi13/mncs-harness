@@ -79,7 +79,14 @@ def build_parser() -> argparse.ArgumentParser:
     readiness_parser.add_argument(
         "--profile",
         default="base-inference",
-        choices=("base-inference", "code-analysis", "multi-agent", "MNEL", "RAVEL"),
+        choices=(
+            "base-inference",
+            "code-analysis",
+            "multi-agent",
+            "sustained-experiment",
+            "MNEL",
+            "RAVEL",
+        ),
     )
     models_parser = subparsers.add_parser(
         "models", help="Show controller-local and per-worker model state"
@@ -177,7 +184,14 @@ def build_parser() -> argparse.ArgumentParser:
     residency_status.add_argument("--json", action="store_true")
     residency_warm = residency_sub.add_parser("warm")
     residency_warm.add_argument("worker")
+    residency_warm.add_argument("--model")
     residency_warm.add_argument("--json", action="store_true")
+    residency_release = residency_sub.add_parser(
+        "release", help="Release one exact worker-local model and verify provider state"
+    )
+    residency_release.add_argument("worker")
+    residency_release.add_argument("model")
+    residency_release.add_argument("--json", action="store_true")
 
     commons_parser = subparsers.add_parser(
         "commons", help="Browse controller-local Commons without a model"
@@ -1080,14 +1094,42 @@ def cmd_residency(args: argparse.Namespace) -> int:
     session, fleet = _fleet(config, refresh=True)
     if args.residency_command == "status":
         payload = fleet.snapshot()["residency"]
+    elif args.residency_command == "warm":
+        if args.model:
+            results = fleet.residency.prepare_experiment(
+                "operator-explicit-warm",
+                [{"worker_id": args.worker, "model": args.model, "role": "operator"}],
+            )
+        else:
+            results = fleet.residency.reconcile(force_worker=args.worker)
+        payload = {
+            "outcome": "PASS",
+            "worker": args.worker,
+            "results": list(results),
+        }
+        outcomes = {item.get("outcome") for item in payload["results"]}
+        if outcomes != {"PASS"}:
+            payload["outcome"] = "UNKNOWN"
+        session.refresh_model_inventory()
+        payload["fleet"] = fleet.snapshot()["fabric"]
     else:
         payload = {
             "outcome": "PASS",
             "worker": args.worker,
-            "results": list(fleet.residency.reconcile(force_worker=args.worker)),
+            "model": args.model,
+            "results": list(
+                fleet.residency.release_experiment(
+                    "operator-explicit-release",
+                    [{
+                        "worker_id": args.worker,
+                        "model": args.model,
+                        "provider": "ollama",
+                        "managed": True,
+                    }],
+                )
+            ),
         }
-        outcomes = {item.get("outcome") for item in payload["results"]}
-        if outcomes != {"PASS"}:
+        if {item.get("outcome") for item in payload["results"]} != {"PASS"}:
             payload["outcome"] = "UNKNOWN"
         session.refresh_model_inventory()
         payload["fleet"] = fleet.snapshot()["fabric"]

@@ -295,6 +295,39 @@ class ProfileSemanticsTests(unittest.TestCase):
         self.assertEqual(ravel["layers"]["reference_studies"]["status"], BLOCKED)
         self.assertEqual(ravel["status"], BLOCKED)
 
+    def test_sustained_experiment_requires_provider_residency_lifecycle(self) -> None:
+        support = {
+            "persistent_service_execution": True,
+            "persistent_detached_execution": True,
+            "persistent_service_capability_ingestion": True,
+        }
+        ready = _ready_layers(
+            profile="sustained-experiment",
+            residency={
+                "persistent_service_support": support,
+                "provider_lifecycle_supported": True,
+                "experiment_keep_alive": -1,
+            },
+        )
+        self.assertEqual(ready["layers"]["residency"]["status"], READY)
+        self.assertEqual(ready["status"], READY)
+        self.assertFalse(
+            ready["layers"]["residency"]["detail"][
+                "model_residency_is_conversation_state"
+            ]
+        )
+
+        unload_each_call = _ready_layers(
+            profile="sustained-experiment",
+            residency={
+                "persistent_service_support": support,
+                "provider_lifecycle_supported": True,
+                "experiment_keep_alive": 0,
+            },
+        )
+        self.assertEqual(unload_each_call["layers"]["residency"]["status"], BLOCKED)
+        self.assertEqual(unload_each_call["status"], BLOCKED)
+
 
 class ExperimentReadinessTests(unittest.TestCase):
     def test_ready_base_inference_with_eligible_workers(self) -> None:

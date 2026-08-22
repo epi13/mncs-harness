@@ -33,7 +33,7 @@ tools = ["read_file", "list_directory", "search_text", "write_file", "run_comman
 [models.coder]
 name = "qwen3:8b"
 provider = "fabric"
-keep_alive = "0"
+keep_alive = "10m"
 num_ctx = 12288
 think = true
 temperature = 0.4
@@ -44,7 +44,7 @@ tools = ["read_file", "list_directory", "search_text", "write_file", "run_comman
 [models.reviewer]
 name = "gemma4:12b"
 provider = "fabric"
-keep_alive = "0"
+keep_alive = "10m"
 num_ctx = 16384
 think = true
 temperature = 1.0
@@ -156,8 +156,16 @@ enabled = false
 warm_on_startup = false
 prefer_resident_for_auto_routing = true
 keep_alive = -1
+# Per-request model values above are ordinary bounded interactive reuse. A
+# sustained experiment explicitly overrides them with this provider-specific
+# value after establishing a Harness-owned residency lease.
+experiment_keep_alive = -1
 warm_timeout_seconds = 300.0
 maximum_model_memory_fraction = 0.5
+observation_max_age_seconds = 300.0
+max_pinned_models_per_worker = 1
+release_on_experiment_end = true
+reject_conflicting_loaded_models = true
 role_preference = ["e4b", "e2b", "coder", "reviewer"]
 
 [fabric]

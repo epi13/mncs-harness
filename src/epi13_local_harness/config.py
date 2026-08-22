@@ -121,7 +121,7 @@ def load_config(path: Path | None = None) -> HarnessConfig:
         models[role] = ModelConfig(
             role=role,
             name=str(_required(item, "name", f"models.{role}")),
-            keep_alive=item.get("keep_alive", "0"),
+            keep_alive=item.get("keep_alive", "10m"),
             num_ctx=int(item.get("num_ctx", 8192)),
             think=item.get("think", False),
             temperature=float(item.get("temperature", 1.0)),
@@ -467,10 +467,17 @@ def _parse_model_residency_config(raw: dict[str, Any]) -> ModelResidencyConfig:
             )
         )
     keep_alive = raw.get("keep_alive", -1)
-    if not isinstance(keep_alive, (str, int)) or isinstance(keep_alive, bool):
-        raise ValueError("model_residency.keep_alive must be a duration or integer")
+    experiment_keep_alive = raw.get("experiment_keep_alive", -1)
+    for field, value in (
+        ("keep_alive", keep_alive),
+        ("experiment_keep_alive", experiment_keep_alive),
+    ):
+        if not isinstance(value, (str, int)) or isinstance(value, bool):
+            raise ValueError(f"model_residency.{field} must be a duration or integer")
     warm_timeout = float(raw.get("warm_timeout_seconds", 300.0))
     memory_fraction = float(raw.get("maximum_model_memory_fraction", 0.5))
+    observation_max_age = float(raw.get("observation_max_age_seconds", 300.0))
+    max_pinned = int(raw.get("max_pinned_models_per_worker", 1))
     role_preference = tuple(
         str(value)
         for value in raw.get(
@@ -483,6 +490,14 @@ def _parse_model_residency_config(raw: dict[str, Any]) -> ModelResidencyConfig:
         raise ValueError(
             "model_residency.maximum_model_memory_fraction must be between 0.05 and 0.9"
         )
+    if not 1 <= observation_max_age <= 3600:
+        raise ValueError(
+            "model_residency.observation_max_age_seconds must be between 1 and 3600"
+        )
+    if not 1 <= max_pinned <= 8:
+        raise ValueError(
+            "model_residency.max_pinned_models_per_worker must be between 1 and 8"
+        )
     if not role_preference or len(set(role_preference)) != len(role_preference):
         raise ValueError("model_residency.role_preference must be unique and non-empty")
     return ModelResidencyConfig(
@@ -492,8 +507,15 @@ def _parse_model_residency_config(raw: dict[str, Any]) -> ModelResidencyConfig:
             raw.get("prefer_resident_for_auto_routing", True)
         ),
         keep_alive=keep_alive,
+        experiment_keep_alive=experiment_keep_alive,
         warm_timeout_seconds=warm_timeout,
         maximum_model_memory_fraction=memory_fraction,
+        observation_max_age_seconds=observation_max_age,
+        max_pinned_models_per_worker=max_pinned,
+        release_on_experiment_end=bool(raw.get("release_on_experiment_end", True)),
+        reject_conflicting_loaded_models=bool(
+            raw.get("reject_conflicting_loaded_models", True)
+        ),
         role_preference=role_preference,
         workers=tuple(sorted(workers, key=lambda item: item.worker_id)),
     )

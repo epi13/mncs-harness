@@ -337,8 +337,13 @@ class ModelResidencyConfig:
     warm_on_startup: bool = False
     prefer_resident_for_auto_routing: bool = True
     keep_alive: str | int = -1
+    experiment_keep_alive: str | int = -1
     warm_timeout_seconds: float = 300.0
     maximum_model_memory_fraction: float = 0.5
+    observation_max_age_seconds: float = 300.0
+    max_pinned_models_per_worker: int = 1
+    release_on_experiment_end: bool = True
+    reject_conflicting_loaded_models: bool = True
     role_preference: tuple[str, ...] = ("e4b", "e2b", "coder", "reviewer")
     workers: tuple[ResidentWorkerConfig, ...] = ()
 

@@ -55,6 +55,13 @@ dependency-free Ollama HTTP client, a multi-turn tool-calling loop, workspace
 confinement, interactive approval, a Textual TUI, verification helpers, SQLite
 metrics, and unit tests.
 
+For sustained experiments, Harness owns an explicit model-weight lifecycle:
+prepare each exact worker/model assignment, verify provider-observed loaded state,
+reuse it across synchronous, detached, and tool-follow-up calls, and release only
+the experiment-managed weight at teardown. Conversation messages and tool-loop
+context remain caller/Control state; a warm model is not conversation memory. See
+[Experiment model residency](docs/EXPERIMENT_MODEL_RESIDENCY.md).
+
 ## Requirements
 
 - Linux or another POSIX-like system, with Windows worker support through Fabric
