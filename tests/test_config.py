@@ -108,6 +108,38 @@ kind = "ssh"
         self.assertNotIn("password", text.lower())
         self.assertNotIn("token", text.lower())
 
+    def test_experiment_residency_policy_is_loaded_and_bounded(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            destination = Path(directory) / "config.toml"
+            destination.write_text(
+                """
+[model_residency]
+enabled = true
+experiment_keep_alive = "45m"
+observation_max_age_seconds = 120
+max_pinned_models_per_worker = 2
+release_on_experiment_end = false
+reject_conflicting_loaded_models = false
+""".strip(),
+                encoding="utf-8",
+            )
+            residency = load_config(destination).model_residency
+        self.assertEqual(residency.experiment_keep_alive, "45m")
+        self.assertEqual(residency.observation_max_age_seconds, 120)
+        self.assertEqual(residency.max_pinned_models_per_worker, 2)
+        self.assertFalse(residency.release_on_experiment_end)
+        self.assertFalse(residency.reject_conflicting_loaded_models)
+
+    def test_experiment_residency_rejects_unbounded_pin_count(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            destination = Path(directory) / "config.toml"
+            destination.write_text(
+                "[model_residency]\nmax_pinned_models_per_worker = 9\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "between 1 and 8"):
+                load_config(destination)
+
 
 if __name__ == "__main__":
     unittest.main()

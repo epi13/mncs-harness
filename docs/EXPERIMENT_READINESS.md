@@ -56,6 +56,7 @@ Prefer `provider + tag + digest + worker` over a tag alone.
 | `base-inference` | Harness, Fabric controller, fleet, workers, models, Commons consumer, artifact write |
 | `code-analysis` | base-inference + Joern (sandbox-callable) + Forge (callable) |
 | `multi-agent` | base-inference + routing |
+| `sustained-experiment` | multi-agent + provider model-residency lifecycle |
 | `MNEL` | multi-agent + Commons operator publication + reference-studies |
 | `RAVEL` | base-inference + reference-studies + Forge |
 

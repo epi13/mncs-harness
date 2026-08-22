@@ -21,6 +21,11 @@ prefer_resident_for_auto_routing = true
 keep_alive = -1
 warm_timeout_seconds = 300
 maximum_model_memory_fraction = 0.5
+experiment_keep_alive = -1
+observation_max_age_seconds = 300
+max_pinned_models_per_worker = 1
+release_on_experiment_end = true
+reject_conflicting_loaded_models = true
 
 [model_residency.workers.worker-01-windows]
 model = "gemma4:e4b"
@@ -29,8 +34,9 @@ model = "gemma4:e4b"
 An explicit assignment wins. Otherwise Harness chooses only among its configured
 role preferences that a current worker inventory actually reports and requires
 bounded model-size and host-memory facts before warming. Ollama `/api/ps` is the
-loaded-state observation; `/api/generate` with an empty prompt and configured
-In service mode, these probes are attempted only when the connected Fabric
+loaded-state observation; `/api/generate` with an empty prompt and the configured
+`keep_alive` is the lifecycle operation. In service mode, these probes are
+attempted only when the connected Fabric
 controller advertises persistent execution and capability-observation
 ingestion. Otherwise use `controller_mode = "transitional"` only for the
 explicit embedded-direct compatibility path; inventory and warming remain
@@ -75,6 +81,8 @@ elh fabric refresh
 elh models [--worker ID]
 elh residency status
 elh residency warm ID
+elh residency warm ID --model TAG
+elh residency release ID TAG
 elh route --worker ID --model-name TAG "task"
 ```
 
@@ -98,9 +106,9 @@ and Commons browser. Commons content is always labelled untrusted and rendered a
 data; it is never converted into a tool invocation.
 
 Compatibility floor: `mncs-fabric>=0.2.0a15,<0.3` for service mode. Embedded
-compatibility may remain on older supported Fabric releases. Persistent service
-mode currently cannot run the bounded inventory/warm probes because execution
-dispatch and capability ingestion are not implemented over the consumer socket.
-Use explicit transitional mode for that compatibility path.
+compatibility may remain on older supported Fabric releases. Warm/release in
+persistent service mode requires the controller's execution dispatch, detached
+execution, and capability-ingestion features. Missing features fail closed; use
+explicit transitional mode only for the compatibility path.
 `mncs-commons[mcp]>=0.5.0.dev1,<0.6`. These package versions are separate from
 Fabric's wire protocol and Commons' record, exchange, and node profiles.

@@ -35,6 +35,7 @@ EXPERIMENT_REQUIRED_CAPABILITIES = (
     "classified_fleet_refresh",
     "persistent_service_execution",
     "persistent_detached_execution",
+    "persistent_service_capability_ingestion",
     "scheduled_work_queue",
 )
 def require_execution_bundle_archive_api() -> dict[str, object]:

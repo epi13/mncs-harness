@@ -327,6 +327,7 @@ class FabricTests(unittest.TestCase):
         assert isinstance(payload, dict)
         self.assertEqual(payload["tools"], tools)
         self.assertEqual(payload["model"], model.name)
+        self.assertEqual(payload["keep_alive"], model.keep_alive)
 
     def test_work_result_reads_nested_detached_execution_record(self) -> None:
         session = FabricSession(FabricConfig(enabled=True, controller_mode="service"))

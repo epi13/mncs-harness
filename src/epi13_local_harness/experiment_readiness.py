@@ -87,6 +87,28 @@ PROFILES = {
         "optional": ("control", "commons_operator", "joern", "forge", "scheduler", "reference_studies"),
         "roles": ("generation", "review"),
     },
+    "sustained-experiment": {
+        "required": (
+            "harness",
+            "fabric_controller",
+            "fleet",
+            "workers",
+            "models",
+            "routing",
+            "residency",
+            "commons_consumer",
+            "artifact_write",
+        ),
+        "optional": (
+            "control",
+            "commons_operator",
+            "joern",
+            "forge",
+            "scheduler",
+            "reference_studies",
+        ),
+        "roles": ("generation", "review"),
+    },
     "MNEL": {
         "required": (
             "harness",
@@ -506,6 +528,7 @@ def evaluate_layers(
     joern: Mapping[str, Any] | None = None,
     reference_studies: Mapping[str, Any] | None = None,
     routing: Mapping[str, Any] | None = None,
+    residency: Mapping[str, Any] | None = None,
     scheduler: Mapping[str, Any] | None = None,
     artifact_write: Mapping[str, Any] | None = None,
     runtime_identities: Mapping[str, Any] | None = None,
@@ -667,6 +690,37 @@ def evaluate_layers(
     else:
         route_state = UNKNOWN
     layers.append(_layer("routing", route_state, routing))
+
+    residency = dict(residency or {})
+    residency_features = residency.get("persistent_service_support") or {}
+    lifecycle_transport = all(
+        isinstance(residency_features, Mapping) and residency_features.get(name) is True
+        for name in (
+            "persistent_service_execution",
+            "persistent_detached_execution",
+            "persistent_service_capability_ingestion",
+        )
+    )
+    if residency.get("experiment_keep_alive") == 0:
+        residency_state = BLOCKED
+    elif lifecycle_transport and residency.get("provider_lifecycle_supported") is True:
+        residency_state = READY
+    elif residency:
+        residency_state = BLOCKED
+    else:
+        residency_state = UNKNOWN
+    layers.append(
+        _layer(
+            "residency",
+            residency_state,
+            {
+                **residency,
+                "lifecycle_transport": lifecycle_transport,
+                "model_residency_is_conversation_state": False,
+                "conversation_state_authority": "mncs-control-mcp/harness caller",
+            },
+        )
+    )
 
     commons = dict(commons or {})
     consumer_ready = commons.get("consumerReadCapable") or commons.get("read_capable") or commons.get("available")
@@ -981,6 +1035,35 @@ def inspect_live_config(config: Any, *, profile: str = "base-inference") -> dict
             ),
             "local_fallback": bool(getattr(config.fabric, "fallback_to_local", False)),
             "fallback_explicit": True,
+            "resident_model_policy": "experiment-pinned",
+        },
+        residency={
+            "persistent_service_support": capabilities,
+            "provider_lifecycle_supported": any(
+                str(model.get("namespace") or model.get("provider") or "ollama") == "ollama"
+                for worker in workers
+                for model in worker.get("model_inventory") or []
+                if isinstance(model, Mapping)
+            ),
+            "experiment_keep_alive": config.model_residency.experiment_keep_alive,
+            "release_on_experiment_end": config.model_residency.release_on_experiment_end,
+            "max_pinned_models_per_worker": (
+                config.model_residency.max_pinned_models_per_worker
+            ),
+            "observation_max_age_seconds": (
+                config.model_residency.observation_max_age_seconds
+            ),
+            "current_worker_observations": [
+                {
+                    "worker_id": worker.get("worker_id"),
+                    "inventory_status": worker.get("capability_inventory_status"),
+                    "loaded_model_names": worker.get("loaded_model_names", []),
+                    "captured_at": (
+                        (worker.get("capability_observation") or {}).get("captured_at")
+                    ),
+                }
+                for worker in workers
+            ],
         },
         artifact_write=artifact,
         scheduler={"available": True, "detail": "inspection only; no schedule tick"},
