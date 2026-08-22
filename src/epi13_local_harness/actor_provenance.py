@@ -7,8 +7,6 @@ import json
 from collections.abc import Iterable, Mapping
 from typing import Any
 
-from . import __version__
-
 ACTOR_PROVENANCE_SCHEMA = "mncs-harness.actor-provenance.v0.1"
 BOOTSTRAP_EXPERIMENT_ROLES = frozenset(
     {
@@ -49,6 +47,8 @@ def build_actor_provenance(
 ) -> dict[str, Any]:
     """Build an identity-addressed Harness record; a role never changes its producer."""
 
+    from . import __version__ as harness_version
+
     role = _text(role, "role", 128)
     tools = sorted({_text(item, "tool_exposure[]", 256) for item in tool_exposure})
     material: dict[str, Any] = {
@@ -58,7 +58,7 @@ def build_actor_provenance(
         "model_identity": _text(model_identity, "model_identity"),
         "provider_identity": _text(provider_identity, "provider_identity"),
         "worker_identity": _text(worker_identity, "worker_identity"),
-        "harness_version": __version__,
+        "harness_version": harness_version,
         "route_identity": _text(route_identity, "route_identity"),
         "tool_exposure": tools,
         "policy_profile": _text(policy_profile, "policy_profile"),
