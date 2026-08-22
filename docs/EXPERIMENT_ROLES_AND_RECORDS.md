@@ -1,6 +1,6 @@
 # Experiment Roles and Record Provenance
 
-Status: architecture proposal / non-normative
+Status: bootstrap actor provenance implemented / non-normative authority
 
 ## Purpose
 
@@ -72,6 +72,14 @@ When an experiment-role model contributes an observation, Commons publication is
 
 The temporary investigator and adaptive-critic roles should be retained as explicit baselines. When MNEL and RAVEL are later operational, the project can compare whether those systems improve attribution quality, transfer, next-intervention choice, efficiency or retained-failure use relative to strong general models given equivalent evidence.
 
-## First implementation target
+## Implemented bootstrap contract
+
+`build_actor_provenance` emits `mncs-harness.actor-provenance.v0.1` with exact role, model,
+provider, worker, Harness version, route, exposed tools, policy, prompt, and session identities.
+It provides stable/content digests and an explicit identity boundary: temporary roles remain
+`mncs-harness` records and cannot impersonate RAVEL or MNEL. Control consumes this helper when an
+experiment actor is resolved.
+
+## Next experiment target
 
 The experiment-role surface should be exercised with a small Concept Reconstruction Experiment such as the MNCS tri-state result lattice. Exact role/model/worker pins should be part of the experiment identity so later reruns can distinguish model changes from language/compiler/tooling changes.

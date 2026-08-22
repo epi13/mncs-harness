@@ -27,6 +27,7 @@ CONSUMER_READ_TOOLS = frozenset(
         "commons_work_status",
         "commons_durable_work_list",
         "commons_evidence_trace",
+        "commons_experiment",
     }
 )
 REQUIRED_CONSUMER_TOOLS = frozenset(
@@ -39,6 +40,7 @@ REQUIRED_CONSUMER_TOOLS = frozenset(
         "commons_conversation",
         "commons_work_list",
         "commons_evidence_trace",
+        "commons_experiment",
     }
 )
 MODEL_PUBLICATION_TOOLS = frozenset(
@@ -482,6 +484,11 @@ class CommonsSession:
                 arguments.get("root", ""),
                 depth=arguments.get("depth", 3),
                 max_nodes=arguments.get("maxNodes", 1000),
+            ),
+            "commons_experiment": lambda: client.experiment(
+                arguments.get("experimentId", ""),
+                depth=arguments.get("depth", 4),
+                max_nodes=arguments.get("maxNodes", 256),
             ),
             "commons_publish_record": lambda: self._admin_publish(arguments),
             "commons_submit_work_record": lambda: self._admin_submit_work(arguments),
