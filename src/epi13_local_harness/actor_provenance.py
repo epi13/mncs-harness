@@ -79,3 +79,26 @@ def build_actor_provenance(
         "observed_at": _text(observed_at, "observed_at", 128),
         "bootstrap_role": role in BOOTSTRAP_EXPERIMENT_ROLES,
     }
+
+
+def to_rights_participant(record: Mapping[str, Any]) -> dict[str, Any]:
+    """Project an actor-provenance record into a rights-manifest participant.
+
+    The mapping preserves the stable identity so a manifest participant can be
+    traced back to the exact Harness route record without duplicating payload.
+    Model identity is carried as provenance metadata only; it never implies
+    authorship, ownership, or any other legal status.
+    """
+
+    required = ("role", "model_identity", "provider_identity", "stable_id", "content_digest")
+    missing = [key for key in required if not record.get(key)]
+    if missing:
+        raise ValueError(f"actor provenance record is missing: {', '.join(missing)}")
+    return {
+        "type": "model",
+        "role": str(record["role"]),
+        "model": str(record["model_identity"]),
+        "provider": str(record["provider_identity"]),
+        "participant_ref": str(record["stable_id"]),
+        "digest": str(record["content_digest"]).split(":", 1)[-1][:64],
+    }
