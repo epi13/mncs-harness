@@ -1,0 +1,10 @@
+[Unit]
+Description=Refresh MNCS Fabric model inventory before the five-minute freshness limit
+
+[Timer]
+OnBootSec=10s
+OnUnitInactiveSec=240s
+Persistent=true
+
+[Install]
+WantedBy=timers.target

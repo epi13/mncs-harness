@@ -1,0 +1,15 @@
+[Unit]
+Description=MNCS Fabric model-inventory refresh
+After=mncs-fabric-controller.service
+Wants=mncs-fabric-controller.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/Documents/Projects/mncs-harness
+ExecStart=%h/.local/bin/elh fabric refresh --json
+Environment=PYTHONUNBUFFERED=1
+TimeoutStartSec=180s
+UMask=0077
+NoNewPrivileges=yes
+PrivateTmp=yes
+
