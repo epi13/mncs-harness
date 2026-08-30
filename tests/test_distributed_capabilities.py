@@ -10,6 +10,7 @@ from pathlib import Path
 
 from epi13_local_harness.agent import LocalAgent
 from epi13_local_harness.capability_graph import build_capability_graph
+from epi13_local_harness.commons import CommonsError
 from epi13_local_harness.config import load_config
 from epi13_local_harness.fabric import FabricExecutionError, FabricStatus
 from epi13_local_harness.fabric_inventory_session import (
@@ -25,12 +26,20 @@ from epi13_local_harness.models import (
 )
 
 
-def _entry(name: str, size: int = 1) -> dict[str, object]:
+def _entry(
+    name: str,
+    size: int = 1,
+    *,
+    capabilities: list[str] | None = None,
+) -> dict[str, object]:
+    attributes: dict[str, object] = {"size_bytes": size}
+    if capabilities:
+        attributes["ollama_capabilities"] = list(capabilities)
     return {
         "kind": "model",
         "namespace": "ollama",
         "name": name,
-        "attributes": {"size_bytes": size},
+        "attributes": attributes,
     }
 
 
@@ -157,19 +166,55 @@ class DistributedCapabilityTests(unittest.TestCase):
     def test_compatible_fallback_selects_only_a_worker_that_reports_it(self) -> None:
         session = self._session(
             [
-                _worker("worker-a", [_entry("general:3b", 3)]),
-                _worker("worker-b", [_entry("devstral-small:8b", 8)]),
+                _worker("worker-a", [_entry("general:3b", 3, capabilities=["completion"])]),
+                _worker(
+                    "worker-b",
+                    [_entry("arbitrary-tool-model:8b", 8, capabilities=["completion", "tools"])],
+                ),
             ]
         )
         model = load_config(None).models["coder"]
         effective, selection = session.resolve_model("coder", model)
-        self.assertEqual(effective.name, "devstral-small:8b")
+        self.assertEqual(effective.name, "arbitrary-tool-model:8b")
         self.assertEqual(selection.worker_id, "worker-b")
-        self.assertIn("code-hinted", selection.reason)
+        self.assertIn("provider-reported tools", selection.reason)
+        self.assertNotIn("code-hinted", selection.reason)
 
-    def test_stale_unknown_and_unavailable_inventories_fail_closed(self) -> None:
+    def test_stale_last_known_inventory_remains_routable(self) -> None:
+        worker = _worker("stale", [_entry("gemma4:e4b")], inventory_status="STALE")
+        session = self._session([worker])
+        configured = load_config(None).models["e4b"]
+        _effective, auto = session.resolve_model("e4b", configured)
+        self.assertTrue(auto.available)
+        self.assertEqual(auto.worker_id, "stale")
+        from epi13_local_harness.models import RoutingOverride
+
+        _effective, pinned = session.resolve_model(
+            "e4b",
+            configured,
+            RoutingOverride.from_values(worker="stale", model="gemma4:e4b"),
+        )
+        self.assertTrue(pinned.available)
+        self.assertEqual(pinned.worker_id, "stale")
+
+    def test_resolve_model_from_status_does_not_reread_controller(self) -> None:
+        session = self._session([_worker("worker-a", [_entry("gemma4:e4b")])])
+        captured = session.status()
+        calls = {"status": 0}
+        original = session.status
+
+        def counted() -> FabricStatus:
+            calls["status"] += 1
+            return original()
+
+        session.status = counted  # type: ignore[method-assign]
+        configured = load_config(None).models["e4b"]
+        session.resolve_model_from_status(captured, "e4b", configured)
+        session.resolve_model_from_status(captured, "coder", configured)
+        self.assertEqual(calls["status"], 0)
+
+    def test_unknown_and_unavailable_inventories_fail_closed(self) -> None:
         cases = (
-            (_worker("stale", [_entry("gemma4:e4b")], inventory_status="STALE"), "STALE"),
             (_worker("unknown", [_entry("gemma4:e4b")], inventory_status="UNKNOWN"), "UNKNOWN"),
             (
                 _worker("down", [_entry("gemma4:e4b")], availability="UNAVAILABLE"),
@@ -261,8 +306,8 @@ class DistributedCapabilityTests(unittest.TestCase):
         self.assertNotIn("capabilities", stale_graph["workers"][0])
 
     def test_remote_inference_targets_do_not_grant_workspace_or_tool_authority(self) -> None:
-        targets = SessionTargets.remote_inference("collamore02-windows")
-        self.assertEqual(targets.inference.label, "fabric-worker:collamore02-windows")
+        targets = SessionTargets.remote_inference("worker-01-windows")
+        self.assertEqual(targets.inference.label, "fabric-worker:worker-01-windows")
         self.assertEqual(targets.workspace.label, "controller")
         self.assertEqual(targets.tools.label, "controller")
         with self.assertRaises(ValueError):
@@ -527,6 +572,7 @@ class DistributedSessionIntegrationTests(unittest.TestCase):
                 commons=replace(
                     base.commons,
                     enabled=True,
+                    controller_mode="stdio",
                     store_path=root / "commons",
                     domain="controller:test",
                 ),
@@ -557,6 +603,11 @@ class DistributedSessionIntegrationTests(unittest.TestCase):
 
     def test_remote_fabric_model_uses_controller_commons_and_publishes_inert_evidence(self) -> None:
         try:
+            from mncs_commons.local_service import (
+                CommonsService,
+                CommonsServiceConfig,
+                CommonsServiceServer,
+            )
             from mncs_commons.store import CommonsStore
             from mncs_fabric.api import FabricClient
             from mncs_fabric.transport import InProcessTransport
@@ -617,6 +668,19 @@ class DistributedSessionIntegrationTests(unittest.TestCase):
                 session._refresh_model_inventories()
 
                 commons_path = root / "controller-commons"
+                commons_store = CommonsStore(commons_path)
+                commons_store.init()
+                commons_service_config = CommonsServiceConfig(
+                    commons_path,
+                    root / "commons.sock",
+                    root / "commons-operator.sock",
+                    domain="controller:test",
+                )
+                commons_server = CommonsServiceServer(
+                    CommonsService(commons_service_config)
+                )
+                commons_server.start()
+                self.addCleanup(commons_server.close)
                 base = load_config(None)
                 config = replace(
                     base,
@@ -624,6 +688,9 @@ class DistributedSessionIntegrationTests(unittest.TestCase):
                     commons=replace(
                         base.commons,
                         enabled=True,
+                        controller_mode="service",
+                        service_socket=commons_service_config.consumer_socket,
+                        operator_socket=commons_service_config.operator_socket,
                         store_path=commons_path,
                         domain="controller:test",
                         publish_fabric_evidence=True,
@@ -632,6 +699,11 @@ class DistributedSessionIntegrationTests(unittest.TestCase):
                 )
                 agent = LocalAgent(config)
                 agent.fabric_session = session
+                self.assertNotIn(
+                    "commons_publish_record", agent.commons_session.tool_names
+                )
+                with self.assertRaises(CommonsError):
+                    agent.commons_session.call("commons_work_list", {"limit": "1"})
                 workspace = root / "controller-workspace"
                 workspace.mkdir()
                 result = agent.run(
@@ -690,7 +762,7 @@ class DistributedSessionIntegrationTests(unittest.TestCase):
                 self.assertTrue(
                     all(
                         row["payload"]["consumer_context"]["source_project"]
-                        == "epi13-local-harness"
+                        == "mncs-harness"
                         for row in inference_dispatches
                     )
                 )
@@ -727,6 +799,11 @@ class DistributedSessionIntegrationTests(unittest.TestCase):
         try:
             from mncs_commons.application import CommonsApplication
             from mncs_commons.bootstrap import _request
+            from mncs_commons.local_service import (
+                CommonsService,
+                CommonsServiceConfig,
+                CommonsServiceServer,
+            )
             from mncs_commons.store import CommonsStore
             from mncs_fabric.api import FabricClient
             from mncs_fabric.transport import InProcessTransport
@@ -754,6 +831,17 @@ class DistributedSessionIntegrationTests(unittest.TestCase):
                     "controller:test",
                 )
                 receipt = CommonsApplication(store).publish(request, domain="controller:test")
+                commons_service_config = CommonsServiceConfig(
+                    commons_path,
+                    root / "commons.sock",
+                    root / "commons-operator.sock",
+                    domain="controller:test",
+                )
+                commons_server = CommonsServiceServer(
+                    CommonsService(commons_service_config)
+                )
+                commons_server.start()
+                self.addCleanup(commons_server.close)
                 _AgentOllamaFixture.publication_record = _response_observation(
                     str(request["metadata"]["recordId"])
                 )
@@ -801,6 +889,9 @@ class DistributedSessionIntegrationTests(unittest.TestCase):
                     commons=replace(
                         base.commons,
                         enabled=True,
+                        controller_mode="service",
+                        service_socket=commons_service_config.consumer_socket,
+                        operator_socket=commons_service_config.operator_socket,
                         store_path=commons_path,
                         domain="controller:test",
                         allow_model_publication=True,

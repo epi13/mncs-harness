@@ -29,11 +29,23 @@ class CommonsOperatorService:
             "exchange": status.exchange,
             "store_healthy": status.store_healthy,
             "record_count": status.record_count,
+            "controller_mode": status.controller_mode,
+            "package_compatible": status.package_compatible,
+            "service_reachable": status.service_reachable,
+            "read_capable": status.read_capable,
+            "publication_capable": status.publication_capable,
+            "publication_configured": status.publication_configured,
             "content_trust": "UNTRUSTED",
         }
 
     def work(self, *, limit: int = 100) -> dict[str, Any]:
+        return self._read("commons_durable_work_list", {"limit": limit})
+
+    def opportunities(self, *, limit: int = 100) -> dict[str, Any]:
         return self._read("commons_work_list", {"limit": limit})
+
+    def work_status(self, work_id: str) -> dict[str, Any]:
+        return self._read("commons_work_status", {"workId": work_id})
 
     def query(self, **filters: Any) -> dict[str, Any]:
         if "open_work" in filters:
@@ -59,11 +71,16 @@ class CommonsOperatorService:
         return self._read("commons_sync", arguments)
 
     def publish(self, record: dict[str, Any]) -> dict[str, Any]:
-        result, success = self.session.call(
-            "commons_publish_record", {"record": record}, allow_write=True
-        )
-        if not success:
-            return {"outcome": "UNKNOWN", "result": result, "content_trust": "UNTRUSTED"}
+        from .commons import CommonsError
+
+        try:
+            result = self.session.operator_publish(record)
+        except CommonsError as exc:
+            return {
+                "outcome": "UNKNOWN",
+                "result": {"code": exc.code, "detail": exc.detail},
+                "content_trust": "UNTRUSTED",
+            }
         return {"outcome": "PASS", "result": result, "content_trust": "UNTRUSTED"}
 
     def _read(self, name: str, arguments: dict[str, Any]) -> dict[str, Any]:

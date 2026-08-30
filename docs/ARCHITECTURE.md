@@ -1,6 +1,6 @@
 # Architecture
 
-Local Harness is a Fabric consumer/router. `service` connects to the existing
+MNCS Harness is a Fabric consumer/router. `service` connects to the existing
 consumer socket; `embedded` is explicit compatibility ownership for isolated
 deployments; `transitional` combines persistent fleet authority with a separate
 embedded execution path. The latter is temporary and every status projection
@@ -31,9 +31,9 @@ DeterministicRouter
    |
    +---- E4B: primary workspace worker
    |
-   +---- Qwen3 8B: optional independent coding specialist
+   +---- coder role: optional mutation specialist (selected from Fabric inventory)
    |
-   `---- 12B: difficult, ambiguous, multimodal, or high-risk review
+   `---- reviewer role: difficult, ambiguous, multimodal, or high-risk review
              |
              v
        inference provider boundary
@@ -103,8 +103,11 @@ reduction, and escalation.
 
 The implemented `SessionTargets` value records these three locations independently on
 every attempt. `capability_graph.py` assembles a deterministic inspection view from
-current Fabric observations plus configured controller facts. The current tool target
-remains controller-local; remote targeted tools are deliberately future work.
+current Fabric observations plus configured controller facts. Tools remain
+controller-local by default. `FabricTargetToolExecutor` is the explicit remote path:
+Harness selects one worker, applies its existing command policy and approval, converts
+the chosen workspace material into an immutable bundle, and invokes Fabric's exact
+target API with no fallback.
 
 Controller-hosted MNCS MCPs should normally be exposed to remote models by tool
 schema and proxied invocation through the harness. Worker-local MCPs are reserved for
@@ -112,14 +115,21 @@ capabilities inherently attached to that worker, such as local hardware or an
 application instance. A remote model does not need a duplicate installation of every
 controller MCP merely to call it.
 
-MNCS Commons is the first implemented controller MCP. `CommonsSession` launches the
-fixed `mncs_commons.mcp_server` module with the operator-configured controller store,
-validates the exact local-agent descriptor and tool set, and then registers those
-schemas with `ToolRegistry`. Read operations remain low-risk reads. Persistent
-publication has a dedicated opt-in policy and still requires ordinary approval.
-Fabric evidence publication is a separate controller action and is conservative by
-default. The capability graph therefore places Commons under `controller.mcp`; it is
-never copied into a Fabric worker observation.
+MNCS Commons is the first implemented controller MCP. In the default `service` mode,
+`CommonsSession` connects to the persistent Commons consumer socket, validates the
+exact local-agent descriptor and read-only tool set, and registers those schemas with
+`ToolRegistry`. It never opens the store directly and closing a harness client does
+not stop Commons. Persistent publication has a dedicated opt-in policy, uses the
+separate operator socket, and still requires ordinary approval. Fabric evidence
+publication is a separate controller action and is conservative by default. Explicit
+`stdio` mode remains a compatibility path. The capability graph therefore places
+Commons under `controller.mcp`; it is never copied into a Fabric worker observation.
+
+MNCS Control is the remote API surface; MNCS Harness owns semantic routing and
+acceptance policy; Fabric owns persistent execution and worker observations; Commons
+owns durable shared coordination/history; Forge owns evaluation, evidence, and claim
+semantics. A submitting client may disconnect after Fabric acceptance without
+transferring any of these authority boundaries.
 
 Shell access follows the same authority boundary. The preferred primitive remains a
 guarded executable plus argv. Bash or PowerShell script tools may be added where they
@@ -159,7 +169,8 @@ The distributed capability/session layer extends this boundary without changing 
 authority model. The bounded worker-local model probe publishes generic entries into
 Fabric's identity-bound capability observation API. The harness accepts only current
 observations, selects a model and exact reporting worker, and separately records the
-controller workspace and controller tool target.
+controller workspace and tool target. Inference and tool workers can differ while
+workspace authority stays on the controller.
 
 ### `agent.py`
 
@@ -182,8 +193,9 @@ command tools. The registry records every decision and modified path for metrics
 verification.
 
 Tool requests carry an attempt-level target that is controller-local by default.
-Remote target dispatch is not implemented; when added, it must correspond to enrolled
-Fabric capabilities and still pass the same policy and approval checks.
+The explicit remote Python adapter corresponds to an enrolled Fabric worker and a
+fresh factual runtime observation, then reuses the same policy and approval checks.
+It is bounded argv execution, not a general remote shell, and never falls back locally.
 
 ### `policy.py`
 
@@ -247,7 +259,7 @@ The core interfaces are deliberately small:
 # Fabric ownership
 
 The persistent Fabric controller owns durable lifecycle, fleet membership,
-worker presence, and worker facts. Local Harness owns semantic model choice,
+worker presence, and worker facts. MNCS Harness owns semantic model choice,
 residency preference, task decomposition, verification, escalation, and agent
 policy. The split is factual fleet observation below and routing policy above.
 

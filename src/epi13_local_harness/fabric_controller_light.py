@@ -38,7 +38,6 @@ def _remove_toml_keys(text: str, section: str, keys: set[str]) -> str:
 
 def _apply_controller_light(config_path: Path | None) -> int:
     from .config import load_config
-    from .semantic_router import router_status
 
     path = _profile._config_path(config_path)
     _profile._ensure_user_config(path)
@@ -57,17 +56,12 @@ def _apply_controller_light(config_path: Path | None) -> int:
             "runtime_probe_on_refresh": False,
         },
     )
-    text = _profile.upsert_toml_section(
-        text,
-        "router",
-        {
-            "mode": "hybrid",
-            "backend": "transformers",
-            "enable_semantic_routing": True,
-            "device": "cpu",
-            "fallback": "deterministic",
-        },
-    )
+    # Controller-light is a Fabric consumer profile.  It no longer enables a
+    # learned/Hugging Face router; deterministic policy plus current inventory
+    # keeps this profile offline-capable and auditable.
+    # Keep the legacy flag readable for older profile consumers; the runtime
+    # implementation is a no-op and never loads a semantic model.
+    text = _profile.upsert_toml_section(text, "router", {"mode": "deterministic", "backend": "transformers", "enable_semantic_routing": True})
     for role in config.models:
         section = f"models.{role}"
         text = _profile.upsert_toml_section(
@@ -85,16 +79,15 @@ def _apply_controller_light(config_path: Path | None) -> int:
         text = _remove_toml_keys(text, section, {"accelerator_backend"})
     _profile._atomic_write(path, text)
     effective = load_config(path)
-    router = router_status(effective)
     payload = {
         "outcome": "PASS",
         "config": str(path),
         "backup": str(backup),
         "controller_mode": "fabric-consumer-router",
-        "semantic_router_enabled": effective.router.enable_semantic_routing,
-        "semantic_router_state": router.state,
-        "semantic_router_model": router.model,
-        "semantic_router_device": router.device,
+        "semantic_router_enabled": False,
+        "semantic_router_state": "removed",
+        "semantic_router_model": None,
+        "semantic_router_device": None,
         "fabric_fallback_to_local": effective.fabric.fallback_to_local,
         "runtime_probe_on_refresh": effective.fabric.runtime_probe_on_refresh,
         "generation_roles": {
@@ -110,15 +103,9 @@ def _apply_controller_light(config_path: Path | None) -> int:
             "Ollama owns model loading, GPU residency, and CPU/GPU split."
         ),
         "note": (
-            "The semantic router chooses a lane locally; response-generation models are Fabric-routed. "
-            "If the semantic router is not active, deterministic routing remains the bounded fallback."
+            "Deterministic role policy chooses a lane; current Fabric inventory resolves placement."
         ),
     }
-    if router.state in {"missing-dependencies", "not-cached", "unpinned", "unsupported"}:
-        payload["router_action"] = (
-            "Run `python -m pip install -e '.[router]'` and `elh router prepare` if semantic routing "
-            "is desired immediately; deterministic routing remains available meanwhile."
-        )
     print(json.dumps(payload, indent=2, sort_keys=True))
     return 0
 

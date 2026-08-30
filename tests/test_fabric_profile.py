@@ -86,8 +86,8 @@ class FabricProfileTests(unittest.TestCase):
                 "WORKER01",
             ]
         )
-        self.assertEqual(args.worker_id, "collamore02-windows")
-        self.assertEqual(args.controller_id, "epi13-local-harness")
+        self.assertEqual(args.worker_id, "worker-01-windows")
+        self.assertEqual(args.controller_id, "mncs-harness")
         self.assertEqual(args.worker_port, 7443)
         self.assertEqual(args.windows_python, "python")
 

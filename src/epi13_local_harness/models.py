@@ -6,7 +6,9 @@ from typing import Any, Literal
 
 Risk = Literal["low", "medium", "high", "blocked"]
 TargetKind = Literal["controller", "fabric-worker", "unresolved"]
-RoutingMode = Literal["AUTO", "ROLE", "MODEL", "WORKER", "WORKER_MODEL"]
+RoutingMode = Literal[
+    "AUTO", "ROLE", "MODEL", "WORKER", "WORKER_MODEL", "WORKER_MODEL_ROLE"
+]
 
 
 @dataclass(frozen=True)
@@ -26,6 +28,7 @@ class RoutingOverride:
             "MODEL": (False, False, True),
             "WORKER": (False, True, False),
             "WORKER_MODEL": (False, True, True),
+            "WORKER_MODEL_ROLE": (True, True, True),
         }
         if self.mode not in expected:
             raise ValueError("routing override mode is invalid")
@@ -50,8 +53,16 @@ class RoutingOverride:
         model: str | None = None,
         allow_fallback: bool = False,
     ) -> "RoutingOverride":
+        if role is not None and worker is not None and model is not None:
+            return cls(
+                "WORKER_MODEL_ROLE",
+                role=role,
+                worker=worker,
+                model=model,
+                allow_fallback=allow_fallback,
+            )
         if role is not None and (worker is not None or model is not None):
-            raise ValueError("role cannot be combined with exact worker/model routing")
+            raise ValueError("role requires both worker and model for exact role routing")
         if role is not None:
             return cls("ROLE", role=role, allow_fallback=allow_fallback)
         if worker is not None and model is not None:
@@ -107,6 +118,19 @@ class SessionTargets:
     @classmethod
     def remote_inference(cls, worker_identity: str) -> "SessionTargets":
         return cls(inference=SessionTarget("fabric-worker", worker_identity))
+
+    @classmethod
+    def remote_inference_and_tools(
+        cls,
+        inference_worker_identity: str,
+        tool_worker_identity: str,
+    ) -> "SessionTargets":
+        """Keep controller workspace authority while splitting inference and tools."""
+
+        return cls(
+            inference=SessionTarget("fabric-worker", inference_worker_identity),
+            tools=SessionTarget("fabric-worker", tool_worker_identity),
+        )
 
     @classmethod
     def unresolved_inference(cls) -> "SessionTargets":
@@ -257,11 +281,11 @@ class FabricConfig:
     # Service mode is the architecture default for both TOML and direct API
     # construction. Compatibility callers must opt into embedded explicitly.
     controller_mode: str = "service"
-    controller_id: str = "epi13-local-harness"
+    controller_id: str = "mncs-harness"
     service_socket: Path = Path("~/.local/state/mncs-fabric/controller.sock")
     service_timeout_seconds: float = 5.0
-    consumer_identity: str = "epi13-local-harness"
-    state_path: Path = Path("~/.local/state/epi13-local-harness/fabric.jsonl")
+    consumer_identity: str = "mncs-harness"
+    state_path: Path = Path("~/.local/state/mncs-harness/fabric.jsonl")
     fallback_to_local: bool = True
     refresh_on_startup: bool = True
     refresh_timeout_seconds: float = 5.0
@@ -269,7 +293,7 @@ class FabricConfig:
     runtime_probe_timeout_seconds: float = 45.0
     runtime_probe_max_age_seconds: float = 1800.0
     worker_bundle_root: Path = Path(
-        "~/.local/state/epi13-local-harness/fabric-worker-bundle"
+        "~/.local/state/mncs-harness/fabric-worker-bundle"
     )
     provider_ollama_base_url: str = "http://127.0.0.1:11434"
     provider_timeout_seconds: int = 600
@@ -313,8 +337,13 @@ class ModelResidencyConfig:
     warm_on_startup: bool = False
     prefer_resident_for_auto_routing: bool = True
     keep_alive: str | int = -1
+    experiment_keep_alive: str | int = -1
     warm_timeout_seconds: float = 300.0
     maximum_model_memory_fraction: float = 0.5
+    observation_max_age_seconds: float = 300.0
+    max_pinned_models_per_worker: int = 1
+    release_on_experiment_end: bool = True
+    reject_conflicting_loaded_models: bool = True
     role_preference: tuple[str, ...] = ("e4b", "e2b", "coder", "reviewer")
     workers: tuple[ResidentWorkerConfig, ...] = ()
 
@@ -336,6 +365,9 @@ class ControllerConfig:
 @dataclass(frozen=True)
 class CommonsConfig:
     enabled: bool = False
+    controller_mode: str = "service"
+    service_socket: Path = Path("~/.local/state/mncs-commons/commons.sock")
+    operator_socket: Path = Path("~/.local/state/mncs-commons/commons-operator.sock")
     store_path: Path = Path("~/.local/state/mncs-commons")
     domain: str = "local"
     auto_initialize: bool = True

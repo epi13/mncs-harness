@@ -7,8 +7,11 @@ from epi13_local_harness.commons_operator import CommonsOperatorService
 
 
 class _Session:
+    """Commons session double with explicit operator vs model-facing surfaces."""
+
     def __init__(self) -> None:
         self.calls: list[tuple[str, dict[str, object], bool]] = []
+        self.operator_publishes: list[dict[str, object]] = []
 
     def status(self):
         return SimpleNamespace(
@@ -34,13 +37,19 @@ class _Session:
             ]
         }, True
 
+    def operator_publish(self, record):
+        """Operator-admin publication; independent of model-facing write tools."""
+
+        self.operator_publishes.append(dict(record))
+        return {"outcome": "PASS", "digest": "sha256:" + "b" * 64}
+
 
 class CommonsOperatorTests(unittest.TestCase):
     def test_reads_use_existing_mcp_tools_and_keep_instructions_inert(self) -> None:
         session = _Session()
         service = CommonsOperatorService(session)
         result = service.work(limit=7)
-        self.assertEqual(session.calls, [("commons_work_list", {"limit": 7}, False)])
+        self.assertEqual(session.calls, [("commons_durable_work_list", {"limit": 7}, False)])
         self.assertEqual(result["content_trust"], "UNTRUSTED")
         self.assertIn("rm -rf /", result["result"]["records"][0]["statement"])
 
@@ -49,11 +58,10 @@ class CommonsOperatorTests(unittest.TestCase):
         service = CommonsOperatorService(session)
         record = {"apiVersion": "commons.mncs.dev/v0alpha1", "kind": "Observation"}
         result = service.publish(record)
-        self.assertEqual(
-            session.calls,
-            [("commons_publish_record", {"record": record}, True)],
-        )
+        self.assertEqual(session.operator_publishes, [record])
+        self.assertEqual(session.calls, [])
         self.assertEqual(result["outcome"], "PASS")
+        self.assertEqual(result["content_trust"], "UNTRUSTED")
 
 
 if __name__ == "__main__":

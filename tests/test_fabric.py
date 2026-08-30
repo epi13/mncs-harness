@@ -12,7 +12,13 @@ from unittest.mock import patch
 
 from epi13_local_harness.agent import LocalAgent
 from epi13_local_harness.config import load_config
-from epi13_local_harness.fabric import FabricSession, FabricStatus, FabricUnavailable
+from epi13_local_harness.fabric import (
+    FabricSession,
+    FabricStatus,
+    FabricUnavailable,
+    _invocation_script,
+    _parse_stage_lines,
+)
 from epi13_local_harness.models import FabricConfig, FabricWorkerConfig, MetricsConfig
 from epi13_local_harness.provider import FabricOllamaProvider, ProviderError
 
@@ -226,10 +232,135 @@ class FabricTests(unittest.TestCase):
                 self.assertEqual(metadata["execution_source"], "local")
                 self.assertEqual(metadata["placement_mode"], "cpu")
                 self.assertTrue(metadata["fabric_receipt_identity"])
+                self.assertIn("worker-started", metadata.get("inference_stages") or [])
+                self.assertEqual(metadata.get("inference_stage"), "completed")
         finally:
             server.shutdown()
             thread.join(timeout=2)
             server.server_close()
+
+    def test_invocation_script_emits_unbuffered_stage_markers(self) -> None:
+        script = _invocation_script()
+        self.assertIn('print("ELH_FABRIC_STAGE "', script)
+        self.assertIn("flush=True", script)
+        self.assertIn("worker-started", script)
+        self.assertIn("inference-started", script)
+        self.assertIn("inference-completed", script)
+        stages = _parse_stage_lines(
+            "ELH_FABRIC_STAGE {\"stage\":\"worker-started\"}\n"
+            "noise\n"
+            "ELH_FABRIC_STAGE {\"stage\":\"completed\"}\n"
+        )
+        self.assertEqual([item["stage"] for item in stages], ["worker-started", "completed"])
+
+    def test_submit_chat_uses_detached_submit_and_does_not_execute(self) -> None:
+        session = FabricSession(FabricConfig(enabled=True, controller_mode="service"))
+        session._state = "available"
+        session._execution_transport = "persistent-service"
+        session._consumer_context = None
+        calls: list[str] = []
+
+        class Client:
+            def submit_execution(self, *args: object, **kwargs: object) -> dict[str, object]:
+                calls.append("submit")
+                return {"work_id": "sha256:" + "a" * 64}
+
+            def execute(self, *args: object, **kwargs: object) -> list[object]:
+                calls.append("execute")
+                raise AssertionError("detached submit must not execute synchronously")
+
+        session.client = Client()
+        with tempfile.TemporaryDirectory() as directory:
+            session.config = replace(
+                session.config,
+                state_path=Path(directory) / "fabric.jsonl",
+            )
+            from epi13_local_harness.config import load_config
+
+            model = load_config(Path("/missing/config.toml")).models["e2b"]
+            accepted = session.submit_chat(
+                model,
+                [{"role": "user", "content": "hello"}],
+                worker_id="fabric-worker-01",
+                idempotency_key="elh-test",
+            )
+        self.assertEqual(calls, ["submit"])
+        self.assertEqual(accepted["stage"], "accepted")
+        self.assertTrue(str(accepted["work_id"]).startswith("sha256:"))
+
+    def test_submit_chat_includes_tool_schemas_in_detached_payload(self) -> None:
+        session = FabricSession(FabricConfig(enabled=True, controller_mode="service"))
+        session._state = "available"
+        session._execution_transport = "persistent-service"
+        session._consumer_context = None
+        captured: dict[str, object] = {}
+
+        class Client:
+            def submit_execution(self, *args: object, **kwargs: object) -> dict[str, object]:
+                import zipfile
+
+                archive = Path(str(kwargs["execution_bundle_archive"]))
+                with zipfile.ZipFile(archive) as bundle:
+                    request = json.loads(bundle.read("request.json"))
+                captured["payload"] = request["payload"]
+                captured["worker_id"] = kwargs["worker_id"]
+                return {"work_id": "sha256:" + "c" * 64}
+
+        session.client = Client()
+        tools = [{"type": "function", "function": {"name": "read_file", "parameters": {"type": "object"}}}]
+        with tempfile.TemporaryDirectory() as directory:
+            session.config = replace(
+                session.config,
+                state_path=Path(directory) / "fabric.jsonl",
+            )
+            from epi13_local_harness.config import load_config
+
+            model = load_config(Path("/missing/config.toml")).models["coder"]
+            session.submit_chat(
+                model,
+                [{"role": "user", "content": "list files"}],
+                worker_id="collamore02-windows",
+                tools=tools,
+            )
+        self.assertEqual(captured["worker_id"], "collamore02-windows")
+        payload = captured["payload"]
+        assert isinstance(payload, dict)
+        self.assertEqual(payload["tools"], tools)
+        self.assertEqual(payload["model"], model.name)
+        self.assertEqual(payload["keep_alive"], model.keep_alive)
+
+    def test_work_result_reads_nested_detached_execution_record(self) -> None:
+        session = FabricSession(FabricConfig(enabled=True, controller_mode="service"))
+        session._state = "available"
+        captured = (
+            'ELH_FABRIC_STAGE {"stage":"worker-started"}\n'
+            'ELH_FABRIC_RESPONSE {"content":"MNCS_SUBMIT_OK"}\n'
+            'ELH_FABRIC_STAGE {"stage":"completed"}\n'
+        )
+
+        class Client:
+            def execution_result(self, work_id: str) -> dict[str, object]:
+                return {
+                    "work_id": work_id,
+                    "state": "COMPLETED",
+                    "result": {
+                        "execution_transport": "persistent-detached",
+                        "results": [
+                            {
+                                "record": {
+                                    "outcome": "PASS",
+                                    "stdout": {"captured_utf8": captured},
+                                }
+                            }
+                        ],
+                    },
+                }
+
+        session.client = Client()
+        payload = session.work_result("sha256:" + "b" * 64)
+        self.assertEqual(payload["stage"], "completed")
+        self.assertEqual(payload["response"]["content"], "MNCS_SUBMIT_OK")
+        self.assertEqual(payload["inference_stages"], ["worker-started", "completed"])
 
 
 if __name__ == "__main__":

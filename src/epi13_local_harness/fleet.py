@@ -7,7 +7,6 @@ from typing import Any
 from .models import HarnessConfig
 from .ollama import OllamaClient, OllamaError
 from .residency import ResidencyManager
-from .semantic_router import router_status
 
 
 class FleetService:
@@ -23,8 +22,55 @@ class FleetService:
     def _name(model: dict[str, Any]) -> str:
         return str(model.get("name") or model.get("model") or "")
 
-    def snapshot(self) -> dict[str, Any]:
-        fabric = self.fabric_session.status()
+    def role_availability(
+        self,
+        snapshot: dict[str, Any] | None = None,
+        *,
+        status: Any | None = None,
+    ) -> list[dict[str, Any]]:
+        """Resolve every configured role against one captured Fabric status."""
+
+        captured = status
+        if captured is None:
+            captured = self.fabric_session.status()
+        view = snapshot if snapshot is not None else self.snapshot(captured)
+        local_names = {
+            self._name(item)
+            for item in (view.get("controller") or {}).get("installed_models", [])
+        }
+        rows: list[dict[str, Any]] = []
+        resolve = getattr(self.fabric_session, "resolve_model_from_status", None)
+        for role, model in self.config.models.items():
+            if model.provider == "fabric" and self.config.fabric.enabled and callable(resolve):
+                _effective, selection = resolve(captured, role, model)
+                rows.append(
+                    {
+                        "role": role,
+                        "provider": "fabric",
+                        "configured_model": model.name,
+                        "resolved_model": selection.selected_model if selection else None,
+                        "worker": selection.worker_id if selection else None,
+                        "available": bool(selection and selection.available),
+                        "reason": selection.reason if selection else "no Fabric selection",
+                    }
+                )
+            else:
+                available = model.name in local_names
+                rows.append(
+                    {
+                        "role": role,
+                        "provider": "controller-ollama",
+                        "configured_model": model.name,
+                        "resolved_model": model.name,
+                        "worker": "controller",
+                        "available": available,
+                        "reason": "controller-local installed inventory",
+                    }
+                )
+        return rows
+
+    def snapshot(self, status: Any | None = None) -> dict[str, Any]:
+        fabric = status if status is not None else self.fabric_session.status()
         try:
             installed = self.local_ollama.tags()
             running = self.local_ollama.running()
@@ -65,7 +111,6 @@ class FleetService:
                     "residency": assignments.get(str(worker.get("worker_id"))),
                 }
             )
-        semantic = router_status(self.config)
         return {
             "controller": {
                 "generation_policy": self.config.controller.generation_policy,
@@ -74,13 +119,7 @@ class FleetService:
                 "installed_model_count": len(local_models),
                 "loaded_generation_models": sorted(running_names),
                 "generation_model_loaded": bool(running_names),
-                "semantic_router": {
-                    "state": semantic.state,
-                    "active": semantic.active,
-                    "cached": semantic.cached,
-                    "model": semantic.model,
-                    "device": semantic.device,
-                },
+                "routing": "deterministic-policy-and-fabric-inventory",
             },
             "fabric": {
                 "state": fabric.state,
@@ -105,4 +144,3 @@ class FleetService:
         if reconcile and self.config.model_residency.enabled:
             self.residency.reconcile()
         return self.snapshot()
-

@@ -25,14 +25,42 @@ from .models import (
     VerificationConfig,
 )
 
-APP_NAME = "epi13-local-harness"
+APP_NAME = "mncs-harness"
+LEGACY_APP_NAME = "epi13-local-harness"
+DEFAULT_CONTROLLER_ID = "mncs-harness"
+COMPAT_CONTROLLER_IDS = (DEFAULT_CONTROLLER_ID, LEGACY_APP_NAME)
+
+
+def preferred_config_path() -> Path:
+    """Return the canonical config path, honoring environment overrides."""
+
+    for key in ("MNCS_HARNESS_CONFIG", "EPI13_HARNESS_CONFIG"):
+        override = os.environ.get(key)
+        if override:
+            return Path(override).expanduser()
+    return Path.home() / ".config" / APP_NAME / "config.toml"
 
 
 def default_config_path() -> Path:
-    override = os.environ.get("EPI13_HARNESS_CONFIG")
-    if override:
-        return Path(override).expanduser()
-    return Path.home() / ".config" / APP_NAME / "config.toml"
+    """Resolve the active config path, falling back to the legacy location."""
+
+    preferred = preferred_config_path()
+    if os.environ.get("MNCS_HARNESS_CONFIG") or os.environ.get("EPI13_HARNESS_CONFIG"):
+        return preferred
+    legacy = Path.home() / ".config" / LEGACY_APP_NAME / "config.toml"
+    if not preferred.exists() and legacy.exists():
+        return legacy
+    return preferred
+
+
+def default_state_dir() -> Path:
+    """Return the writable state directory, preferring the new location."""
+
+    preferred = Path.home() / ".local" / "state" / APP_NAME
+    legacy = Path.home() / ".local" / "state" / LEGACY_APP_NAME
+    if preferred.exists() or not legacy.exists():
+        return preferred
+    return legacy
 
 
 def bundled_config_path() -> Path:
@@ -44,7 +72,7 @@ def bundled_evals_path() -> Path:
 
 
 def initialize_config(destination: Path | None = None, force: bool = False) -> Path:
-    destination = (destination or default_config_path()).expanduser()
+    destination = (destination or preferred_config_path()).expanduser()
     if destination.exists() and not force:
         raise FileExistsError(f"Configuration already exists: {destination}")
     destination.parent.mkdir(parents=True, exist_ok=True)
@@ -93,7 +121,7 @@ def load_config(path: Path | None = None) -> HarnessConfig:
         models[role] = ModelConfig(
             role=role,
             name=str(_required(item, "name", f"models.{role}")),
-            keep_alive=item.get("keep_alive", "0"),
+            keep_alive=item.get("keep_alive", "10m"),
             num_ctx=int(item.get("num_ctx", 8192)),
             think=item.get("think", False),
             temperature=float(item.get("temperature", 1.0)),
@@ -138,10 +166,8 @@ def load_config(path: Path | None = None) -> HarnessConfig:
             resource_max_age_seconds=float(item.get("resource_max_age_seconds", 300.0)),
         )
 
-    required_roles = {"e2b", "e4b", "reviewer"}
-    missing = required_roles.difference(models)
-    if missing:
-        raise ValueError(f"Missing required model roles: {', '.join(sorted(missing))}")
+    if not models:
+        raise ValueError("At least one model role must be configured")
 
     lanes: dict[str, LaneConfig] = {}
     for lane_name, item in lanes_raw.items():
@@ -200,7 +226,7 @@ def load_config(path: Path | None = None) -> HarnessConfig:
             enable_semantic_routing=bool(router_raw.get("enable_semantic_routing", False)),
             fallback=str(router_raw.get("fallback", "deterministic")),
             ambiguity_lane=str(router_raw.get("ambiguity_lane", "review")),
-            cache_directory=Path(str(router_raw.get("cache_directory", "~/.cache/epi13-local-harness/router"))).expanduser(),
+            cache_directory=Path(str(router_raw.get("cache_directory", f"~/.cache/{APP_NAME}/router"))).expanduser(),
             local_files_only=bool(router_raw.get("local_files_only", False)),
         ),
         lanes=lanes,
@@ -227,7 +253,7 @@ def load_config(path: Path | None = None) -> HarnessConfig:
             ),
         ),
         metrics=MetricsConfig(
-            path=Path(str(metrics_raw.get("path", "~/.local/state/epi13-local-harness/metrics.sqlite3"))).expanduser(),
+            path=Path(str(metrics_raw.get("path", f"~/.local/state/{APP_NAME}/metrics.sqlite3"))).expanduser(),
             store_prompt_text=bool(metrics_raw.get("store_prompt_text", False)),
         ),
         fabric=_parse_fabric_config(fabric_raw),
@@ -238,6 +264,9 @@ def load_config(path: Path | None = None) -> HarnessConfig:
 
 
 def _parse_commons_config(raw: dict[str, Any]) -> CommonsConfig:
+    controller_mode = str(raw.get("controller_mode", "service"))
+    if controller_mode not in {"service", "stdio"}:
+        raise ValueError("commons.controller_mode must be service or stdio")
     domain = str(raw.get("domain", "local"))
     startup = float(raw.get("startup_timeout_seconds", 10.0))
     call = float(raw.get("call_timeout_seconds", 30.0))
@@ -250,6 +279,18 @@ def _parse_commons_config(raw: dict[str, Any]) -> CommonsConfig:
         raise ValueError("commons.max_response_bytes must be between 1024 and 4194304")
     return CommonsConfig(
         enabled=bool(raw.get("enabled", False)),
+        controller_mode=controller_mode,
+        service_socket=Path(
+            str(raw.get("service_socket", "~/.local/state/mncs-commons/commons.sock"))
+        ).expanduser(),
+        operator_socket=Path(
+            str(
+                raw.get(
+                    "operator_socket",
+                    "~/.local/state/mncs-commons/commons-operator.sock",
+                )
+            )
+        ).expanduser(),
         store_path=Path(
             str(raw.get("store_path", "~/.local/state/mncs-commons"))
         ).expanduser(),
@@ -353,10 +394,10 @@ def _parse_fabric_config(raw: dict[str, Any]) -> FabricConfig:
             "fabric.controller_mode=service cannot contain fabric.workers or registry_path; "
             "use controller_mode=embedded or transitional for explicit compatibility"
         )
-    service_timeout = float(raw.get("service_timeout_seconds", 5.0))
+    service_timeout = float(raw.get("service_timeout_seconds", 30.0))
     if not 0.1 <= service_timeout <= 30:
         raise ValueError("fabric.service_timeout_seconds must be between 0.1 and 30")
-    consumer_identity = str(raw.get("consumer_identity", "epi13-local-harness"))
+    consumer_identity = str(raw.get("consumer_identity", DEFAULT_CONTROLLER_ID))
     if not consumer_identity or len(consumer_identity) > 128 or "\x00" in consumer_identity:
         raise ValueError("fabric.consumer_identity must be bounded non-empty text")
     runtime_probe_timeout = float(raw.get("runtime_probe_timeout_seconds", 45.0))
@@ -377,14 +418,14 @@ def _parse_fabric_config(raw: dict[str, Any]) -> FabricConfig:
     return FabricConfig(
         enabled=bool(raw.get("enabled", False)),
         controller_mode=controller_mode,
-        controller_id=str(raw.get("controller_id", "epi13-local-harness")),
+        controller_id=str(raw.get("controller_id", DEFAULT_CONTROLLER_ID)),
         service_socket=Path(
             str(raw.get("service_socket", "~/.local/state/mncs-fabric/controller.sock"))
         ).expanduser(),
         service_timeout_seconds=service_timeout,
         consumer_identity=consumer_identity,
         state_path=Path(
-            str(raw.get("state_path", "~/.local/state/epi13-local-harness/fabric.jsonl"))
+            str(raw.get("state_path", f"~/.local/state/{APP_NAME}/fabric.jsonl"))
         ).expanduser(),
         fallback_to_local=bool(raw.get("fallback_to_local", True)),
         refresh_on_startup=bool(raw.get("refresh_on_startup", True)),
@@ -396,7 +437,7 @@ def _parse_fabric_config(raw: dict[str, Any]) -> FabricConfig:
             str(
                 raw.get(
                     "worker_bundle_root",
-                    "~/.local/state/epi13-local-harness/fabric-worker-bundle",
+                    f"~/.local/state/{APP_NAME}/fabric-worker-bundle",
                 )
             )
         ).expanduser(),
@@ -426,10 +467,17 @@ def _parse_model_residency_config(raw: dict[str, Any]) -> ModelResidencyConfig:
             )
         )
     keep_alive = raw.get("keep_alive", -1)
-    if not isinstance(keep_alive, (str, int)) or isinstance(keep_alive, bool):
-        raise ValueError("model_residency.keep_alive must be a duration or integer")
+    experiment_keep_alive = raw.get("experiment_keep_alive", -1)
+    for field, value in (
+        ("keep_alive", keep_alive),
+        ("experiment_keep_alive", experiment_keep_alive),
+    ):
+        if not isinstance(value, (str, int)) or isinstance(value, bool):
+            raise ValueError(f"model_residency.{field} must be a duration or integer")
     warm_timeout = float(raw.get("warm_timeout_seconds", 300.0))
     memory_fraction = float(raw.get("maximum_model_memory_fraction", 0.5))
+    observation_max_age = float(raw.get("observation_max_age_seconds", 300.0))
+    max_pinned = int(raw.get("max_pinned_models_per_worker", 1))
     role_preference = tuple(
         str(value)
         for value in raw.get(
@@ -442,6 +490,14 @@ def _parse_model_residency_config(raw: dict[str, Any]) -> ModelResidencyConfig:
         raise ValueError(
             "model_residency.maximum_model_memory_fraction must be between 0.05 and 0.9"
         )
+    if not 1 <= observation_max_age <= 3600:
+        raise ValueError(
+            "model_residency.observation_max_age_seconds must be between 1 and 3600"
+        )
+    if not 1 <= max_pinned <= 8:
+        raise ValueError(
+            "model_residency.max_pinned_models_per_worker must be between 1 and 8"
+        )
     if not role_preference or len(set(role_preference)) != len(role_preference):
         raise ValueError("model_residency.role_preference must be unique and non-empty")
     return ModelResidencyConfig(
@@ -451,8 +507,15 @@ def _parse_model_residency_config(raw: dict[str, Any]) -> ModelResidencyConfig:
             raw.get("prefer_resident_for_auto_routing", True)
         ),
         keep_alive=keep_alive,
+        experiment_keep_alive=experiment_keep_alive,
         warm_timeout_seconds=warm_timeout,
         maximum_model_memory_fraction=memory_fraction,
+        observation_max_age_seconds=observation_max_age,
+        max_pinned_models_per_worker=max_pinned,
+        release_on_experiment_end=bool(raw.get("release_on_experiment_end", True)),
+        reject_conflicting_loaded_models=bool(
+            raw.get("reject_conflicting_loaded_models", True)
+        ),
         role_preference=role_preference,
         workers=tuple(sorted(workers, key=lambda item: item.worker_id)),
     )

@@ -24,11 +24,23 @@ class _RecordingClient:
         return []
 
 
+class _Transport:
+    timeout = 2.0
+
+
+class _TimedClient(_RecordingClient):
+    _service_transport = _Transport()
+
+    def execute(self, *args, **kwargs):
+        self.seen_timeout = self._service_transport.timeout
+        return super().execute(*args, **kwargs)
+
+
 class _WorkerListClient:
     def workers(self):
         return [
             {
-                "worker_id": "collamore02-windows",
+                "worker_id": "worker-01-windows",
                 "source": "remote",
                 "availability": "AVAILABLE",
             }
@@ -49,11 +61,11 @@ class LiveWorkerInventoryTests(unittest.TestCase):
         self.assertEqual(model["capabilities"], ["completion", "tools"])
 
     def test_fresh_request_ids_are_bounded_and_unique(self) -> None:
-        first = _fresh_request_id("elh-inventory:collamore02-windows")
-        second = _fresh_request_id("elh-inventory:collamore02-windows")
+        first = _fresh_request_id("elh-inventory:worker-01-windows")
+        second = _fresh_request_id("elh-inventory:worker-01-windows")
         self.assertNotEqual(first, second)
         self.assertLessEqual(len(first), 256)
-        self.assertTrue(first.startswith("elh-inventory:collamore02-windows:"))
+        self.assertTrue(first.startswith("elh-inventory:worker-01-windows:"))
 
     def test_dispatch_wrapper_does_not_replay_identical_semantic_work(self) -> None:
         client = _RecordingClient()
@@ -70,6 +82,14 @@ class LiveWorkerInventoryTests(unittest.TestCase):
         wrapped = _FreshDispatchClient(client)
         wrapped.execute({}, {}, request_id="operator-request")
         self.assertEqual(client.request_ids, ["operator-request"])
+
+    def test_dispatch_wrapper_extends_short_service_timeout_for_bounded_jobs(self) -> None:
+        client = _TimedClient()
+        wrapped = _FreshDispatchClient(client)
+        wrapped.execute({"timeout_seconds": 20}, {})
+        self.assertEqual(len(client.request_ids), 1)
+        self.assertEqual(client.seen_timeout, 20.0)
+        self.assertEqual(client._service_transport.timeout, 2.0)
 
     def test_successful_idempotent_replay_is_not_mislabeled_as_failure(self) -> None:
         self.assertTrue(

@@ -39,7 +39,7 @@ from .metrics import MetricsStore
 from .models import AgentResult, HarnessConfig, RoutePlan, RoutingOverride
 from .ollama import OllamaClient, OllamaError
 from .router import plan_route
-from .semantic_router import RouterRuntimeStatus, activate_router, router_status
+from .semantic_router import RouterRuntimeStatus, router_status
 
 
 def role_options(config: HarnessConfig) -> list[tuple[str, str]]:
@@ -521,7 +521,7 @@ def residency_table(config: HarnessConfig, status: FabricStatus) -> Table:
 class HarnessTui(App[None]):
     """Interactive terminal interface for the policy-aware local harness."""
 
-    TITLE = "Epi13 Local Harness"
+    TITLE = "MNCS Harness"
     SUB_TITLE = "Policy-aware local AI"
     BINDINGS = [
         Binding("ctrl+q", "quit", "Quit"),
@@ -705,7 +705,7 @@ class HarnessTui(App[None]):
         self._log(
             Panel(
                 Markdown(
-                    "**Epi13 Local Harness TUI**\n\n"
+                    "**MNCS Harness TUI**\n\n"
                     "Each prompt is routed independently. Select a role to force it, "
                     "or leave **Automatic routing** selected. Exact worker/model pins "
                     "remain active across prompts until changed and fail closed unless "
@@ -764,12 +764,12 @@ class HarnessTui(App[None]):
         role = self._selected_role() if mode == "ROLE" else None
         worker = (
             self._selection(self.query_one("#worker", Select))
-            if mode in {"WORKER", "WORKER_MODEL"}
+            if mode in {"WORKER", "WORKER_MODEL", "WORKER_MODEL_ROLE"}
             else None
         )
         model = (
             self._selection(self.query_one("#model-name", Select))
-            if mode in {"MODEL", "WORKER_MODEL"}
+            if mode in {"MODEL", "WORKER_MODEL", "WORKER_MODEL_ROLE"}
             else None
         )
         requested = RoutingOverride.from_values(
@@ -1115,17 +1115,13 @@ def run_tui(
     selected_workspace = (workspace or Path.cwd()).expanduser().resolve()
     if not selected_workspace.is_dir():
         raise ValueError(f"Workspace is not a directory: {selected_workspace}")
-    # Load the small semantic router before Textual starts thread-backed routing
-    # work. A failed activation is recorded for Doctor and deterministic routing
-    # remains available; it does not prevent the TUI from starting.
-    activate_router(config)
     HarnessTui(config, selected_workspace, config_path=config_path).run()
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        prog="elh-tui",
-        description="Epi13 Local Harness TUI",
+        prog="mncs-harness-tui",
+        description="MNCS Harness TUI",
     )
     parser.add_argument("--config", type=Path, help="Path to a TOML configuration file")
     parser.add_argument("--workspace", type=Path, default=Path.cwd())

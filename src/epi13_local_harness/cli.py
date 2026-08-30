@@ -2,11 +2,16 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
+import signal
 import subprocess
 import sys
+import urllib.error
+import urllib.request
+from dataclasses import replace
 from pathlib import Path
-from typing import Sequence
+from typing import Any, Callable, Sequence
 
 from . import __version__
 from .agent import LocalAgent
@@ -19,11 +24,6 @@ from .fleet import FleetService
 from .metrics import MetricsStore
 from .models import RoutingOverride
 from .router import plan_route
-from .semantic_router import (
-    SemanticRouterError,
-    prepare_router,
-    router_status,
-)
 from .verifiers import Verifier
 
 
@@ -32,7 +32,10 @@ def _path(value: str) -> Path:
 
 
 def _add_routing_arguments(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("--role", help="Force a configured semantic role")
+    parser.add_argument(
+        "--role",
+        help="Force a configured role; with --worker and --model-name, keep exact pins",
+    )
     parser.add_argument(
         "--model",
         dest="legacy_role",
@@ -59,22 +62,37 @@ def build_parser() -> argparse.ArgumentParser:
     init_parser = subparsers.add_parser("init", help="Create a user configuration")
     init_parser.add_argument("--force", action="store_true", help="Replace an existing config")
     init_parser.add_argument("--path", type=_path, help="Destination path")
+    subparsers.add_parser(
+        "install-cli",
+        help="Install relocatable elh wrappers that do not embed a host Python shebang",
+    )
 
     doctor_parser = subparsers.add_parser(
         "doctor", help="Check router, controller, Fabric, Commons, models, and tools"
     )
     doctor_parser.add_argument("--json", action="store_true")
+    readiness_parser = subparsers.add_parser(
+        "experiment-readiness",
+        help="Inspect whether this stack may start experiments without repairing it",
+    )
+    readiness_parser.add_argument("--json", action="store_true")
+    readiness_parser.add_argument(
+        "--profile",
+        default="base-inference",
+        choices=(
+            "base-inference",
+            "code-analysis",
+            "multi-agent",
+            "sustained-experiment",
+            "MNEL",
+            "RAVEL",
+        ),
+    )
     models_parser = subparsers.add_parser(
         "models", help="Show controller-local and per-worker model state"
     )
     models_parser.add_argument("--worker", help="Limit output to one Fabric worker")
     models_parser.add_argument("--json", action="store_true")
-
-    router_parser = subparsers.add_parser(
-        "router",
-        help="Inspect or prepare the semantic prompt router",
-    )
-    router_parser.add_argument("action", choices=("status", "prepare"))
 
     pull_parser = subparsers.add_parser("pull", help="Pull one or all Ollama models")
     pull_parser.add_argument("--role", action="append", help="Configured role to pull")
@@ -96,6 +114,24 @@ def build_parser() -> argparse.ArgumentParser:
     )
     ask_parser.add_argument("--verbose", action="store_true")
 
+    submit_parser = subparsers.add_parser(
+        "submit",
+        help="Accept exact-pin inference as detached persistent Fabric work and return immediately",
+    )
+    submit_parser.add_argument("task", nargs="?", help="Task text; reads stdin when omitted")
+    _add_routing_arguments(submit_parser)
+    submit_parser.add_argument("--idempotency-key")
+    submit_parser.add_argument("--json", action="store_true")
+
+    work_parser = subparsers.add_parser("work", help="Inspect detached persistent Fabric inference work")
+    work_sub = work_parser.add_subparsers(dest="work_command", required=True)
+    work_status = work_sub.add_parser("status")
+    work_status.add_argument("work_id")
+    work_status.add_argument("--json", action="store_true")
+    work_result = work_sub.add_parser("result")
+    work_result.add_argument("work_id")
+    work_result.add_argument("--json", action="store_true")
+
     chat_parser = subparsers.add_parser("chat", help="Start a routed terminal session")
     chat_parser.add_argument("--workspace", type=_path, default=Path.cwd())
     _add_routing_arguments(chat_parser)
@@ -104,6 +140,15 @@ def build_parser() -> argparse.ArgumentParser:
     verify_parser = subparsers.add_parser("verify", help="Run deterministic file verifiers")
     verify_parser.add_argument("paths", nargs="*", type=_path, default=[Path.cwd()])
     verify_parser.add_argument("--workspace", type=_path, default=Path.cwd())
+    verify_models = subparsers.add_parser(
+        "verify-models",
+        help="Run generic verification probes against Fabric-discovered models",
+    )
+    verify_models.add_argument("--worker", help="Limit to one worker identity")
+    verify_models.add_argument("--model-name", help="Limit to one opaque model tag")
+    verify_models.add_argument("--tier", action="append", type=int, choices=(0, 1, 2, 3))
+    verify_models.add_argument("--persist", action="store_true", help="Append evidence records")
+    verify_models.add_argument("--json", action="store_true")
 
     eval_parser = subparsers.add_parser("eval", help="Evaluate routing cases")
     eval_parser.add_argument("--file", type=_path, help="JSONL evaluation file")
@@ -139,17 +184,27 @@ def build_parser() -> argparse.ArgumentParser:
     residency_status.add_argument("--json", action="store_true")
     residency_warm = residency_sub.add_parser("warm")
     residency_warm.add_argument("worker")
+    residency_warm.add_argument("--model")
     residency_warm.add_argument("--json", action="store_true")
+    residency_release = residency_sub.add_parser(
+        "release", help="Release one exact worker-local model and verify provider state"
+    )
+    residency_release.add_argument("worker")
+    residency_release.add_argument("model")
+    residency_release.add_argument("--json", action="store_true")
 
     commons_parser = subparsers.add_parser(
         "commons", help="Browse controller-local Commons without a model"
     )
     commons_sub = commons_parser.add_subparsers(dest="commons_command", required=True)
-    for name in ("status", "work"):
+    for name in ("status", "work", "opportunities"):
         command = commons_sub.add_parser(name)
         command.add_argument("--json", action="store_true")
-        if name == "work":
+        if name in {"work", "opportunities"}:
             command.add_argument("--limit", type=int, default=100)
+    commons_work_status = commons_sub.add_parser("work-status")
+    commons_work_status.add_argument("work_id")
+    commons_work_status.add_argument("--json", action="store_true")
     commons_query = commons_sub.add_parser("query")
     commons_query.add_argument("--kind")
     commons_query.add_argument("--state")
@@ -221,11 +276,16 @@ def _emit(value: object, *, json_output: bool = False) -> None:
     )
 
 
-def _fleet(config, *, refresh: bool = False) -> tuple[InventoryAwareFabricSession, FleetService]:
+def _fleet(
+    config,
+    *,
+    refresh: bool = False,
+    refresh_inventory: bool = True,
+) -> tuple[InventoryAwareFabricSession, FleetService]:
     session = InventoryAwareFabricSession(
         config.fabric, residency_config=config.model_residency
     )
-    session.initialize()
+    session.initialize(refresh_inventory=refresh_inventory)
     fleet = FleetService(config, session)
     if refresh:
         fleet.refresh(reconcile=False)
@@ -283,103 +343,200 @@ def _plan_payload(plan) -> dict[str, object]:
     }
 
 
-def _router_status_payload(config) -> dict[str, object]:
-    status = router_status(config)
-    return {
-        "enabled": status.enabled,
-        "mode": status.mode,
-        "backend": status.backend,
-        "model": status.model,
-        "revision": status.revision,
-        "device": status.device,
-        "local_files_only": status.local_files_only,
-        "cache_directory": str(status.cache_directory),
-        "missing_dependencies": status.missing_dependencies,
-        "cached": status.cached,
-        "active": status.active,
-        "state": status.state,
-        "detail": status.detail,
-    }
-
-
-def _print_router_status(config) -> None:
-    status = router_status(config)
-    print("Semantic router:")
-    print(f"  state:      {status.state}")
-    print(f"  enabled:    {status.enabled}")
-    print(f"  mode:       {status.mode}")
-    print(f"  backend:    {status.backend}")
-    print(f"  model:      {status.model or '(not configured)'}")
-    print(f"  revision:   {status.revision or '(not configured)'}")
-    print(f"  device:     {status.device}")
-    print(f"  cached:     {status.cached}")
-    print(f"  active:     {status.active}")
-    print(f"  cache:      {status.cache_directory}")
-    if status.missing_dependencies:
-        print("  missing:    " + ", ".join(status.missing_dependencies))
-    if status.detail:
-        print(f"  detail:     {status.detail}")
-
-
 def cmd_init(args: argparse.Namespace) -> int:
+    from .portable_cli import install_portable_cli
+
     destination = initialize_config(args.path, args.force)
     print(destination)
+    for path in install_portable_cli():
+        print(path)
     return 0
 
 
+def cmd_install_cli(args: argparse.Namespace) -> int:
+    del args
+    from .portable_cli import install_portable_cli
+
+    for path in install_portable_cli():
+        print(path)
+    return 0
+
+
+def _bounded_probe(
+    name: str,
+    fn: Callable[[], Any],
+    *,
+    timeout_seconds: float,
+) -> dict[str, Any]:
+    """Run one doctor probe with a real wall-clock bound.
+
+    Thread-pool timeouts cannot interrupt a CPython thread blocked in a
+    socket recv that holds progress in another library. SIGALRM can.
+    """
+
+    if os.name != "posix":
+        try:
+            detail = fn()
+        except Exception as exc:
+            return {"name": name, "status": "ERROR", "detail": str(exc)}
+        return {"name": name, "status": "PASS", "detail": detail}
+
+    timed_out = False
+
+    def _alarm(_signum: int, _frame: object) -> None:
+        nonlocal timed_out
+        timed_out = True
+        raise TimeoutError(name)
+
+    previous = signal.signal(signal.SIGALRM, _alarm)
+    signal.setitimer(signal.ITIMER_REAL, float(timeout_seconds))
+    try:
+        detail = fn()
+        return {"name": name, "status": "PASS", "detail": detail}
+    except TimeoutError:
+        return {
+            "name": name,
+            "status": "TIMEOUT",
+            "detail": f"{name} probe exceeded {timeout_seconds:.0f}s",
+        }
+    except Exception as exc:
+        if timed_out:
+            return {
+                "name": name,
+                "status": "TIMEOUT",
+                "detail": f"{name} probe exceeded {timeout_seconds:.0f}s",
+            }
+        return {"name": name, "status": "ERROR", "detail": str(exc)}
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0.0)
+        signal.signal(signal.SIGALRM, previous)
+
+
+def doctor_outcome(
+    subsystems: list[dict[str, Any]],
+    route_availability: list[dict[str, Any]],
+) -> str:
+    """Summarize doctor health without treating optional route gaps as transport failure."""
+
+    core_failed = [
+        item
+        for item in subsystems
+        if item.get("status") != "PASS" and not str(item.get("name", "")).startswith("Worker ")
+    ]
+    worker_failed = [
+        item
+        for item in subsystems
+        if str(item.get("name", "")).startswith("Worker ") and item.get("status") != "PASS"
+    ]
+    fabric_roles = [item for item in route_availability if item.get("provider") == "fabric"]
+    unavailable_routes = [item for item in fabric_roles if not item.get("available")]
+    if any(item.get("status") == "ERROR" for item in core_failed):
+        return "ERROR"
+    if any(item.get("status") == "TIMEOUT" for item in core_failed):
+        return "UNKNOWN"
+    if worker_failed or unavailable_routes:
+        return "DEGRADED"
+    if core_failed:
+        return "UNKNOWN"
+    return "PASS"
+
+
+def _doctor_progress(message: str, *, json_output: bool) -> None:
+    print(message, file=sys.stderr if json_output else sys.stdout, flush=True)
+
+
 def cmd_doctor(args: argparse.Namespace) -> int:
+    json_output = bool(args.json)
+    _doctor_progress("elh doctor: probing subsystems", json_output=json_output)
     config = load_config(args.config)
     config_path = args.config or default_config_path()
-    commons_service = _commons(config)
-    commons_status = commons_service.status()
-    session, fleet = _fleet(config)
-    snapshot = fleet.snapshot()
-    route_availability: list[dict[str, object]] = []
-    failures = 0
-    if commons_status["enabled"] and not commons_status["ready"]:
-        failures += 1
-    router = router_status(config)
-    if router.enabled and router.state in {
-        "unsupported",
-        "unpinned",
-        "missing-dependencies",
-    }:
-        failures += 1
-    if router.enabled and router.local_files_only and router.state == "not-cached":
-        failures += 1
-    local_names = {
-        str(item.get("name") or item.get("model"))
-        for item in snapshot["controller"]["installed_models"]
+    subsystems: list[dict[str, Any]] = []
+
+    def commons_probe() -> dict[str, Any]:
+        return _commons(config).status()
+
+    def fabric_probe() -> dict[str, Any]:
+        session, fleet = _fleet(config, refresh_inventory=False)
+        status = session.status()
+        snapshot = fleet.snapshot(status)
+        return {
+            "state": status.state,
+            "execution_transport": status.execution_transport,
+            "detail": status.detail,
+            "workers": snapshot["fabric"]["workers"],
+            "controller": snapshot["controller"],
+            "role_availability": fleet.role_availability(snapshot, status=status),
+        }
+
+    def ollama_probe() -> dict[str, Any]:
+        url = config.ollama.base_url.rstrip("/") + "/api/tags"
+        with urllib.request.urlopen(url, timeout=5) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+        models = payload.get("models") if isinstance(payload, dict) else None
+        if not isinstance(models, list):
+            raise RuntimeError("controller Ollama returned a malformed tags document")
+        return {"model_count": len(models)}
+
+    def cli_probe() -> dict[str, Any]:
+        from .portable_cli import WRAPPERS, install_portable_cli
+
+        bin_dir = Path(sys.prefix) / ("Scripts" if os.name == "nt" else "bin")
+        missing = [
+            name
+            for name in ("mncs-harness", "mncs-harness-tui", "mncs-harness-fabric")
+            if not (bin_dir / name).exists()
+        ]
+        repaired: list[str] = []
+        if missing:
+            repaired = [str(path.name) for path in install_portable_cli(bin_dir)]
+        present = {
+            name: (bin_dir / name).exists()
+            for name in WRAPPERS
+        }
+        if not present.get("mncs-harness"):
+            raise RuntimeError("canonical mncs-harness launcher is still missing after repair")
+        return {
+            "canonical": "mncs-harness",
+            "compatibility": ["elh", "epi13-harness"],
+            "present": present,
+            "repaired": repaired,
+        }
+
+    commons_result = _bounded_probe("Commons", commons_probe, timeout_seconds=8)
+    fabric_result = _bounded_probe("Fabric", fabric_probe, timeout_seconds=35)
+    ollama_result = _bounded_probe("Ollama", ollama_probe, timeout_seconds=6)
+    cli_result = _bounded_probe("CLI", cli_probe, timeout_seconds=4)
+    subsystems.extend((commons_result, fabric_result, ollama_result, cli_result))
+
+    commons_status = commons_result.get("detail") if commons_result["status"] == "PASS" else {}
+    if not isinstance(commons_status, dict):
+        commons_status = {"code": commons_result["status"], "detail": commons_result["detail"]}
+    fabric_detail = fabric_result.get("detail") if fabric_result["status"] == "PASS" else {}
+    snapshot = {
+        "controller": fabric_detail.get("controller", {}) if isinstance(fabric_detail, dict) else {},
+        "fabric": {"workers": fabric_detail.get("workers", []) if isinstance(fabric_detail, dict) else []},
     }
-    for role, model in config.models.items():
-        if model.provider == "fabric" and config.fabric.enabled:
-            _effective, selection = session.resolve_model(role, model)
-            available = bool(selection and selection.available)
-            route_availability.append(
-                {
-                    "role": role,
-                    "provider": "fabric",
-                    "configured_model": model.name,
-                    "resolved_model": selection.selected_model if selection else None,
-                    "worker": selection.worker_id if selection else None,
-                    "available": available,
-                    "reason": selection.reason if selection else "no Fabric selection",
-                }
-            )
-        else:
-            available = model.name in local_names
-            route_availability.append(
-                {
-                    "role": role,
-                    "provider": "controller-ollama",
-                    "configured_model": model.name,
-                    "resolved_model": model.name,
-                    "worker": "controller",
-                    "available": available,
-                    "reason": "controller-local installed inventory",
-                }
-            )
-        failures += int(not available)
+    for worker in snapshot["fabric"]["workers"]:
+        worker_id = str(worker.get("worker_id") or "unknown-worker")
+        availability = str(worker.get("availability") or "UNKNOWN")
+        status = "PASS" if availability == "AVAILABLE" else "ERROR"
+        subsystems.append(
+            {
+                "name": f"Worker {worker_id}",
+                "status": status,
+                "detail": {
+                    "availability": availability,
+                    "installed_model_count": worker.get("installed_model_count"),
+                    "loaded_model_names": worker.get("loaded_model_names"),
+                },
+            }
+        )
+
+    route_availability = (
+        list(fabric_detail.get("role_availability") or [])
+        if isinstance(fabric_detail, dict)
+        else []
+    )
 
     tools = {
         executable: shutil.which(executable)
@@ -389,42 +546,61 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         store = MetricsStore(config.metrics.path, config.metrics.store_prompt_text)
         store.recent(1)
         metrics = "writable"
+        subsystems.append({"name": "Metrics", "status": "PASS", "detail": metrics})
     except OSError as exc:
         metrics = f"ERROR: {exc}"
-        failures += 1
+        subsystems.append({"name": "Metrics", "status": "ERROR", "detail": str(exc)})
+
+    outcome = doctor_outcome(subsystems, route_availability)
+    failed = outcome not in {"PASS", "DEGRADED"}
+
+    def _public_detail(item: dict[str, Any]) -> Any:
+        detail = item.get("detail")
+        if item["name"] == "Fabric" and isinstance(detail, dict):
+            return {
+                "state": detail.get("state"),
+                "execution_transport": detail.get("execution_transport"),
+                "detail": detail.get("detail"),
+            }
+        return detail
+
     payload = {
-        "outcome": "PASS" if not failures else "UNKNOWN",
+        "outcome": outcome,
         "python": sys.version.split()[0],
         "config": str(config_path),
+        "subsystems": [
+            {"name": item["name"], "status": item["status"], "detail": _public_detail(item)}
+            for item in subsystems
+        ],
         "metrics": {"path": str(config.metrics.path), "status": metrics},
-        "router": _router_status_payload(config),
+        "routing": {
+            "mode": "deterministic",
+            "semantic_router": "removed",
+            "offline": True,
+        },
         "commons": commons_status,
         "fleet": snapshot,
         "role_availability": route_availability,
         "tools": tools,
     }
-    if args.json:
+    if json_output:
         _emit(payload, json_output=True)
     else:
         print(f"Python: {payload['python']}")
         print(f"Config: {config_path}")
-        _print_router_status(config)
-        print(
-            f"Commons: {commons_status['code']} profile={commons_status['profile']} "
-            f"records={commons_status['record_count']}"
-        )
-        controller = snapshot["controller"]
-        print(
-            f"Controller: generation={controller['generation_policy']} "
-            f"loaded={','.join(controller['loaded_generation_models']) or 'none'}"
-        )
-        for worker in snapshot["fabric"]["workers"]:
-            print(
-                f"Fabric {worker['worker_id']}: {worker.get('availability', 'UNKNOWN')} "
-                f"version={worker.get('worker_service_version') or 'UNKNOWN'} "
-                f"installed={worker.get('installed_model_count', 0)} "
-                f"loaded={','.join(worker.get('loaded_model_names', [])) or 'none'}"
-            )
+        print("Routing: deterministic policy + current Fabric inventory (semantic router removed)")
+        for item in subsystems:
+            detail = item["detail"]
+            if item["name"] == "Fabric" and isinstance(detail, dict):
+                summary = f"{detail.get('state')} transport={detail.get('execution_transport')}"
+            elif item["name"] == "Commons" and isinstance(detail, dict):
+                summary = f"{detail.get('code')} records={detail.get('record_count')}"
+            elif item["name"].startswith("Worker ") and isinstance(detail, dict):
+                loaded = ",".join(detail.get("loaded_model_names") or []) or "none"
+                summary = f"{detail.get('availability')} installed={detail.get('installed_model_count', 0)} loaded={loaded}"
+            else:
+                summary = detail if isinstance(detail, str) else json.dumps(detail, default=str)
+            print(f"{item['name']:<22} {item['status']:<8} {summary}")
         for item in route_availability:
             print(
                 f"Role {item['role']:8} {item['provider']:18} "
@@ -435,7 +611,31 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         for executable, location in tools.items():
             print(f"Tool {executable:10} {location or 'not installed (optional)'}")
         print(f"Metrics database: {metrics}")
-    return 1 if failures else 0
+        print(f"Overall: {outcome}")
+    return 1 if failed else 0
+
+
+def cmd_experiment_readiness(args: argparse.Namespace) -> int:
+    from .experiment_readiness import BLOCKED, UNKNOWN, inspect_live_config
+
+    config = load_config(args.config)
+    payload = inspect_live_config(config, profile=args.profile)
+    if args.json:
+        _emit(payload, json_output=True)
+    else:
+        print(f"Profile: {payload['profile']}")
+        print(f"Profile status: {payload.get('profile_status') or payload['status']}")
+        print(f"Claim boundary: {payload['claim_boundary']}")
+        print(f"Schema: {payload.get('schema')}")
+        print(f"Fabric classification: {payload.get('fabric_classification')}")
+        print(f"Stack identity: {payload['experiment_stack']['experiment_stack_identity']}")
+        print(f"Provenance: {payload['experiment_stack'].get('provenance_status')}")
+        for name, layer in payload["layers"].items():
+            print(f"{name:<22} {layer['status']:<8} {layer.get('evidence') or ''}")
+        for warning in payload.get("optional_warnings") or []:
+            print(f"optional warning      {warning.get('layer')}: {warning.get('status')}")
+        print(f"Overall: {payload['status']}")
+    return 1 if payload["status"] in {BLOCKED, UNKNOWN} else 0
 
 
 def cmd_models(args: argparse.Namespace) -> int:
@@ -486,16 +686,6 @@ def cmd_models(args: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_router(args: argparse.Namespace) -> int:
-    config = load_config(args.config)
-    if args.action == "status":
-        print(json.dumps(_router_status_payload(config), indent=2))
-        return 0
-    result = prepare_router(config)
-    print(json.dumps(_semantic_payload(result), indent=2))
-    return 0
-
-
 def cmd_pull(args: argparse.Namespace) -> int:
     config = load_config(args.config)
     roles = args.role or list(config.models)
@@ -509,12 +699,6 @@ def cmd_pull(args: argparse.Namespace) -> int:
             "Refusing to pull Fabric-backed roles on the controller: "
             + ", ".join(remote_roles)
             + ". Install models on the intended worker, then use `elh residency warm`.",
-            file=sys.stderr,
-        )
-        return 2
-    if config.controller.generation_policy == "router-only":
-        print(
-            "Controller generation policy is router-only; local generation pulls are denied.",
             file=sys.stderr,
         )
         return 2
@@ -558,11 +742,11 @@ def cmd_route(args: argparse.Namespace) -> int:
             "provider": "controller-ollama",
             "worker": "controller",
             "model": model.name,
-            "available": config.controller.generation_policy != "router-only",
+            "available": True,
             "loaded": False,
             "resident": False,
             "fallback": requested.allow_fallback,
-            "reason": f"controller policy is {config.controller.generation_policy}",
+            "reason": "local generation is available; deterministic routing is authoritative",
         }
     print(json.dumps(payload, indent=2))
     return 0
@@ -570,13 +754,30 @@ def cmd_route(args: argparse.Namespace) -> int:
 
 def _print_attempts(result, verbose: bool) -> None:
     print(f"Route: {' -> '.join(result.route.all_roles)}", file=sys.stderr)
+    print(f"Routing mode: {result.route.routing_override.mode}", file=sys.stderr)
     for attempt in result.attempts:
         status = "passed" if attempt.verification.passed else "failed"
+        worker = attempt.session_targets.inference.worker_identity or "unresolved"
         print(
             f"Attempt {attempt.role} ({attempt.model}): {status}; "
-            f"tools={len(attempt.tool_executions)}",
+            f"worker={worker}; tools={len(attempt.tool_executions)}",
             file=sys.stderr,
         )
+        if attempt.error:
+            print(f"  error={attempt.error}", file=sys.stderr)
+        stages = attempt.metrics.get("inference_stages")
+        if stages:
+            print(f"  stages={' -> '.join(str(item) for item in stages)}", file=sys.stderr)
+        residency = attempt.metrics.get("residency_reconciliation")
+        if residency:
+            print(f"  residency={residency}", file=sys.stderr)
+        record = attempt.metrics.get("fabric_record_identity")
+        request = attempt.metrics.get("fabric_request_identity")
+        if record or request:
+            print(f"  fabric request={request} record={record}", file=sys.stderr)
+        commons = attempt.metrics.get("commons_evidence_receipt")
+        if commons:
+            print(f"  commons={commons}", file=sys.stderr)
         if verbose:
             for check in attempt.verification.checks:
                 print(f"  CHECK {check}", file=sys.stderr)
@@ -591,7 +792,8 @@ def cmd_ask(args: argparse.Namespace) -> int:
     if not workspace.is_dir():
         raise ValueError(f"Workspace is not a directory: {workspace}")
     images = _validate_images(args.image)
-    result = LocalAgent(config).run(
+    print("elh: starting", file=sys.stderr, flush=True)
+    result = LocalAgent(config, refresh_inventory=False, warm_residency=False).run(
         task,
         workspace=workspace,
         images=images,
@@ -603,10 +805,80 @@ def cmd_ask(args: argparse.Namespace) -> int:
     return 0 if result.successful else 1
 
 
+def cmd_submit(args: argparse.Namespace) -> int:
+    override = _routing_override(args)
+    if override.mode not in {"WORKER_MODEL", "WORKER_MODEL_ROLE"}:
+        raise ValueError("elh submit requires exact --worker and --model-name pins")
+    config = load_config(args.config)
+    task = _task_text(args.task)
+    agent = LocalAgent(config, refresh_inventory=False, warm_residency=False)
+    role = override.role if override.role in config.models else (
+        "coder" if "coder" in config.models else next(iter(config.models))
+    )
+    base = config.models[role]
+    model, selection = agent.fabric_session.resolve_model(
+        role,
+        replace(base, name=str(override.model)),
+        override,
+    )
+    if selection is None or not selection.available or not selection.worker_id:
+        raise ValueError(selection.reason if selection else "exact pin could not be resolved")
+    agent._configure_fabric_provenance(task, role, model)
+    from .tools import ToolRegistry
+
+    registry = ToolRegistry(
+        Path.cwd(),
+        config.policy,
+        auto_approve=True,
+        interactive=False,
+        commons=agent.commons_session,
+    )
+    tools = registry.available_schemas(tuple(dict.fromkeys((*model.tools, *agent.commons_session.tool_names))))
+    accepted = agent.fabric_session.submit_chat(
+        model,
+        [{"role": "user", "content": task}],
+        worker_id=selection.worker_id,
+        idempotency_key=args.idempotency_key,
+        tools=tools or None,
+    )
+    payload = {
+        "outcome": "ACCEPTED",
+        "stage": "accepted",
+        "work_id": accepted.get("work_id"),
+        "worker": selection.worker_id,
+        "model": model.name,
+        "routing_mode": override.mode,
+        "execution_transport": accepted.get("execution_transport"),
+        "authority": "persistent-fabric",
+        "commons_authority": "none",
+    }
+    if args.json:
+        _emit(payload, json_output=True)
+    else:
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    return 0
+
+
+def cmd_work(args: argparse.Namespace) -> int:
+    config = load_config(args.config)
+    session = InventoryAwareFabricSession(config.fabric, residency_config=config.model_residency)
+    session.initialize(refresh_inventory=False)
+    if args.work_command == "status":
+        payload = session.work_status(args.work_id)
+    else:
+        payload = session.work_result(args.work_id)
+    payload["commons_authority"] = "none"
+    if args.json:
+        _emit(payload, json_output=True)
+    else:
+        print(json.dumps(payload, indent=2, sort_keys=True))
+    return 0
+
+
 def cmd_chat(args: argparse.Namespace) -> int:
     config = load_config(args.config)
     workspace = args.workspace.resolve()
-    agent = LocalAgent(config)
+    agent = LocalAgent(config, refresh_inventory=False, warm_residency=False)
     routing_override = _routing_override(args)
     print("Local harness chat. Each message is routed independently. Type /quit to exit.")
     while True:
@@ -627,6 +899,64 @@ def cmd_chat(args: argparse.Namespace) -> int:
         )
         _print_attempts(result, False)
         print(result.final_content)
+
+
+def cmd_verify_models(args: argparse.Namespace) -> int:
+    from .model_verification import discover_candidates, verify_candidate
+
+    config = load_config(args.config)
+    session, _fleet_view = _fleet(config, refresh_inventory=False)
+    status = session.status()
+    workers = [
+        worker
+        for worker in status.workers
+        if not args.worker or worker.get("worker_id") == args.worker
+    ]
+    found = discover_candidates(workers)
+    if args.model_name:
+        found = [item for item in found if item[1].get("name") == args.model_name]
+    tiers = set(args.tier or [0, 1])
+    probes = {
+        "reachability": lambda _name, _item: (
+            "PASS",
+            "implementation identity is present in CURRENT Fabric inventory",
+        ),
+        "marker_response": lambda _name, _item: (
+            "UNKNOWN",
+            "marker probe requires an explicit live inference session",
+        ),
+        "tool_call": lambda _name, _item: (
+            "UNKNOWN",
+            "tool probe requires an explicit live inference session",
+        ),
+        "file_read": lambda _name, _item: (
+            "UNKNOWN",
+            "vision/file probe requires an explicit live inference session",
+        ),
+        "fabric_receipt": lambda _name, _item: (
+            "PASS" if status.state == "available" else "UNKNOWN",
+            f"fabric state={status.state}",
+        ),
+    }
+    payload = []
+    for worker_id, item in found:
+        result = verify_candidate(
+            worker_id,
+            item,
+            probes=probes,
+            tiers=tiers,
+            persist=bool(args.persist),
+        )
+        payload.append(
+            {
+                "worker": result.worker_id,
+                "model": result.model,
+                "summary": result.summary,
+                "records": [record.public() for record in result.records],
+            }
+        )
+    _emit({"candidates": payload, "count": len(payload)}, json_output=args.json)
+    return 0 if found else 1
 
 
 def cmd_verify(args: argparse.Namespace) -> int:
@@ -764,14 +1094,42 @@ def cmd_residency(args: argparse.Namespace) -> int:
     session, fleet = _fleet(config, refresh=True)
     if args.residency_command == "status":
         payload = fleet.snapshot()["residency"]
+    elif args.residency_command == "warm":
+        if args.model:
+            results = fleet.residency.prepare_experiment(
+                "operator-explicit-warm",
+                [{"worker_id": args.worker, "model": args.model, "role": "operator"}],
+            )
+        else:
+            results = fleet.residency.reconcile(force_worker=args.worker)
+        payload = {
+            "outcome": "PASS",
+            "worker": args.worker,
+            "results": list(results),
+        }
+        outcomes = {item.get("outcome") for item in payload["results"]}
+        if outcomes != {"PASS"}:
+            payload["outcome"] = "UNKNOWN"
+        session.refresh_model_inventory()
+        payload["fleet"] = fleet.snapshot()["fabric"]
     else:
         payload = {
             "outcome": "PASS",
             "worker": args.worker,
-            "results": list(fleet.residency.reconcile(force_worker=args.worker)),
+            "model": args.model,
+            "results": list(
+                fleet.residency.release_experiment(
+                    "operator-explicit-release",
+                    [{
+                        "worker_id": args.worker,
+                        "model": args.model,
+                        "provider": "ollama",
+                        "managed": True,
+                    }],
+                )
+            ),
         }
-        outcomes = {item.get("outcome") for item in payload["results"]}
-        if outcomes != {"PASS"}:
+        if {item.get("outcome") for item in payload["results"]} != {"PASS"}:
             payload["outcome"] = "UNKNOWN"
         session.refresh_model_inventory()
         payload["fleet"] = fleet.snapshot()["fabric"]
@@ -787,6 +1145,10 @@ def cmd_commons(args: argparse.Namespace) -> int:
         payload = service.status()
     elif command == "work":
         payload = service.work(limit=args.limit)
+    elif command == "opportunities":
+        payload = service.opportunities(limit=args.limit)
+    elif command == "work-status":
+        payload = service.work_status(args.work_id)
     elif command == "query":
         payload = service.query(
             kind=args.kind,
@@ -828,14 +1190,18 @@ def cmd_commons(args: argparse.Namespace) -> int:
 
 COMMANDS = {
     "init": cmd_init,
+    "install-cli": cmd_install_cli,
     "doctor": cmd_doctor,
+    "experiment-readiness": cmd_experiment_readiness,
     "models": cmd_models,
-    "router": cmd_router,
     "pull": cmd_pull,
     "route": cmd_route,
     "ask": cmd_ask,
+    "submit": cmd_submit,
+    "work": cmd_work,
     "chat": cmd_chat,
     "verify": cmd_verify,
+    "verify-models": cmd_verify_models,
     "eval": cmd_eval,
     "metrics": cmd_metrics,
     "fabric": cmd_fabric,
@@ -854,7 +1220,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         FileExistsError,
         OSError,
         CommonsError,
-        SemanticRouterError,
     ) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2

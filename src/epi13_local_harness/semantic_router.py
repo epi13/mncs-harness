@@ -1,3 +1,10 @@
+"""Deprecated compatibility surface for pre-0.6.4 router configurations.
+
+The normal harness never imports or initializes this backend.  It remains only
+to let older callers fail safely while migrating to deterministic policy and
+Fabric inventory routing; the optional router extra has been removed.
+"""
+
 from __future__ import annotations
 
 import importlib.util
@@ -236,6 +243,8 @@ def activate_router(config: HarnessConfig) -> bool:
     recorded for Doctor/status and deterministic routing remains available.
     """
 
+    # Compatibility-only activation for callers that explicitly opt into the
+    # removed backend. Normal CLI/TUI paths never call this function.
     if not config.router.enable_semantic_routing or config.router.backend != "transformers":
         return False
     key = _cache_key(config)
@@ -259,15 +268,13 @@ def route_with_backend(
         return None, f"semantic backend {config.router.backend!r} is not implemented"
     if profile.is_high_risk:
         return None, "high-risk intent kept on deterministic reviewer route"
-
     lanes = _eligible_lanes(config, profile)
     if not lanes:
         return None, "no eligible semantic-routing lanes"
-
     key = _cache_key(config)
     try:
         result = get_router_backend(config).route(text, lanes)
-    except Exception as exc:  # model boundary must preserve deterministic fallback
+    except Exception as exc:
         detail = f"{type(exc).__name__}: {exc}"
         _LAST_ERRORS[key] = detail
         return None, detail
@@ -296,30 +303,13 @@ def _is_snapshot_cached(config: HarnessConfig) -> bool:
 
 def router_status(config: HarnessConfig) -> RouterRuntimeStatus:
     router = config.router
-    missing = _missing_dependencies()
-    key = _cache_key(config)
-    backend = _BACKENDS.get(key)
-    active = bool(backend and backend.loaded)
-    cached = _is_snapshot_cached(config)
-    detail = _LAST_ERRORS.get(key, "")
-
-    if not router.enable_semantic_routing:
-        state = "disabled"
-    elif router.backend != "transformers":
-        state = "unsupported"
-        detail = detail or f"backend {router.backend!r} is not implemented"
-    elif not _FULL_COMMIT_RE.fullmatch(router.revision):
-        state = "unpinned"
-        detail = detail or "a full 40-character model revision is required"
-    elif missing:
-        state = "missing-dependencies"
-        detail = detail or "missing: " + ", ".join(missing)
-    elif active:
-        state = "active"
-    elif cached:
-        state = "cached"
-    else:
-        state = "not-cached"
+    # Do not inspect optional packages or Hugging Face caches here.  Doctor and
+    # normal inference must remain useful on an offline, deterministic install.
+    missing: tuple[str, ...] = ()
+    active = False
+    cached = False
+    state = "disabled" if not router.enable_semantic_routing else "removed"
+    detail = _LAST_ERRORS.get(_cache_key(config), "semantic router removed; deterministic policy and Fabric inventory are used")
 
     return RouterRuntimeStatus(
         enabled=router.enable_semantic_routing,

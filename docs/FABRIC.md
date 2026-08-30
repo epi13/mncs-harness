@@ -44,8 +44,20 @@ quantization, KV cache, and actual layer movement.
 ## Configuration
 
 Service-mode consumers require a Fabric public contract that advertises
-`persistent_fleet_read`; the current supported contract is `0.2.0a15` or newer in
-the `0.2.x` line. Persistent execution and capability ingestion are selected
+`persistent_fleet_read`. Fabric compatibility is three distinct identities:
+
+```text
+MIN_SUPPORTED_FABRIC          0.2.0a17  6285f7d3f49994e926aa0468a6cc2b644f9a3e85
+EXPERIMENT_CERTIFIED_FABRIC   0.2.0a30  02fea5b5571e3b43a532d904f56468f99c75e482
+                                      sha256:188d6b6a64d215871147c157b60a5d066776505b1c7d5d6d52434de45db9c940
+FABRIC_MAIN_CANARY            main      forward-compatibility only
+```
+
+The package floor remains `0.2.0a17` or newer in the `0.2.x` line. Experiments
+are certified against the exact `EXPERIMENT_CERTIFIED_FABRIC` commit, not a
+floating `main` or a label such as `latest`. Version metadata cannot override
+a missing required persistent-service capability. Persistent execution and
+capability ingestion are selected
 from public feature metadata rather than inferred from a package version. The
 current contract retains provider-neutral worker capability observations,
 ensures each explicitly supplied request bundle is staged after placement, and
@@ -73,7 +85,7 @@ controller_id = "epi13-local-harness"
 service_socket = "~/.local/state/mncs-fabric/controller.sock"
 service_timeout_seconds = 5.0
 consumer_identity = "epi13-local-harness"
-state_path = "~/.local/state/epi13-local-harness/fabric.jsonl"
+state_path = "~/.local/state/mncs-harness/fabric.jsonl"
 fallback_to_local = true
 refresh_on_startup = true
 refresh_timeout_seconds = 5.0
@@ -154,6 +166,59 @@ connection, fleet availability, execution transport, capability inventory, and
 generation availability. Worker-initiated rendezvous is a separate planned
 Fabric feature and is never inferred from a package version.
 
+`elh ask` reads the persistent controller inventory and dispatches. Exact
+`--worker` / `--model-name` pins do not refresh remote inventories or
+reconcile fleet residency. `LocalAgent.run()` no longer calls
+`refresh_fabric_inventory()` on a manual pin. Resident warming remains
+`elh residency warm`, TUI refresh, and a scoped best-effort restore only
+when inference used a non-resident model on that one worker.
+
+Legacy `[router] enable_semantic_routing = true` with the Transformers
+backend is ignored during normal execution. Only the explicit heuristic
+compatibility backend may still annotate a lane.
+
+Automatic and role-based placement use CURRENT capability inventory only.
+UNKNOWN, unavailable workers, and STALE inventory fail closed for AUTO/ROLE.
+An exact operator pin (`--worker` plus `--model-name`) may still use STALE
+persistent inventory when the worker is AVAILABLE and the model is represented.
+The distributed capability graph projects CURRENT model facts only; a stale
+worker may appear with `capability_inventory_status = STALE` and no model
+entries.
+
+Doctor, fleet role availability, and other batch diagnostics resolve every
+configured role against one captured Fabric status. They do not call
+`status()` once per role.
+
+Exact-pin inference can be accepted as detached persistent Fabric work:
+
+```bash
+elh submit 'Reply with exactly: MARKER' --worker fabric-worker-01 --model-name granite3.3:2b --json
+elh work status <work_id>
+elh work result <work_id>
+```
+
+This uses Fabric `submit_execution` / `execution.status` / `execution.result`.
+The initiating client may disconnect. Commons does not authorize execution.
+
+Worker-local Ollama invocation emits `ELH_FABRIC_STAGE` lines
+(`worker-started`, `provider-connecting`, `inference-started`,
+`inference-completed`, `completed` / `failed`) so a still-running job is not an
+empty `stdout=""`. `PYTHONUNBUFFERED=1` is set on those jobs.
+
+`elh fabric refresh` records installed and currently loaded Ollama models from
+the worker loopback API, including `/api/show` capabilities. A model appearing
+in `ollama list` is not proof that it is loadable: use `elh residency warm
+WORKER` or a small routed inference to verify the provider. HTTP 4xx/5xx bodies,
+connection failures, and timeouts are retained as an unavailable observation;
+the router will not select stale or unknown inventory. Persistent service
+dispatch temporarily extends the short control-socket timeout for a bounded
+job (never beyond the transport's 30-second ceiling), so cold model loads do
+not get mislabeled as an immediate routing success.
+When Ollama returns `HTTP 500: unable to load model` with a blob identity,
+retain that diagnostic and have the operator verify disk/permissions and
+re-pull the named model; Harness never deletes or silently replaces model
+blobs.
+
 Completed attempts show provider, worker, placement mode, precision, and Fabric
 identities. They also record independent inference, workspace, and tool-execution
 targets. The SQLite migration is additive and does not store prompt text by default.
@@ -164,6 +229,35 @@ When a model requests a tool, the remote model response returns to the local
 harness. The local policy registry validates and executes the tool, and only the
 next inference request may cross Fabric. Remote inference never grants a worker
 access to the local workspace.
+
+For an explicitly remote tool target, `FabricTargetToolExecutor` first applies the
+same Harness command policy and approval decision. It currently accepts only Python
+argv workloads through Fabric's worker-local `@python` alias. The consumer selects an
+exact enrolled worker and an allowed workspace root; the adapter stages only that root
+as an immutable content bundle, converts in-root absolute arguments to bundle-relative
+paths, rejects POSIX and Windows drive/root/UNC/device forms plus mixed-separator
+parent traversal, and requires a relative Python entry point to resolve inside the
+selected bundle. Non-path CLI values such as URLs and `model:name` remain opaque. It then calls
+`FabricClient.execute_target` with
+the Harness consumer context and an identity-addressed record of the policy decision.
+
+The adapter reads only public fleet and capability records. It does not receive worker
+addresses, TLS material, registry paths, rendezvous sessions, or remote staging paths.
+Fabric rechecks membership, presence, freshness, and runtime compatibility and returns
+target admission and execution evidence. A denial, disconnect, or malformed result is
+returned as a failed tool call; there is no controller-local or alternate-worker
+fallback. The authorization identity is Harness provenance, not Fabric proof that a
+semantic tool request was permitted. Automatic model-directed target choice and result
+material import remain future policy work.
+
+The immutable bundle and argv checks provide logical confinement, not an
+operating-system sandbox. Current Fabric execution records separately report the
+containment mode, provider, filesystem enforcement, and network enforcement.
+Fabric-owned Fedora/Linux deployments may require bubblewrap and fail closed when it
+is unavailable; `DECLARED_OFFLINE` execution then receives a network namespace.
+An older or explicitly `compatibility-uncontained` worker still runs with the service
+account's ambient filesystem/network authority. Harness must not infer containment
+from bundle verification or a Fabric package version alone.
 
 In `transitional` mode, persistent Fabric remains authoritative for membership,
 presence, and fleet identity. Bounded execution and worker-local observations
@@ -202,7 +296,7 @@ suite.
 # Persistent Fabric consumer boundary
 
 Fabric is persistent infrastructure owned by `mncs-fabric-controller.service`.
-Local Harness is an ordinary `FabricClient` consumer and never uses
+MNCS Harness is an ordinary `FabricClient` consumer and never uses
 `FabricAdminClient`. Service mode reads the shared consumer AF_UNIX socket and
 closes only its own connection; Harness shutdown is not worker disconnect and
 does not stop Fabric.
@@ -217,14 +311,14 @@ consumer_identity = "epi13-local-harness"
 ```
 
 `embedded` is an explicit compatibility mode that retains the historical
-worker/registry setup. `transitional` reads fleet authority from the persistent
-service but uses a separate embedded-direct client only for bounded execution
-until Fabric exposes execution dispatch over the service boundary. It is
-temporary and clearly labeled in diagnostics/results.
+worker/registry setup. `transitional` remains an explicit compatibility mode for an
+older Fabric contract and is clearly labeled in diagnostics/results.
 
 Service mode reports the controller, fleet, execution, and inventory states
 independently. A connected controller does not imply executable inference:
-Fabric 0.2.0a15 currently reports `FABRIC_SERVICE_EXECUTION_UNSUPPORTED` for
-execution, model inventory probes, residency warming, and capability ingestion.
-Future public contract feature flags can enable those operations without
-changing the Harness routing/session boundary.
+the static package contract is only a compatibility ceiling. Harness derives
+inference dispatch, inventory, residency, and capability-ingestion support from the
+live service projection and fails closed with `FABRIC_SERVICE_EXECUTION_UNSUPPORTED`
+when a connected service does not advertise execution. A configured backend or
+rendezvous worker can advertise those features without changing the Harness
+routing/session boundary.

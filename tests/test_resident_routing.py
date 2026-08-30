@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import unittest
 from dataclasses import replace
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from types import SimpleNamespace
 
 from epi13_local_harness.agent import LocalAgent
@@ -28,6 +30,7 @@ def _worker(
     models: list[dict[str, object]],
     *,
     memory: int = 32_000_000_000,
+    available_memory: int | None = None,
     availability: str = "AVAILABLE",
     freshness: str = "CURRENT",
 ) -> dict[str, object]:
@@ -37,7 +40,12 @@ def _worker(
         "availability": availability,
         "model_inventory_status": freshness,
         "model_inventory": models,
-        "resource_snapshot": {"host_memory_total_bytes": memory},
+        "resource_snapshot": {
+            "host_memory_total_bytes": memory,
+            "host_memory_available_bytes": (
+                memory // 2 if available_memory is None else available_memory
+            ),
+        },
     }
 
 
@@ -55,6 +63,73 @@ class _ResidencySession:
         del keep_alive, timeout_seconds
         self.warmed.append((worker_id, model))
         return {"worker_id": worker_id, "model": model, "loaded": True}
+
+
+class _ExperimentResidencySession:
+    def __init__(self, status: FabricStatus) -> None:
+        self._status = status
+        self.warms: list[tuple[str, str, object]] = []
+        self.releases: list[tuple[str, str]] = []
+
+    def status(self) -> FabricStatus:
+        return self._status
+
+    def refresh_model_inventory(self) -> FabricStatus:
+        return self._status
+
+    @staticmethod
+    def residency_capability(provider_namespace: str) -> dict[str, object]:
+        return {
+            "provider": provider_namespace,
+            "supported": provider_namespace == "ollama",
+            "actions": ["observe", "release", "warm"] if provider_namespace == "ollama" else [],
+        }
+
+    def _model(self, worker_id: str, model_name: str) -> dict[str, object]:
+        worker = next(item for item in self._status.workers if item["worker_id"] == worker_id)
+        return next(item for item in worker["model_inventory"] if item["name"] == model_name)
+
+    def establish_model_residency(
+        self,
+        worker_id: str,
+        model_name: str,
+        *,
+        provider_namespace: str,
+        keep_alive: object,
+        timeout_seconds: float,
+        policy_mode: str,
+        experiment_id: str,
+    ) -> dict[str, object]:
+        del provider_namespace, timeout_seconds, policy_mode, experiment_id
+        model = self._model(worker_id, model_name)
+        preexisting = bool(model.get("loaded"))
+        model["loaded"] = True
+        self.warms.append((worker_id, model_name, keep_alive))
+        return {
+            "loaded": True,
+            "preexisting_loaded": preexisting,
+            "remaining_loaded_models": [model_name],
+        }
+
+    def release_model_residency(
+        self,
+        worker_id: str,
+        model_name: str,
+        *,
+        provider_namespace: str,
+        timeout_seconds: float,
+        experiment_id: str,
+    ) -> dict[str, object]:
+        del provider_namespace, timeout_seconds, experiment_id
+        model = self._model(worker_id, model_name)
+        preexisting = bool(model.get("loaded"))
+        model["loaded"] = False
+        self.releases.append((worker_id, model_name))
+        return {
+            "loaded": False,
+            "preexisting_loaded": preexisting,
+            "remaining_loaded_models": [],
+        }
 
 
 class ResidentRoutingTests(unittest.TestCase):
@@ -99,6 +174,112 @@ class ResidentRoutingTests(unittest.TestCase):
             {"gpu": True, "cpu": True, "arm": True},
         )
 
+    def test_experiment_residency_warms_reuses_and_releases_exact_model(self) -> None:
+        worker = _worker("gpu", [_model("qwen3:8b", 5_000_000_000)])
+        session = _ExperimentResidencySession(
+            FabricStatus(True, "available", "controller", workers=(worker,))
+        )
+        manager = ResidencyManager(self.config, session)
+        assignments = [{"worker_id": "gpu", "model": "qwen3:8b", "role": "coder"}]
+
+        first = manager.prepare_experiment("exp-one", assignments)
+        self.assertEqual(first[0]["code"], "RESIDENCY_WARMED")
+        self.assertTrue(first[0]["managed"])
+        self.assertEqual(session.warms, [("gpu", "qwen3:8b", -1)])
+
+        reused = manager.prepare_experiment("exp-one", assignments, prior_leases=first)
+        self.assertEqual(reused[0]["code"], "RESIDENCY_REUSED")
+        self.assertTrue(reused[0]["managed"])
+        self.assertTrue(reused[0]["preexisting_loaded"])
+
+        released = manager.release_experiment("exp-one", list(reused))
+        self.assertEqual(released[0]["code"], "RESIDENCY_RELEASED")
+        self.assertFalse(worker["model_inventory"][0]["loaded"])
+        repeated = manager.release_experiment("exp-one", list(reused))
+        self.assertEqual(repeated[0]["code"], "RESIDENCY_ALREADY_RELEASED")
+
+    def test_experiment_residency_never_releases_preexisting_unmanaged_model(self) -> None:
+        worker = _worker("gpu", [_model("qwen3:8b", 5_000_000_000, loaded=True)])
+        session = _ExperimentResidencySession(
+            FabricStatus(True, "available", "controller", workers=(worker,))
+        )
+        manager = ResidencyManager(self.config, session)
+        leases = manager.prepare_experiment(
+            "exp-preexisting",
+            [{"worker_id": "gpu", "model": "qwen3:8b", "role": "coder"}],
+        )
+        self.assertFalse(leases[0]["managed"])
+        result = manager.release_experiment("exp-preexisting", list(leases))
+        self.assertEqual(result[0]["code"], "RESIDENCY_LEFT_PREEXISTING")
+        self.assertTrue(worker["model_inventory"][0]["loaded"])
+        self.assertEqual(session.releases, [])
+
+    def test_experiment_residency_fails_closed_on_stale_or_insufficient_resources(self) -> None:
+        aged_observation = _worker(
+            "gpu", [_model("qwen3:8b", 5_000_000_000)]
+        )
+        aged_observation["capability_observation"] = {
+            "captured_at": (
+                datetime.now(UTC) - timedelta(seconds=301)
+            ).isoformat()
+        }
+        cases = (
+            (
+                _worker(
+                    "gpu",
+                    [_model("qwen3:8b", 5_000_000_000)],
+                    freshness="STALE",
+                ),
+                "RESIDENCY_INVENTORY_NOT_CURRENT",
+            ),
+            (
+                _worker(
+                    "gpu",
+                    [_model("qwen3:8b", 5_000_000_000)],
+                    available_memory=2_000_000_000,
+                ),
+                "RESIDENCY_RESOURCE_POLICY_REJECTED",
+            ),
+            (aged_observation, "RESIDENCY_OBSERVATION_STALE"),
+        )
+        for worker, expected in cases:
+            with self.subTest(expected=expected):
+                session = _ExperimentResidencySession(
+                    FabricStatus(True, "available", "controller", workers=(worker,))
+                )
+                result = ResidencyManager(self.config, session).prepare_experiment(
+                    "exp-fail-closed",
+                    [{"worker_id": "gpu", "model": "qwen3:8b"}],
+                )
+                self.assertEqual(result[0]["code"], expected)
+                self.assertEqual(session.warms, [])
+
+    def test_experiment_residency_refuses_conflicts_and_pin_overflow(self) -> None:
+        worker = _worker(
+            "gpu",
+            [
+                _model("resident:a", 1_000_000_000, loaded=True),
+                _model("target:b", 1_000_000_000),
+            ],
+        )
+        session = _ExperimentResidencySession(
+            FabricStatus(True, "available", "controller", workers=(worker,))
+        )
+        manager = ResidencyManager(self.config, session)
+        conflict = manager.prepare_experiment(
+            "exp-conflict", [{"worker_id": "gpu", "model": "target:b"}]
+        )
+        self.assertEqual(conflict[0]["code"], "RESIDENCY_CONFLICTING_LOADED_MODELS")
+
+        overflow = manager.prepare_experiment(
+            "exp-overflow",
+            [
+                {"worker_id": "gpu", "model": "resident:a"},
+                {"worker_id": "gpu", "model": "target:b"},
+            ],
+        )
+        self.assertEqual(overflow[0]["code"], "RESIDENCY_PIN_LIMIT_EXCEEDED")
+
     def _inventory_session(self) -> InventoryAwareFabricSession:
         session = object.__new__(InventoryAwareFabricSession)
         session.residency_config = self.residency
@@ -111,6 +292,73 @@ class ResidentRoutingTests(unittest.TestCase):
         session.config = replace(self.config.fabric, enabled=True)
         session.status = lambda: self.status
         return session
+
+    def test_exact_pin_uses_persistent_capability_inventory(self) -> None:
+        worker = {
+            "worker_id": "fabric-worker-01",
+            "source": "remote",
+            "availability": "AVAILABLE",
+            "capability_inventory_status": "CURRENT",
+            "capability_observation": {
+                "availability": "AVAILABLE",
+                "capabilities": [
+                    {
+                        "kind": "model",
+                        "name": "granite3.3:2b",
+                        "namespace": "ollama",
+                        "attributes": {"size_bytes": 1_500_000_000, "loaded": True},
+                    }
+                ],
+            },
+        }
+        session = object.__new__(InventoryAwareFabricSession)
+        session.residency_config = self.residency
+        session.capability_api_available = True
+        session.model_inventory_errors = {}
+        session.model_inventories = {}
+        session.config = replace(self.config.fabric, enabled=True)
+        session.status = lambda: FabricStatus(True, "available", "controller", workers=(worker,))
+        _effective, selection = session.resolve_model(
+            "e2b",
+            self.config.models["e2b"],
+            RoutingOverride.from_values(worker="fabric-worker-01", model="granite3.3:2b"),
+        )
+        self.assertTrue(selection.available)
+        self.assertEqual(selection.worker_id, "fabric-worker-01")
+        self.assertEqual(selection.selected_model, "granite3.3:2b")
+
+    def test_exact_pin_accepts_stale_persistent_capability_inventory(self) -> None:
+        worker = {
+            "worker_id": "fabric-worker-01",
+            "source": "remote",
+            "availability": "AVAILABLE",
+            "capability_inventory_status": "STALE",
+            "capability_observation": {
+                "availability": "AVAILABLE",
+                "capabilities": [
+                    {
+                        "kind": "model",
+                        "name": "granite3.3:2b",
+                        "namespace": "ollama",
+                        "attributes": {"size_bytes": 1_500_000_000, "loaded": True},
+                    }
+                ],
+            },
+        }
+        session = object.__new__(InventoryAwareFabricSession)
+        session.residency_config = self.residency
+        session.capability_api_available = True
+        session.model_inventory_errors = {}
+        session.model_inventories = {}
+        session.config = replace(self.config.fabric, enabled=True)
+        session.status = lambda: FabricStatus(True, "available", "controller", workers=(worker,))
+        _effective, selection = session.resolve_model(
+            "e2b",
+            self.config.models["e2b"],
+            RoutingOverride.from_values(worker="fabric-worker-01", model="granite3.3:2b"),
+        )
+        self.assertTrue(selection.available)
+        self.assertEqual(selection.selected_model, "granite3.3:2b")
 
     def test_manual_worker_model_pair_is_exact_and_fail_closed(self) -> None:
         session = self._inventory_session()
@@ -191,8 +439,9 @@ class ResidentRoutingTests(unittest.TestCase):
         _effective, stale = session.resolve_model(
             "e4b", self.config.models["e4b"], RoutingOverride.from_values(worker="arm")
         )
-        self.assertFalse(stale.available)
-        self.assertIn("PINNED_INVENTORY_NOT_CURRENT", stale.reason)
+        self.assertTrue(stale.available)
+        self.assertEqual(stale.worker_id, "arm")
+        self.assertEqual(stale.selected_model, "gemma4:e2b")
 
     def test_model_and_worker_modes_use_per_worker_inventory(self) -> None:
         session = self._inventory_session()
@@ -229,7 +478,9 @@ class ResidentRoutingTests(unittest.TestCase):
         agent = object.__new__(LocalAgent)
         agent.config = self.config
         agent._last_residency_results = ()
+        agent._lifecycle_stages = []
         refreshes: list[str] = []
+        reconciled: list[str | None] = []
 
         class Session:
             def refresh_model_inventory(self) -> None:
@@ -239,7 +490,8 @@ class ResidentRoutingTests(unittest.TestCase):
                 return None
 
         class Residency:
-            def reconcile(self) -> tuple[dict[str, object], ...]:
+            def reconcile(self, *, force_worker: str | None = None) -> tuple[dict[str, object], ...]:
+                reconciled.append(force_worker)
                 return (
                     {
                         "worker_id": "gpu",
@@ -265,12 +517,108 @@ class ResidentRoutingTests(unittest.TestCase):
 
         agent._restore_residency_after_attempt(attempt)
 
-        self.assertEqual(refreshes, ["refresh"])
+        self.assertEqual(refreshes, [])
+        self.assertEqual(reconciled, ["gpu"])
         self.assertEqual(
             attempt.metrics["residency_reconciliation"][0]["code"],
             "RESIDENCY_WARMED",
         )
         self.assertTrue(attempt.metrics["residency_reconciliation"][0]["loaded"])
+
+    def test_restore_skips_when_exact_route_used_declared_resident(self) -> None:
+        agent = object.__new__(LocalAgent)
+        agent.config = self.config
+        agent._last_residency_results = ()
+        agent._lifecycle_stages = []
+        calls: list[str] = []
+
+        class Residency:
+            def reconcile(self, *, force_worker: str | None = None) -> tuple[dict[str, object], ...]:
+                calls.append(force_worker or "*")
+                return ()
+
+        agent.fleet = SimpleNamespace(residency=Residency())
+        attempt = ModelAttempt(
+            role="e4b",
+            model="gemma4:e4b",
+            content="done",
+            thinking="",
+            metrics={},
+            tool_executions=[],
+            verification=VerificationResult(True, (), ()),
+            session_targets=SessionTargets.remote_inference("gpu"),
+        )
+        agent._restore_residency_after_attempt(attempt)
+        self.assertEqual(calls, [])
+        self.assertEqual(
+            attempt.metrics["residency_reconciliation"][0]["code"],
+            "RESIDENCY_UNCHANGED",
+        )
+
+    def test_restore_reports_not_configured_when_no_declared_resident(self) -> None:
+        agent = object.__new__(LocalAgent)
+        agent.config = replace(self.config, model_residency=ModelResidencyConfig(enabled=True))
+        agent._last_residency_results = ()
+        agent._lifecycle_stages = []
+        agent.fleet = SimpleNamespace(residency=SimpleNamespace(reconcile=lambda **kwargs: (_ for _ in ()).throw(AssertionError("must not reconcile"))))
+        attempt = ModelAttempt(
+            role="e4b",
+            model="gemma4:e4b",
+            content="done",
+            thinking="",
+            metrics={},
+            tool_executions=[],
+            verification=VerificationResult(True, (), ()),
+            session_targets=SessionTargets.remote_inference("gpu"),
+        )
+        agent._restore_residency_after_attempt(attempt)
+        self.assertEqual(
+            attempt.metrics["residency_reconciliation"][0]["code"],
+            "RESIDENCY_NOT_CONFIGURED",
+        )
+        self.assertIsNone(attempt.metrics["residency_reconciliation"][0]["loaded"])
+
+    def test_exact_pin_run_does_not_refresh_or_warm_fleet(self) -> None:
+        agent = object.__new__(LocalAgent)
+        agent.config = replace(self.config, fabric=replace(self.config.fabric, enabled=True))
+        agent._lifecycle_stages = []
+        calls: list[str] = []
+
+        def refresh(**kwargs: object) -> None:
+            calls.append(f"refresh:{kwargs}")
+
+        def restore(attempt: ModelAttempt) -> None:
+            del attempt
+            calls.append("restore")
+
+        agent.refresh_fabric_inventory = refresh  # type: ignore[method-assign]
+        agent._restore_residency_after_attempt = restore  # type: ignore[method-assign]
+        agent.metrics = SimpleNamespace(
+            begin_run=lambda *args, **kwargs: "run",
+            record_attempt=lambda *args, **kwargs: None,
+        )
+        attempt = ModelAttempt(
+            role="e2b",
+            model="granite3.3:2b",
+            content="MNCS_PIN_OK",
+            thinking="",
+            metrics={},
+            tool_executions=[],
+            verification=VerificationResult(True, (), ()),
+            session_targets=SessionTargets.remote_inference("fabric-worker-01"),
+        )
+        agent._run_attempt = lambda *args, **kwargs: attempt  # type: ignore[method-assign]
+        result = LocalAgent.run(
+            agent,
+            "Reply with exactly: MNCS_PIN_OK",
+            workspace=Path("."),
+            routing_override=RoutingOverride.from_values(
+                worker="fabric-worker-01", model="granite3.3:2b"
+            ),
+        )
+        self.assertEqual(result.final_content, "MNCS_PIN_OK")
+        self.assertFalse(any(item.startswith("refresh:") for item in calls))
+        self.assertEqual(calls, ["restore"])
 
 
 if __name__ == "__main__":

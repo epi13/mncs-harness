@@ -1,20 +1,26 @@
 # Worker-local model provisioning
 
-Large model blobs should not be copied from the Local Harness controller to a Fabric
+Large model blobs should not be copied from the MNCS Harness controller to a Fabric
 worker over the LAN. The harness can instead stage a tiny Windows command file and run
 `ollama pull` on the worker itself. Ollama then downloads the model directly from the
 worker's configured registry/network connection.
 
-For the default accelerator roles, the generated installer pulls:
+Provisioning accepts arbitrary operator-supplied tags. There is no architectural
+default model set. To install specific tags:
 
-```text
-gemma4:e4b
-qwen3:8b
-gemma4:12b
+```bash
+elh-fabric install-models-windows \
+  --ssh-host 192.0.2.10 \
+  --ssh-user operator \
+  --ssh-key ~/.ssh/windows-fabric \
+  --expected-hostname WORKER01 \
+  --model example/new-model:7b \
+  --model another-tag:latest
 ```
 
-`gemma4:e2b` is intentionally excluded because the default managed routing policy keeps
-that lightweight role on the controller's local Ollama instance.
+`--use-configured-preferences` is an optional operator preset that pulls whatever
+tags currently appear in configured role preferences. Those tags are examples,
+not system requirements.
 
 ## Stage and run on the worker
 
@@ -23,7 +29,8 @@ elh-fabric install-models-windows \
   --ssh-host 192.0.2.10 \
   --ssh-user operator \
   --ssh-key ~/.ssh/windows-fabric \
-  --expected-hostname WORKER01
+  --expected-hostname WORKER01 \
+  --model example/new-model:7b
 ```
 
 The command:
@@ -67,7 +74,7 @@ The installer intentionally does not expose Ollama on the LAN.
 ## Fabric API compatibility before commissioning
 
 Persistent commissioning stages the `mncs_fabric` package that is actually imported by
-the active Local Harness Python environment. Editable installs can therefore be stale
+the active MNCS Harness Python environment. Editable installs can therefore be stale
 even when `pyproject.toml` declares a newer optional dependency.
 
 Before touching the worker, `elh-fabric commission-windows` now verifies that the active

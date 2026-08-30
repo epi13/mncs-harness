@@ -10,6 +10,8 @@
   model, worker, and exact worker/model operator overrides.
 - Unified fleet view for runtime routing, CLI, Doctor, Models, and TUI.
 - Direct Commons CLI and TUI browsing over the existing controller-local MCP seam.
+- Policy-gated exact-worker Python tool execution through Fabric target admission,
+  immutable bundles, deterministic retry, and bound evidence.
 
 ## Still future
 
@@ -51,7 +53,7 @@ agent loop useful across MNCS Fabric without turning Fabric into an agent runtim
   separate task properties rather than assuming they are the same host;
 - [x] allow a model placed on a remote worker to request controller-owned tools against
   the controller workspace through the existing policy/approval boundary;
-- [ ] introduce explicit execution-target routing for policy-approved tools that must run
+- [x] introduce explicit execution-target routing for policy-approved tools that must run
   on another enrolled worker, without granting the model arbitrary SSH or host shell
   authority;
 - [x] model a capability graph spanning observed models/runtimes/worker capabilities,
@@ -64,8 +66,9 @@ agent loop useful across MNCS Fabric without turning Fabric into an agent runtim
 - [x] support controller-local MNCS Commons for remote models through validated
   tool-schema proxying while reserving worker-local MCPs for future resources
   inherently attached to a worker; and
-- [x] add an in-process evaluation proving remote inference can safely operate on a different
-  workspace/execution target and that policy remains authoritative.
+- [x] add in-process evaluations proving inference and tools can use different workers,
+  controller workspace authority remains separate, policy denial prevents dispatch,
+  and identical retry does not execute twice.
 
 The 0.5.0 integration additionally proves a multi-turn Commons WorkRequest-to-
 Observation contribution, opaque Fabric consumer provenance, optional inert Fabric
@@ -74,9 +77,9 @@ invocation, worker-local Commons, federation, and automatic scheduling remain fu
 work.
 
 An operator-controlled physical run also placed `gemma4:e4b` on
-`collamore02-windows`, mediated `commons_describe` through the Fedora controller, and
+`worker-01-windows`, mediated `commons_describe` through the Fedora controller, and
 completed the second Fabric turn. Its sanitized evidence is in
-`development-evidence/commons-fabric-collamore02-2026-08-10.json`; this is physical
+`development-evidence/commons-fabric-worker-01-2026-08-10.json`; this is physical
 integration evidence, not independent assurance.
 
 ## 0.3 — repository intelligence
@@ -163,6 +166,6 @@ is actually true. Its metrics and tool boundary should remain separable enough t
 reused by Forge without coupling the repository to MNCS internals prematurely.
 - [x] Consume Fabric-owned persistent controller/fleet state through the
   ordinary local service socket with explicit embedded/transitional compatibility.
-- [ ] Move inference dispatch, worker-local inventory, residency warming, and
-  capability ingestion to persistent Fabric once its public service contract
-  advertises those features.
+- [x] Derive inference dispatch, worker-local inventory, residency warming, and
+  capability ingestion from the persistent Fabric service's live feature projection;
+  connected services that omit a feature remain explicitly unsupported.
