@@ -102,7 +102,6 @@ def _ready_layers(**overrides: object) -> dict[str, object]:
         "routing": {"available": True, "local_fallback": False},
         "artifact_write": {"writable": True, "path": "/tmp/metrics"},
         "runtime_identities": _runtime_identities(),
-        "joern": {"sandbox_callable": False},
         "forge": {"available": False},
     }
     payload.update(overrides)
@@ -261,14 +260,13 @@ class ProfileSemanticsTests(unittest.TestCase):
         result = _ready_layers()
         self.assertEqual(result["profile_status"], READY)
         warning_layers = {item["layer"] for item in result["optional_warnings"]}
-        self.assertIn("joern", warning_layers)
         self.assertIn("forge", warning_layers)
 
-    def test_required_missing_capability_blocks_profile(self) -> None:
-        result = _ready_layers(profile="code-analysis", joern={"host_visible": True}, forge={"available": True})
-        self.assertEqual(result["layers"]["joern"]["status"], DEGRADED)
-        self.assertEqual(result["layers"]["forge"]["status"], DEGRADED)
-        self.assertEqual(result["status"], DEGRADED)
+    def test_code_analysis_profile_is_provider_neutral(self) -> None:
+        result = _ready_layers(profile="code-analysis", forge={"status": READY})
+        self.assertNotIn("joern", result["layers"])
+        self.assertEqual(result["layers"]["forge"]["status"], READY)
+        self.assertEqual(result["status"], READY)
 
     def test_ravel_historical_limitation_does_not_block_base_inference(self) -> None:
         result = _ready_layers(

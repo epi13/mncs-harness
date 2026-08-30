@@ -70,7 +70,7 @@ MNCS Forge project inspection was attempted for planning and evidence review. Th
 available Forge instance was configured for the separate
 `machine-native-complexity-standard` checkout, not either repository in this change,
 and exposed no safe arbitrary-repository verifier/candidate scope. Repository-native
-Joern, unit tests, pytest, Ruff, compile checks, and Git review therefore remain the
-authoritative evidence for this iteration. A useful future Forge addition would be an
-explicit multi-repository workspace descriptor plus cross-repository contract/version
-verification without broad arbitrary-command authority.
+static analysis, unit tests, pytest, Ruff, compile checks, and Git review therefore
+remain the authoritative evidence for this iteration. A useful future Forge addition
+would be an explicit multi-repository workspace descriptor plus cross-repository
+contract/version verification without broad arbitrary-command authority.

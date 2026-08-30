@@ -54,15 +54,15 @@ Prefer `provider + tag + digest + worker` over a tag alone.
 | Profile | Required layers |
 | --- | --- |
 | `base-inference` | Harness, Fabric controller, fleet, workers, models, Commons consumer, artifact write |
-| `code-analysis` | base-inference + Joern (sandbox-callable) + Forge (callable) |
+| `code-analysis` | base-inference + Forge (callable) |
 | `multi-agent` | base-inference + routing |
 | `sustained-experiment` | multi-agent + provider model-residency lifecycle |
 | `MNEL` | multi-agent + Commons operator publication + reference-studies |
 | `RAVEL` | base-inference + reference-studies + Forge |
 
-Joern unavailable is an optional warning for `base-inference`. It blocks
-`code-analysis`. The historical RAVEL 0.5 canonical-artifact limitation blocks
-the RAVEL profile only.
+Forge availability is an optional warning for `base-inference` and is required
+by `code-analysis`. The historical RAVEL 0.5 canonical-artifact limitation
+blocks the RAVEL profile only.
 
 ## Fabric compatibility
 

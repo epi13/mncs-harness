@@ -55,7 +55,7 @@ PROFILES = {
             "commons_consumer",
             "artifact_write",
         ),
-        "optional": ("control", "commons_operator", "joern", "forge", "scheduler", "reference_studies"),
+        "optional": ("control", "commons_operator", "forge", "scheduler", "reference_studies"),
         "roles": ("generation",),
     },
     "code-analysis": {
@@ -67,7 +67,6 @@ PROFILES = {
             "models",
             "commons_consumer",
             "artifact_write",
-            "joern",
             "forge",
         ),
         "optional": ("control", "commons_operator", "scheduler", "reference_studies"),
@@ -84,7 +83,7 @@ PROFILES = {
             "commons_consumer",
             "artifact_write",
         ),
-        "optional": ("control", "commons_operator", "joern", "forge", "scheduler", "reference_studies"),
+        "optional": ("control", "commons_operator", "forge", "scheduler", "reference_studies"),
         "roles": ("generation", "review"),
     },
     "sustained-experiment": {
@@ -102,7 +101,6 @@ PROFILES = {
         "optional": (
             "control",
             "commons_operator",
-            "joern",
             "forge",
             "scheduler",
             "reference_studies",
@@ -122,7 +120,7 @@ PROFILES = {
             "reference_studies",
             "artifact_write",
         ),
-        "optional": ("control", "joern", "forge", "scheduler"),
+        "optional": ("control", "forge", "scheduler"),
         "roles": ("generation", "review"),
     },
     "RAVEL": {
@@ -137,7 +135,7 @@ PROFILES = {
             "forge",
             "artifact_write",
         ),
-        "optional": ("control", "commons_operator", "joern", "scheduler"),
+        "optional": ("control", "commons_operator", "scheduler"),
         "roles": ("generation",),
     },
 }
@@ -525,7 +523,6 @@ def evaluate_layers(
     fabric: Mapping[str, Any] | None = None,
     commons: Mapping[str, Any] | None = None,
     forge: Mapping[str, Any] | None = None,
-    joern: Mapping[str, Any] | None = None,
     reference_studies: Mapping[str, Any] | None = None,
     routing: Mapping[str, Any] | None = None,
     residency: Mapping[str, Any] | None = None,
@@ -756,19 +753,6 @@ def evaluate_layers(
     else:
         forge_state = UNKNOWN
     layers.append(_layer("forge", forge_state, forge))
-
-    joern = dict(joern or {})
-    if joern.get("status"):
-        joern_state = str(joern["status"])
-    elif joern.get("sandbox_callable") is True:
-        joern_state = READY
-    elif joern.get("host_visible") or joern.get("available"):
-        joern_state = DEGRADED
-    elif joern:
-        joern_state = DEGRADED
-    else:
-        joern_state = UNKNOWN
-    layers.append(_layer("joern", joern_state, joern))
 
     studies = dict(reference_studies or {})
     ravel_limitation = studies.get("ravel_0_5_limitation") or studies.get("historical_limitation")
