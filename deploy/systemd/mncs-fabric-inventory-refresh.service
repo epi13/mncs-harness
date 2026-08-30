@@ -12,4 +12,3 @@ TimeoutStartSec=180s
 UMask=0077
 NoNewPrivileges=yes
 PrivateTmp=yes
-
