@@ -44,8 +44,20 @@ quantization, KV cache, and actual layer movement.
 ## Configuration
 
 Service-mode consumers require a Fabric public contract that advertises
-`persistent_fleet_read`; the current package floor is `0.2.0a17` or newer in
-the `0.2.x` line. Persistent execution and capability ingestion are selected
+`persistent_fleet_read`. Fabric compatibility is three distinct identities:
+
+```text
+MIN_SUPPORTED_FABRIC          0.2.0a17  6285f7d3f49994e926aa0468a6cc2b644f9a3e85
+EXPERIMENT_CERTIFIED_FABRIC   0.2.0a30  02fea5b5571e3b43a532d904f56468f99c75e482
+                                      sha256:188d6b6a64d215871147c157b60a5d066776505b1c7d5d6d52434de45db9c940
+FABRIC_MAIN_CANARY            main      forward-compatibility only
+```
+
+The package floor remains `0.2.0a17` or newer in the `0.2.x` line. Experiments
+are certified against the exact `EXPERIMENT_CERTIFIED_FABRIC` commit, not a
+floating `main` or a label such as `latest`. Version metadata cannot override
+a missing required persistent-service capability. Persistent execution and
+capability ingestion are selected
 from public feature metadata rather than inferred from a package version. The
 current contract retains provider-neutral worker capability observations,
 ensures each explicitly supplied request bundle is staged after placement, and
@@ -73,7 +85,7 @@ controller_id = "epi13-local-harness"
 service_socket = "~/.local/state/mncs-fabric/controller.sock"
 service_timeout_seconds = 5.0
 consumer_identity = "epi13-local-harness"
-state_path = "~/.local/state/epi13-local-harness/fabric.jsonl"
+state_path = "~/.local/state/mncs-harness/fabric.jsonl"
 fallback_to_local = true
 refresh_on_startup = true
 refresh_timeout_seconds = 5.0
@@ -286,7 +298,7 @@ suite.
 # Persistent Fabric consumer boundary
 
 Fabric is persistent infrastructure owned by `mncs-fabric-controller.service`.
-Local Harness is an ordinary `FabricClient` consumer and never uses
+MNCS Harness is an ordinary `FabricClient` consumer and never uses
 `FabricAdminClient`. Service mode reads the shared consumer AF_UNIX socket and
 closes only its own connection; Harness shutdown is not worker disconnect and
 does not stop Fabric.

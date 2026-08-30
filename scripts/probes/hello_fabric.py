@@ -1,0 +1,1 @@
+print("MNCS_FABRIC_PYTHON_OK")

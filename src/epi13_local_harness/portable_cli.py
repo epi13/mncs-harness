@@ -17,6 +17,9 @@ import sys
 from pathlib import Path
 
 WRAPPERS = {
+    "mncs-harness": "epi13_local_harness.cli",
+    "mncs-harness-tui": "epi13_local_harness.tui",
+    "mncs-harness-fabric": "epi13_local_harness.fabric_controller_light",
     "elh": "epi13_local_harness.cli",
     "epi13-harness": "epi13_local_harness.cli",
     "elh-tui": "epi13_local_harness.tui",

@@ -16,10 +16,10 @@ class TuiLiveModelTests(unittest.TestCase):
         return FabricStatus(
             enabled=True,
             state="available",
-            controller_id="epi13-local-harness",
+            controller_id="mncs-harness",
             workers=(
                 {
-                    "worker_id": "collamore02-windows",
+                    "worker_id": "worker-01-windows",
                     "source": "remote",
                     "availability": "AVAILABLE",
                     "model_count": 3,

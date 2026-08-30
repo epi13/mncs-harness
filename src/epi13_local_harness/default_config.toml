@@ -3,6 +3,11 @@ base_url = "http://127.0.0.1:11434"
 timeout_seconds = 600
 max_tool_steps = 8
 
+# Model names below are operator preferences / bootstrap examples, not
+# architectural requirements. Automatic routing treats them as exact
+# preference pins when installed and otherwise selects from Fabric inventory
+# using capabilities, evidence, resources, and policy.
+
 [models.e2b]
 name = "gemma4:e2b"
 provider = "fabric"
@@ -28,7 +33,7 @@ tools = ["read_file", "list_directory", "search_text", "write_file", "run_comman
 [models.coder]
 name = "qwen3:8b"
 provider = "fabric"
-keep_alive = "0"
+keep_alive = "10m"
 num_ctx = 12288
 think = true
 temperature = 0.4
@@ -39,7 +44,7 @@ tools = ["read_file", "list_directory", "search_text", "write_file", "run_comman
 [models.reviewer]
 name = "gemma4:12b"
 provider = "fabric"
-keep_alive = "0"
+keep_alive = "10m"
 num_ctx = 16384
 think = true
 temperature = 1.0
@@ -48,10 +53,11 @@ top_k = 64
 tools = ["read_file", "list_directory", "search_text", "write_file", "run_command", "git_diff", "system_info"]
 
 [router]
-mode = "hybrid" # deprecated compatibility keys; runtime routing is deterministic
-backend = "transformers"
-model = "LiquidAI/LFM2.5-Encoder-350M-Prompt-Router"
-revision = "35ca4a0469f180f1cf05a630df8842fa17ac18e3"
+# Semantic routing is removed. These keys remain only so older configs parse.
+mode = "deterministic"
+backend = "deterministic"
+model = ""
+revision = ""
 device = "cpu"
 minimum_score = 0.60
 minimum_margin = 0.12
@@ -95,9 +101,9 @@ max_attempts = 3
 simple_word_limit = 80
 complex_word_limit = 220
 semantic_enabled = false
-semantic_backend = "transformers"
-semantic_model = "LiquidAI/LFM2.5-Encoder-350M-Prompt-Router"
-semantic_revision = "35ca4a0469f180f1cf05a630df8842fa17ac18e3"
+semantic_backend = "deterministic"
+semantic_model = ""
+semantic_revision = ""
 semantic_device = "cpu"
 minimum_score = 0.60
 minimum_margin = 0.12
@@ -123,7 +129,7 @@ unit_test_command = ["python", "-m", "unittest", "discover", "-s", "tests"]
 use_shellcheck_when_available = true
 
 [metrics]
-path = "~/.local/state/epi13-local-harness/metrics.sqlite3"
+path = "~/.local/state/mncs-harness/metrics.sqlite3"
 store_prompt_text = false
 
 [commons]
@@ -150,28 +156,36 @@ enabled = false
 warm_on_startup = false
 prefer_resident_for_auto_routing = true
 keep_alive = -1
+# Per-request model values above are ordinary bounded interactive reuse. A
+# sustained experiment explicitly overrides them with this provider-specific
+# value after establishing a Harness-owned residency lease.
+experiment_keep_alive = -1
 warm_timeout_seconds = 300.0
 maximum_model_memory_fraction = 0.5
+observation_max_age_seconds = 300.0
+max_pinned_models_per_worker = 1
+release_on_experiment_end = true
+reject_conflicting_loaded_models = true
 role_preference = ["e4b", "e2b", "coder", "reviewer"]
 
 [fabric]
 enabled = false
 controller_mode = "service"
-controller_id = "epi13-local-harness"
+controller_id = "mncs-harness"
 service_socket = "~/.local/state/mncs-fabric/controller.sock"
 service_timeout_seconds = 30.0
-consumer_identity = "epi13-local-harness"
+consumer_identity = "mncs-harness"
 # Embedded/transitional compatibility only:
 # controller_mode = "embedded"
 # registry_path = "~/.local/state/mncs-fabric/workers.json"
-state_path = "~/.local/state/epi13-local-harness/fabric.jsonl"
+state_path = "~/.local/state/mncs-harness/fabric.jsonl"
 fallback_to_local = true
 refresh_on_startup = true
 refresh_timeout_seconds = 5.0
 runtime_probe_on_refresh = true
 runtime_probe_timeout_seconds = 45.0
 runtime_probe_max_age_seconds = 1800.0
-worker_bundle_root = "~/.local/state/epi13-local-harness/fabric-worker-bundle"
+worker_bundle_root = "~/.local/state/mncs-harness/fabric-worker-bundle"
 provider_ollama_base_url = "http://127.0.0.1:11434"
 provider_timeout_seconds = 600
 job_timeout_overhead_seconds = 5

@@ -205,7 +205,7 @@ def plan_route(
     if forced_role is not None and routing_override is not None:
         raise ValueError("legacy forced_role cannot be combined with routing_override")
     requested = routing_override or RoutingOverride.from_values(role=forced_role)
-    if requested.mode == "ROLE":
+    if requested.role is not None:
         forced_role = requested.role
 
     if forced_role:
@@ -223,7 +223,7 @@ def plan_route(
 
     # Every operator pin is authoritative. Exact worker/model requests must
     # not initialize compatibility routing or walk the escalation cascade.
-    if requested.mode in {"MODEL", "WORKER", "WORKER_MODEL"}:
+    if requested.mode in {"MODEL", "WORKER", "WORKER_MODEL", "WORKER_MODEL_ROLE"}:
         plan = _deterministic_route(profile, config)
         return replace(plan, escalation_roles=(), routing_override=requested)
     if requested.mode != "AUTO":

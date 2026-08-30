@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Local Harness already separates semantic model choice from physical placement and can
+MNCS Harness already separates semantic model choice from physical placement and can
 observe installed/loaded worker models, keep one preferred resident generation model
 per worker, route to an exact worker/model pair, and reconcile a worker back to its
 declared steady state after a transient model displaces the preferred resident.
@@ -22,7 +22,7 @@ The reusable idea is broader than MoE inference:
 > Total available capability can exceed simultaneously resident capability when
 > activation is sparse and movement, reuse, and eviction are explicit and measurable.
 
-For Local Harness, the sparse unit is normally a model, provider session, tool,
+For MNCS Harness, the sparse unit is normally a model, provider session, tool,
 capability, or bounded subtask rather than a transformer expert.
 
 ## Architectural analogy
@@ -40,7 +40,7 @@ capability, or bounded subtask rather than a transformer expert.
 | parallel expert reads | parallel independent task placement |
 | storage/RAM hierarchy | installed/warm/active capability hierarchy |
 
-The analogy is intentionally coarse. Local Harness must not move transformer layers or
+The analogy is intentionally coarse. MNCS Harness must not move transformer layers or
 experts itself. Provider runtimes remain responsible for quantization, KV caches,
 CPU/GPU split, expert movement, and accelerator-specific execution.
 
@@ -236,7 +236,7 @@ This design does **not** propose:
 - making Fabric an inference engine;
 - sharding transformer experts/layers across Fabric workers;
 - per-token network scheduling;
-- copying Picchio source into Local Harness;
+- copying Picchio source into MNCS Harness;
 - assuming a warm model is the correct model;
 - unconstrained speculative downloads or model warming;
 - granting a remote inference worker authority over the controller workspace; or

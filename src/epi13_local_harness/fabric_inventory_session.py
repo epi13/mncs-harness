@@ -3,8 +3,7 @@
 Unlike the operator SSH inventory command, this runtime path uses Fabric itself
 to execute a tiny Python probe on the already-enrolled worker. The probe only
 queries the worker loopback Ollama API. This keeps SSH out of inference/runtime
-routing and lets the semantic router choose among models that are actually
-installed on the worker.
+routing so selection can rank models that are actually installed on the worker.
 """
 
 from __future__ import annotations
@@ -19,6 +18,7 @@ from pathlib import Path
 from typing import Any
 
 from .fabric import FabricExecutionError, FabricSession, FabricStatus
+from .model_evidence import load_evidence
 from .model_selection import ModelSelection, select_installed_model
 from .models import FabricConfig, ModelConfig, ModelResidencyConfig, RoutingOverride
 
@@ -131,26 +131,36 @@ def stage(name, **fields):
 
 stage("worker-started")
 request = json.loads(Path("request.json").read_text(encoding="utf-8"))
-payload = json.dumps({
-    "model": request["model"],
-    "prompt": "",
-    "stream": False,
-    "keep_alive": request["keep_alive"],
-}).encode("utf-8")
 try:
     stage("provider-connecting", model=request["model"])
-    warm = urllib.request.Request(
-        "http://127.0.0.1:11434/api/generate",
-        data=payload,
-        method="POST",
-        headers={"Content-Type": "application/json"},
-    )
-    stage("inference-started", model=request["model"])
-    with urllib.request.urlopen(warm, timeout=request["timeout_seconds"]) as response:
-        json.loads(response.read().decode("utf-8"))
     with urllib.request.urlopen("http://127.0.0.1:11434/api/ps", timeout=10) as response:
-        running = json.loads(response.read().decode("utf-8")).get("models", [])
-    stage("inference-completed", model=request["model"])
+        before = json.loads(response.read().decode("utf-8")).get("models", [])
+    if not isinstance(before, list):
+        raise SystemExit("worker-local Ollama residency returned malformed running state")
+    preexisting = next((item for item in before if isinstance(item, dict) and (
+        item.get("name") == request["model"] or item.get("model") == request["model"]
+    )), None)
+    if request["action"] == "release" and preexisting is None:
+        running = before
+    else:
+        payload = json.dumps({
+            "model": request["model"],
+            "prompt": "",
+            "stream": False,
+            "keep_alive": 0 if request["action"] == "release" else request["keep_alive"],
+        }).encode("utf-8")
+        operation = urllib.request.Request(
+            "http://127.0.0.1:11434/api/generate",
+            data=payload,
+            method="POST",
+            headers={"Content-Type": "application/json"},
+        )
+        stage("residency-operation-started", action=request["action"], model=request["model"])
+        with urllib.request.urlopen(operation, timeout=request["timeout_seconds"]) as response:
+            json.loads(response.read().decode("utf-8"))
+        with urllib.request.urlopen("http://127.0.0.1:11434/api/ps", timeout=10) as response:
+            running = json.loads(response.read().decode("utf-8")).get("models", [])
+    stage("residency-operation-completed", action=request["action"], model=request["model"])
 except urllib.error.HTTPError as exc:
     try:
         detail = exc.read().decode("utf-8", "replace")[:1024]
@@ -172,9 +182,14 @@ selected = next((item for item in running if isinstance(item, dict) and (
     item.get("name") == request["model"] or item.get("model") == request["model"]
 )), None)
 print("ELH_FABRIC_RESIDENCY " + json.dumps({
+    "action": request["action"],
+    "provider": "ollama",
     "model": request["model"],
     "loaded": selected is not None,
+    "preexisting_loaded": preexisting is not None,
     "running": selected,
+    "remaining_loaded_models": sorted(str(item.get("name") or item.get("model")) for item in running
+        if isinstance(item, dict) and (item.get("name") or item.get("model"))),
 }, separators=(",", ":"), ensure_ascii=True), flush=True)
 stage("completed")
 '''
@@ -184,7 +199,7 @@ class _FreshDispatchClient:
     """Delegate Fabric calls while making observation/inference dispatches fresh.
 
     The underlying Fabric API keeps deterministic request identities by default.
-    This wrapper uses the public ``request_id`` seam so Local Harness does not
+    This wrapper uses the public ``request_id`` seam so MNCS Harness does not
     replay an old model inventory or an old failed inference simply because the
     semantic payload is identical to a prior attempt.
     """
@@ -244,6 +259,7 @@ def _model_capability_entries(models: tuple[dict[str, Any], ...]) -> list[dict[s
             "name": "ollama",
             "attributes": {
                 "interface": "loopback-http-api",
+                "residency_actions": ["observe", "release", "warm"],
                 **({"version": provider_versions[0]} if len(provider_versions) == 1 else {}),
             },
         }
@@ -258,6 +274,7 @@ def _model_capability_entries(models: tuple[dict[str, Any], ...]) -> list[dict[s
         if isinstance(size, int) and not isinstance(size, bool) and size >= 0:
             attributes["size_bytes"] = size
         attributes["loaded"] = bool(model.get("loaded", False))
+        attributes["residency_control"] = "provider-loopback-api"
         for key in ("size_vram", "context_length"):
             value = model.get(key)
             if isinstance(value, int) and not isinstance(value, bool) and value >= 0:
@@ -304,7 +321,10 @@ def _model_from_capability(entry: dict[str, Any]) -> dict[str, Any]:
         )
         if source in attributes
     }
-    model: dict[str, Any] = {"name": entry.get("name")}
+    model: dict[str, Any] = {
+        "name": entry.get("name"),
+        "provider": entry.get("namespace"),
+    }
     if isinstance(attributes.get("size_bytes"), int):
         model["size"] = attributes["size_bytes"]
     if entry.get("subject_identity") is not None:
@@ -480,8 +500,28 @@ class InventoryAwareFabricSession(FabricSession):
                         model[key] = loaded[key]
             if isinstance(version, str) and version:
                 model["provider_version"] = version
+                if version == "0.0.0":
+                    model["provider_version_trust"] = "untrusted-packaging"
             models.append(model)
         return tuple(models)
+
+    @staticmethod
+    def residency_capability(provider_namespace: str | None) -> dict[str, Any]:
+        """Return factual lifecycle actions for a provider namespace.
+
+        This is the Harness abstraction boundary. Provider-specific request
+        fields remain inside the bounded worker operation.
+        """
+
+        provider = str(provider_namespace or "ollama")
+        actions = ("observe", "release", "warm") if provider == "ollama" else ()
+        return {
+            "provider": provider,
+            "supported": bool(actions),
+            "actions": list(actions),
+            "conversation_state": "controller-supplied-per-request",
+            "weights_state": "provider-worker-local",
+        }
 
     def warm_model(
         self,
@@ -491,7 +531,76 @@ class InventoryAwareFabricSession(FabricSession):
         keep_alive: str | int = -1,
         timeout_seconds: float = 300.0,
     ) -> dict[str, Any]:
-        """Warm one installed model through a bounded exact-worker Fabric job."""
+        """Compatibility wrapper for background/operator residency warming."""
+
+        return self.establish_model_residency(
+            worker_id,
+            model_name,
+            provider_namespace="ollama",
+            keep_alive=keep_alive,
+            timeout_seconds=timeout_seconds,
+            policy_mode="background-pinned",
+        )
+
+    def establish_model_residency(
+        self,
+        worker_id: str,
+        model_name: str,
+        *,
+        provider_namespace: str,
+        keep_alive: str | int = -1,
+        timeout_seconds: float = 300.0,
+        policy_mode: str = "experiment-pinned",
+        experiment_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Establish and authoritatively observe worker-local model residency."""
+
+        return self._change_model_residency(
+            worker_id,
+            model_name,
+            action="warm",
+            provider_namespace=provider_namespace,
+            keep_alive=keep_alive,
+            timeout_seconds=timeout_seconds,
+            policy_mode=policy_mode,
+            experiment_id=experiment_id,
+        )
+
+    def release_model_residency(
+        self,
+        worker_id: str,
+        model_name: str,
+        *,
+        provider_namespace: str,
+        timeout_seconds: float = 300.0,
+        experiment_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Release only the named model and verify the provider observation."""
+
+        return self._change_model_residency(
+            worker_id,
+            model_name,
+            action="release",
+            provider_namespace=provider_namespace,
+            keep_alive=0,
+            timeout_seconds=timeout_seconds,
+            policy_mode="explicit-release",
+            experiment_id=experiment_id,
+        )
+
+    def _change_model_residency(
+        self,
+        worker_id: str,
+        model_name: str,
+        *,
+        action: str,
+        provider_namespace: str,
+        keep_alive: str | int,
+        timeout_seconds: float,
+        policy_mode: str,
+        experiment_id: str | None,
+    ) -> dict[str, Any]:
+        """Run one provider-specific residency operation through exact Fabric placement."""
 
         if (
             not model_name
@@ -501,6 +610,13 @@ class InventoryAwareFabricSession(FabricSession):
             raise FabricExecutionError("RESIDENCY_MODEL_INVALID: model name is invalid")
         if not 1 <= timeout_seconds <= 3600:
             raise FabricExecutionError("RESIDENCY_TIMEOUT_INVALID: warm timeout is out of bounds")
+        if action not in {"warm", "release"}:
+            raise FabricExecutionError("RESIDENCY_ACTION_INVALID: unsupported residency action")
+        capability = self.residency_capability(provider_namespace)
+        if action not in capability["actions"]:
+            raise FabricExecutionError(
+                f"RESIDENCY_PROVIDER_UNSUPPORTED: {provider_namespace} does not support {action}"
+            )
         if self.config.controller_mode == "service" and not self._service_execution_supported():
             raise FabricExecutionError(
                 "FABRIC_SERVICE_EXECUTION_UNSUPPORTED: model residency requires persistent execution dispatch"
@@ -517,20 +633,40 @@ class InventoryAwareFabricSession(FabricSession):
         if worker.get("model_inventory_status") != "CURRENT":
             raise FabricExecutionError(f"RESIDENCY_INVENTORY_NOT_CURRENT: {worker_id}")
         inventory = worker.get("model_inventory") or []
-        if not any(
-            str(item.get("name") or item.get("model") or "") == model_name
-            for item in inventory
-            if isinstance(item, dict)
-        ):
+        installed_model = next(
+            (
+                item
+                for item in inventory
+                if isinstance(item, dict)
+                and str(item.get("name") or item.get("model") or "") == model_name
+            ),
+            None,
+        )
+        if installed_model is None:
             raise FabricExecutionError(
                 f"RESIDENCY_MODEL_NOT_INSTALLED: {model_name} on {worker_id}"
+            )
+        observed_provider = str(
+            installed_model.get("provider")
+            or installed_model.get("namespace")
+            or "ollama"
+        )
+        if observed_provider != provider_namespace:
+            raise FabricExecutionError(
+                "RESIDENCY_PROVIDER_MISMATCH: "
+                f"{model_name} on {worker_id} is observed under {observed_provider}, "
+                f"not {provider_namespace}"
             )
         if self.client is None:
             raise FabricExecutionError("Fabric client is unavailable")
         request = {
+            "action": action,
             "model": model_name,
             "keep_alive": keep_alive,
             "timeout_seconds": timeout_seconds,
+            "provider_namespace": provider_namespace,
+            "policy_mode": policy_mode,
+            "experiment_id": experiment_id,
         }
         self.config.state_path.parent.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory(
@@ -554,7 +690,7 @@ class InventoryAwareFabricSession(FabricSession):
             plan = validate_job_plan(
                 {
                     "schema_version": "mncs-fabric.job-plan.v0.1",
-                    "job_id": "elh-worker-model-residency",
+                    "job_id": f"elh-worker-model-residency-{action}",
                     "candidate_identity": _identity(
                         {"worker_id": worker_id, "residency": request}
                     ),
@@ -581,7 +717,7 @@ class InventoryAwareFabricSession(FabricSession):
         if not _execution_succeeded(result, record):
             reason = _execution_failure(result, record, "residency warm failed")
             raise FabricExecutionError(
-                f"RESIDENCY_WARM_FAILED: {worker_id}/{model_name}: {reason}"
+                f"RESIDENCY_{action.upper()}_FAILED: {worker_id}/{model_name}: {reason}"
             )
         response_line = next(
             (
@@ -599,16 +735,25 @@ class InventoryAwareFabricSession(FabricSession):
             raise FabricExecutionError(
                 "RESIDENCY_RESPONSE_MALFORMED: invalid JSON"
             ) from exc
-        if not isinstance(provider, dict) or provider.get("loaded") is not True:
+        expected_loaded = action == "warm"
+        if not isinstance(provider, dict) or provider.get("loaded") is not expected_loaded:
             raise FabricExecutionError(
-                f"RESIDENCY_NOT_LOADED: provider did not report {model_name} loaded"
+                f"RESIDENCY_VERIFICATION_FAILED: provider reported loaded="
+                f"{provider.get('loaded') if isinstance(provider, dict) else None}; "
+                f"expected {expected_loaded} for {model_name}"
             )
         self._refresh_model_inventories()
         return {
             "outcome": "PASS",
+            "action": action,
             "worker_id": worker_id,
             "model": model_name,
-            "loaded": True,
+            "provider": provider_namespace,
+            "policy_mode": policy_mode,
+            "experiment_id": experiment_id,
+            "loaded": expected_loaded,
+            "preexisting_loaded": bool(provider.get("preexisting_loaded")),
+            "remaining_loaded_models": list(provider.get("remaining_loaded_models") or []),
             "provider_observation": provider,
             "fabric_request_identity": result.get("request_identity"),
             "fabric_record_identity": result.get("record_identity"),
@@ -698,7 +843,7 @@ class InventoryAwareFabricSession(FabricSession):
             freshness = str(worker.get("capability_inventory_status") or "UNKNOWN")
             if freshness == "CURRENT":
                 pass
-            elif allow_stale and freshness == "STALE":
+            elif freshness == "STALE" and allow_stale:
                 pass
             else:
                 return ()
@@ -758,18 +903,17 @@ class InventoryAwareFabricSession(FabricSession):
     ) -> tuple[ModelConfig, ModelSelection | None]:
         """Resolve a role against one already-captured Fabric status.
 
-        Automatic and role-based placement use CURRENT inventory only.
-        Worker-only and model-only pins still require CURRENT inventory
-        because Fabric must choose the missing placement dimension. Only an
-        explicit WORKER_MODEL pin may consume STALE inventory when the
-        worker is AVAILABLE and the exact model was previously observed.
+        Automatic/role placement uses last-known CURRENT or STALE inventory.
+        STALE remains usable last-known truth; it is not treated as empty.
+        UNKNOWN/UNAVAILABLE still cannot authorize a route. A newly installed
+        model requires an explicit inventory refresh, not a service restart.
         """
 
         if model.provider != "fabric":
             return model, None
         requested = routing_override or RoutingOverride()
-        allow_stale = requested.mode == "WORKER_MODEL"
-        accepted_freshness = {"CURRENT", "STALE"} if allow_stale else {"CURRENT"}
+        allow_stale = True
+        accepted_freshness = {"CURRENT", "STALE"}
         workers = [dict(worker) for worker in status.workers]
         current_candidates = [
             (
@@ -810,6 +954,10 @@ class InventoryAwareFabricSession(FabricSession):
         ) -> ModelSelection:
             item = named(inventory, selected_model) or {}
             size = item.get("size")
+            worker = next(
+                (row for row in workers if row.get("worker_id") == worker_id),
+                {},
+            )
             return ModelSelection(
                 role=role,
                 configured_model=model.name,
@@ -819,6 +967,7 @@ class InventoryAwareFabricSession(FabricSession):
                 ),
                 reason=reason,
                 worker_id=worker_id,
+                inventory_status=self._inventory_freshness(worker),
                 loaded=bool(item.get("loaded", False)),
                 resident=explicit_resident.get(worker_id) == selected_model,
                 route_mode=requested.mode,
@@ -845,7 +994,7 @@ class InventoryAwareFabricSession(FabricSession):
 
         selection: ModelSelection | None = None
 
-        if requested.mode in {"WORKER", "WORKER_MODEL"}:
+        if requested.mode in {"WORKER", "WORKER_MODEL", "WORKER_MODEL_ROLE"}:
             target = next(
                 (worker for worker in workers if worker.get("worker_id") == requested.worker),
                 None,
@@ -868,10 +1017,8 @@ class InventoryAwareFabricSession(FabricSession):
                     selected_model=requested.model,
                 )
             else:
-                inventory = self._worker_inventory(
-                    target, allow_stale=requested.mode == "WORKER_MODEL"
-                )
-                if requested.mode == "WORKER_MODEL":
+                inventory = self._worker_inventory(target, allow_stale=True)
+                if requested.mode in {"WORKER_MODEL", "WORKER_MODEL_ROLE"}:
                     if named(inventory, str(requested.model)) is None:
                         failure = unavailable(
                             "PINNED_MODEL_MISSING",
@@ -887,7 +1034,9 @@ class InventoryAwareFabricSession(FabricSession):
                             "operator pinned the exact Fabric worker/model pair",
                         )
                 else:
-                    resolved = select_installed_model(role, model.name, inventory)
+                    resolved = select_installed_model(
+                        role, model.name, inventory, evidence=load_evidence()
+                    )
                     if resolved is None:
                         failure = unavailable(
                             "PINNED_WORKER_HAS_NO_ELIGIBLE_MODEL",
@@ -967,7 +1116,9 @@ class InventoryAwareFabricSession(FabricSession):
 
         if selection is None and auto_allowed and candidates:
             combined = [item for _worker_id, inventory in candidates for item in inventory]
-            fallback = select_installed_model(role, model.name, combined)
+            fallback = select_installed_model(
+                role, model.name, combined, evidence=load_evidence()
+            )
             if fallback is not None:
                 eligible = [
                     (worker_id, inventory)
@@ -1077,7 +1228,7 @@ class InventoryAwareFabricSession(FabricSession):
         for worker in base.workers:
             item = dict(worker)
             worker_id = str(item.get("worker_id") or "")
-            inventory = self._worker_inventory(item)
+            inventory = self._worker_inventory(item, allow_stale=True)
             if self.capability_api_available:
                 item["model_inventory_status"] = item.get(
                     "capability_inventory_status", "UNKNOWN"

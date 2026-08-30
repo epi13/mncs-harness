@@ -288,6 +288,47 @@ class FabricTests(unittest.TestCase):
         self.assertEqual(accepted["stage"], "accepted")
         self.assertTrue(str(accepted["work_id"]).startswith("sha256:"))
 
+    def test_submit_chat_includes_tool_schemas_in_detached_payload(self) -> None:
+        session = FabricSession(FabricConfig(enabled=True, controller_mode="service"))
+        session._state = "available"
+        session._execution_transport = "persistent-service"
+        session._consumer_context = None
+        captured: dict[str, object] = {}
+
+        class Client:
+            def submit_execution(self, *args: object, **kwargs: object) -> dict[str, object]:
+                import zipfile
+
+                archive = Path(str(kwargs["execution_bundle_archive"]))
+                with zipfile.ZipFile(archive) as bundle:
+                    request = json.loads(bundle.read("request.json"))
+                captured["payload"] = request["payload"]
+                captured["worker_id"] = kwargs["worker_id"]
+                return {"work_id": "sha256:" + "c" * 64}
+
+        session.client = Client()
+        tools = [{"type": "function", "function": {"name": "read_file", "parameters": {"type": "object"}}}]
+        with tempfile.TemporaryDirectory() as directory:
+            session.config = replace(
+                session.config,
+                state_path=Path(directory) / "fabric.jsonl",
+            )
+            from epi13_local_harness.config import load_config
+
+            model = load_config(Path("/missing/config.toml")).models["coder"]
+            session.submit_chat(
+                model,
+                [{"role": "user", "content": "list files"}],
+                worker_id="collamore02-windows",
+                tools=tools,
+            )
+        self.assertEqual(captured["worker_id"], "collamore02-windows")
+        payload = captured["payload"]
+        assert isinstance(payload, dict)
+        self.assertEqual(payload["tools"], tools)
+        self.assertEqual(payload["model"], model.name)
+        self.assertEqual(payload["keep_alive"], model.keep_alive)
+
     def test_work_result_reads_nested_detached_execution_record(self) -> None:
         session = FabricSession(FabricConfig(enabled=True, controller_mode="service"))
         session._state = "available"

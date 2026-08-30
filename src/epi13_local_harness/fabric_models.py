@@ -35,7 +35,12 @@ def add_windows_model_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--model",
         action="append",
-        help="Explicit Ollama model tag; repeat for multiple models. Defaults to accelerator roles.",
+        help="Explicit Ollama model tag; repeat for multiple models.",
+    )
+    parser.add_argument(
+        "--use-configured-preferences",
+        action="store_true",
+        help="Operator preset: pull the model tags currently configured as role preferences.",
     )
     parser.add_argument(
         "--stage-only",
@@ -194,7 +199,15 @@ def install_models_windows(args: argparse.Namespace) -> int:
     if not ssh_key.is_file():
         raise ValueError(f"SSH key does not exist: {ssh_key}")
     remote_root = args.remote_root or f"C:/Users/{args.ssh_user}/mncs-fabric-worker"
-    models = _validate_models(list(args.model)) if args.model else _configured_models(args.config)
+    if args.model:
+        models = _validate_models(list(args.model))
+    elif getattr(args, "use_configured_preferences", False):
+        models = _configured_models(args.config)
+    else:
+        raise ValueError(
+            "specify --model TAG for each model to install, or pass "
+            "--use-configured-preferences to treat configured role names as an operator preset"
+        )
     preflight = _verify_host(
         host=args.ssh_host,
         user=args.ssh_user,

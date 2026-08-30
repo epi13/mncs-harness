@@ -16,11 +16,12 @@ jobs:
         python-version: ["3.11", "3.12", "3.13", "3.14"]
     steps:
       - uses: actions/checkout@v4
-      - name: Checkout supported MNCS Fabric
+      - name: Checkout experiment-certified MNCS Fabric
         uses: actions/checkout@v4
         with:
           repository: epi13/mncs-fabric
-          ref: 6285f7d3f49994e926aa0468a6cc2b644f9a3e85
+          # EXPERIMENT_CERTIFIED_FABRIC 0.2.0a30 — exact certified revision
+          ref: 02fea5b5571e3b43a532d904f56468f99c75e482
           path: .dependencies/mncs-fabric
       - uses: actions/setup-python@v5
         with:
@@ -36,6 +37,27 @@ jobs:
       - name: Routing evaluations
         run: elh eval
 
+  fabric-min-supported:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Checkout minimum-supported MNCS Fabric
+        uses: actions/checkout@v4
+        with:
+          repository: epi13/mncs-fabric
+          # MIN_SUPPORTED_FABRIC 0.2.0a17 — compatibility floor, not the experiment pin
+          ref: 6285f7d3f49994e926aa0468a6cc2b644f9a3e85
+          path: .dependencies/mncs-fabric
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install minimum-supported Fabric
+        run: |
+          python -m pip install -e .dependencies/mncs-fabric
+          python -m pip install -e '.[dev]'
+      - name: Minimum-supported Fabric integration
+        run: python -m unittest tests.test_persistent_fabric tests.test_fabric -v
+
   fabric-main-canary:
     runs-on: ubuntu-latest
     continue-on-error: true
@@ -45,6 +67,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: epi13/mncs-fabric
+          # FABRIC_MAIN_CANARY — forward compatibility only; not experiment provenance
           ref: main
           path: .dependencies/mncs-fabric
       - uses: actions/setup-python@v5

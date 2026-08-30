@@ -11,7 +11,7 @@ from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FutureTimeout
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, Mapping
 from urllib.parse import urlparse
 
 from .models import FabricConfig, ModelConfig
@@ -588,6 +588,13 @@ class FabricSession:
             ]
         )
         if not remote_ids:
+            fleet_refresh = getattr(self.client, "refresh_fleet", None)
+            if self.config.controller_mode == "service" and callable(fleet_refresh):
+                self._apply_classified_refresh(fleet_refresh())
+            return
+        fleet_refresh = getattr(self.client, "refresh_fleet", None)
+        if self.config.controller_mode == "service" and callable(fleet_refresh):
+            self._apply_classified_refresh(fleet_refresh(worker_ids=remote_ids))
             return
         failures: list[str] = []
 
@@ -606,6 +613,24 @@ class FabricSession:
                     failures.append(f"{worker_id}: {exc}")
         finally:
             executor.shutdown(wait=False, cancel_futures=True)
+        if failures:
+            self._detail = "; ".join(failures)
+
+    def _apply_classified_refresh(self, report: Mapping[str, Any] | None) -> None:
+        if not isinstance(report, dict):
+            return
+        failures: list[str] = []
+        for worker in report.get("workers", []):
+            if not isinstance(worker, dict):
+                continue
+            worker_id = str(worker.get("worker_id") or "worker")
+            status = str(worker.get("refresh") or "")
+            if status == "TIMEOUT":
+                owner = worker.get("deadline_fired") or "worker"
+                failures.append(f"{worker_id}: refresh timed out ({owner} deadline)")
+            elif status == "UNAVAILABLE":
+                diagnostic = worker.get("refresh_diagnostic") or "worker is unavailable"
+                failures.append(f"{worker_id}: {diagnostic}")
         if failures:
             self._detail = "; ".join(failures)
 
@@ -797,7 +822,7 @@ class FabricSession:
         from mncs_fabric import ConsumerContext
 
         return ConsumerContext(
-            "epi13-local-harness",
+            "mncs-harness",
             self._consumer_context["workload_identity"],
             provider_identity=self._consumer_context["provider_identity"],
             partition_identity=self._consumer_context["partition_identity"],
@@ -926,7 +951,7 @@ class FabricSession:
                         from mncs_fabric import ConsumerContext
 
                         consumer_context = ConsumerContext(
-                            "epi13-local-harness",
+                            "mncs-harness",
                             self._consumer_context["workload_identity"],
                             provider_identity=self._consumer_context["provider_identity"],
                             partition_identity=self._consumer_context["partition_identity"],
@@ -1025,6 +1050,7 @@ class FabricSession:
         *,
         worker_id: str,
         idempotency_key: str | None = None,
+        tools: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
         """Enqueue exact-pin inference on persistent Fabric and return immediately."""
 
@@ -1048,6 +1074,8 @@ class FabricSession:
                 "top_k": model.top_k,
             },
         }
+        if tools:
+            payload["tools"] = tools
         request = {
             "base_url": _loopback_url(self.config.provider_ollama_base_url),
             "timeout_seconds": self.config.provider_timeout_seconds,
@@ -1094,7 +1122,7 @@ class FabricSession:
                 from mncs_fabric import ConsumerContext
 
                 consumer_context = ConsumerContext(
-                    "epi13-local-harness",
+                    "mncs-harness",
                     self._consumer_context["workload_identity"],
                     provider_identity=self._consumer_context["provider_identity"],
                     partition_identity=self._consumer_context["partition_identity"],

@@ -32,7 +32,10 @@ def _path(value: str) -> Path:
 
 
 def _add_routing_arguments(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("--role", help="Force a configured semantic role")
+    parser.add_argument(
+        "--role",
+        help="Force a configured role; with --worker and --model-name, keep exact pins",
+    )
     parser.add_argument(
         "--model",
         dest="legacy_role",
@@ -68,6 +71,23 @@ def build_parser() -> argparse.ArgumentParser:
         "doctor", help="Check router, controller, Fabric, Commons, models, and tools"
     )
     doctor_parser.add_argument("--json", action="store_true")
+    readiness_parser = subparsers.add_parser(
+        "experiment-readiness",
+        help="Inspect whether this stack may start experiments without repairing it",
+    )
+    readiness_parser.add_argument("--json", action="store_true")
+    readiness_parser.add_argument(
+        "--profile",
+        default="base-inference",
+        choices=(
+            "base-inference",
+            "code-analysis",
+            "multi-agent",
+            "sustained-experiment",
+            "MNEL",
+            "RAVEL",
+        ),
+    )
     models_parser = subparsers.add_parser(
         "models", help="Show controller-local and per-worker model state"
     )
@@ -124,6 +144,15 @@ def build_parser() -> argparse.ArgumentParser:
     verify_parser = subparsers.add_parser("verify", help="Run deterministic file verifiers")
     verify_parser.add_argument("paths", nargs="*", type=_path, default=[Path.cwd()])
     verify_parser.add_argument("--workspace", type=_path, default=Path.cwd())
+    verify_models = subparsers.add_parser(
+        "verify-models",
+        help="Run generic verification probes against Fabric-discovered models",
+    )
+    verify_models.add_argument("--worker", help="Limit to one worker identity")
+    verify_models.add_argument("--model-name", help="Limit to one opaque model tag")
+    verify_models.add_argument("--tier", action="append", type=int, choices=(0, 1, 2, 3))
+    verify_models.add_argument("--persist", action="store_true", help="Append evidence records")
+    verify_models.add_argument("--json", action="store_true")
 
     eval_parser = subparsers.add_parser("eval", help="Evaluate routing cases")
     eval_parser.add_argument("--file", type=_path, help="JSONL evaluation file")
@@ -159,7 +188,14 @@ def build_parser() -> argparse.ArgumentParser:
     residency_status.add_argument("--json", action="store_true")
     residency_warm = residency_sub.add_parser("warm")
     residency_warm.add_argument("worker")
+    residency_warm.add_argument("--model")
     residency_warm.add_argument("--json", action="store_true")
+    residency_release = residency_sub.add_parser(
+        "release", help="Release one exact worker-local model and verify provider state"
+    )
+    residency_release.add_argument("worker")
+    residency_release.add_argument("model")
+    residency_release.add_argument("--json", action="store_true")
 
     commons_parser = subparsers.add_parser(
         "commons", help="Browse controller-local Commons without a model"
@@ -454,14 +490,36 @@ def cmd_doctor(args: argparse.Namespace) -> int:
             raise RuntimeError("controller Ollama returned a malformed tags document")
         return {"model_count": len(models)}
 
-    ollama_required = any(model.provider != "fabric" for model in config.models.values())
+    def cli_probe() -> dict[str, Any]:
+        from .portable_cli import WRAPPERS, install_portable_cli
+
+        bin_dir = Path(sys.prefix) / ("Scripts" if os.name == "nt" else "bin")
+        missing = [
+            name
+            for name in ("mncs-harness", "mncs-harness-tui", "mncs-harness-fabric")
+            if not (bin_dir / name).exists()
+        ]
+        repaired: list[str] = []
+        if missing:
+            repaired = [str(path.name) for path in install_portable_cli(bin_dir)]
+        present = {
+            name: (bin_dir / name).exists()
+            for name in WRAPPERS
+        }
+        if not present.get("mncs-harness"):
+            raise RuntimeError("canonical mncs-harness launcher is still missing after repair")
+        return {
+            "canonical": "mncs-harness",
+            "compatibility": ["elh", "epi13-harness"],
+            "present": present,
+            "repaired": repaired,
+        }
+
     commons_result = _bounded_probe("Commons", commons_probe, timeout_seconds=8)
     fabric_result = _bounded_probe("Fabric", fabric_probe, timeout_seconds=35)
     ollama_result = _bounded_probe("Ollama", ollama_probe, timeout_seconds=6)
-    ollama_result["required"] = ollama_required
-    if not ollama_required and ollama_result["status"] != "PASS":
-        ollama_result["status"] = "DEGRADED"
-    subsystems.extend((commons_result, fabric_result, ollama_result))
+    cli_result = _bounded_probe("CLI", cli_probe, timeout_seconds=4)
+    subsystems.extend((commons_result, fabric_result, ollama_result, cli_result))
 
     commons_status = commons_result.get("detail") if commons_result["status"] == "PASS" else {}
     if not isinstance(commons_status, dict):
@@ -568,6 +626,29 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         print(f"Metrics database: {metrics}")
         print(f"Overall: {outcome}")
     return 1 if failed else 0
+
+
+def cmd_experiment_readiness(args: argparse.Namespace) -> int:
+    from .experiment_readiness import BLOCKED, UNKNOWN, inspect_live_config
+
+    config = load_config(args.config)
+    payload = inspect_live_config(config, profile=args.profile)
+    if args.json:
+        _emit(payload, json_output=True)
+    else:
+        print(f"Profile: {payload['profile']}")
+        print(f"Profile status: {payload.get('profile_status') or payload['status']}")
+        print(f"Claim boundary: {payload['claim_boundary']}")
+        print(f"Schema: {payload.get('schema')}")
+        print(f"Fabric classification: {payload.get('fabric_classification')}")
+        print(f"Stack identity: {payload['experiment_stack']['experiment_stack_identity']}")
+        print(f"Provenance: {payload['experiment_stack'].get('provenance_status')}")
+        for name, layer in payload["layers"].items():
+            print(f"{name:<22} {layer['status']:<8} {layer.get('evidence') or ''}")
+        for warning in payload.get("optional_warnings") or []:
+            print(f"optional warning      {warning.get('layer')}: {warning.get('status')}")
+        print(f"Overall: {payload['status']}")
+    return 1 if payload["status"] in {BLOCKED, UNKNOWN} else 0
 
 
 def cmd_models(args: argparse.Namespace) -> int:
@@ -739,25 +820,41 @@ def cmd_ask(args: argparse.Namespace) -> int:
 
 def cmd_submit(args: argparse.Namespace) -> int:
     override = _routing_override(args)
-    if override.mode != "WORKER_MODEL":
+    if override.mode not in {"WORKER_MODEL", "WORKER_MODEL_ROLE"}:
         raise ValueError("elh submit requires exact --worker and --model-name pins")
     config = load_config(args.config)
     task = _task_text(args.task)
-    role, model = resolve_execution_profile(
-        config.models,
-        model_name=str(override.model),
-        role=args.profile,
+    agent = LocalAgent(config, refresh_inventory=False, warm_residency=False)
+    role = override.role if override.role in config.models else (
+        "coder" if "coder" in config.models else next(iter(config.models))
+    )
+    base = config.models[role]
+    model, selection = agent.fabric_session.resolve_model(
+        role,
+        replace(base, name=str(override.model)),
+        override,
     )
     agent = LocalAgent(config, refresh_inventory=False, warm_residency=False)
     model, selection = agent.fabric_session.resolve_model(role, model, override)
     if selection is None or not selection.available or not selection.worker_id:
         raise ValueError(selection.reason if selection else "exact pin could not be resolved")
     agent._configure_fabric_provenance(task, role, model)
+    from .tools import ToolRegistry
+
+    registry = ToolRegistry(
+        Path.cwd(),
+        config.policy,
+        auto_approve=True,
+        interactive=False,
+        commons=agent.commons_session,
+    )
+    tools = registry.available_schemas(tuple(dict.fromkeys((*model.tools, *agent.commons_session.tool_names))))
     accepted = agent.fabric_session.submit_chat(
         model,
         [{"role": "user", "content": task}],
         worker_id=selection.worker_id,
         idempotency_key=args.idempotency_key,
+        tools=tools or None,
     )
     payload = {
         "outcome": "ACCEPTED",
@@ -827,6 +924,64 @@ def cmd_chat(args: argparse.Namespace) -> int:
         )
         _print_attempts(result, False)
         print(result.final_content)
+
+
+def cmd_verify_models(args: argparse.Namespace) -> int:
+    from .model_verification import discover_candidates, verify_candidate
+
+    config = load_config(args.config)
+    session, _fleet_view = _fleet(config, refresh_inventory=False)
+    status = session.status()
+    workers = [
+        worker
+        for worker in status.workers
+        if not args.worker or worker.get("worker_id") == args.worker
+    ]
+    found = discover_candidates(workers)
+    if args.model_name:
+        found = [item for item in found if item[1].get("name") == args.model_name]
+    tiers = set(args.tier or [0, 1])
+    probes = {
+        "reachability": lambda _name, _item: (
+            "PASS",
+            "implementation identity is present in CURRENT Fabric inventory",
+        ),
+        "marker_response": lambda _name, _item: (
+            "UNKNOWN",
+            "marker probe requires an explicit live inference session",
+        ),
+        "tool_call": lambda _name, _item: (
+            "UNKNOWN",
+            "tool probe requires an explicit live inference session",
+        ),
+        "file_read": lambda _name, _item: (
+            "UNKNOWN",
+            "vision/file probe requires an explicit live inference session",
+        ),
+        "fabric_receipt": lambda _name, _item: (
+            "PASS" if status.state == "available" else "UNKNOWN",
+            f"fabric state={status.state}",
+        ),
+    }
+    payload = []
+    for worker_id, item in found:
+        result = verify_candidate(
+            worker_id,
+            item,
+            probes=probes,
+            tiers=tiers,
+            persist=bool(args.persist),
+        )
+        payload.append(
+            {
+                "worker": result.worker_id,
+                "model": result.model,
+                "summary": result.summary,
+                "records": [record.public() for record in result.records],
+            }
+        )
+    _emit({"candidates": payload, "count": len(payload)}, json_output=args.json)
+    return 0 if found else 1
 
 
 def cmd_verify(args: argparse.Namespace) -> int:
@@ -964,14 +1119,42 @@ def cmd_residency(args: argparse.Namespace) -> int:
     session, fleet = _fleet(config, refresh=True)
     if args.residency_command == "status":
         payload = fleet.snapshot()["residency"]
+    elif args.residency_command == "warm":
+        if args.model:
+            results = fleet.residency.prepare_experiment(
+                "operator-explicit-warm",
+                [{"worker_id": args.worker, "model": args.model, "role": "operator"}],
+            )
+        else:
+            results = fleet.residency.reconcile(force_worker=args.worker)
+        payload = {
+            "outcome": "PASS",
+            "worker": args.worker,
+            "results": list(results),
+        }
+        outcomes = {item.get("outcome") for item in payload["results"]}
+        if outcomes != {"PASS"}:
+            payload["outcome"] = "UNKNOWN"
+        session.refresh_model_inventory()
+        payload["fleet"] = fleet.snapshot()["fabric"]
     else:
         payload = {
             "outcome": "PASS",
             "worker": args.worker,
-            "results": list(fleet.residency.reconcile(force_worker=args.worker)),
+            "model": args.model,
+            "results": list(
+                fleet.residency.release_experiment(
+                    "operator-explicit-release",
+                    [{
+                        "worker_id": args.worker,
+                        "model": args.model,
+                        "provider": "ollama",
+                        "managed": True,
+                    }],
+                )
+            ),
         }
-        outcomes = {item.get("outcome") for item in payload["results"]}
-        if outcomes != {"PASS"}:
+        if {item.get("outcome") for item in payload["results"]} != {"PASS"}:
             payload["outcome"] = "UNKNOWN"
         session.refresh_model_inventory()
         payload["fleet"] = fleet.snapshot()["fabric"]
@@ -1034,6 +1217,7 @@ COMMANDS = {
     "init": cmd_init,
     "install-cli": cmd_install_cli,
     "doctor": cmd_doctor,
+    "experiment-readiness": cmd_experiment_readiness,
     "models": cmd_models,
     "pull": cmd_pull,
     "route": cmd_route,
@@ -1042,6 +1226,7 @@ COMMANDS = {
     "work": cmd_work,
     "chat": cmd_chat,
     "verify": cmd_verify,
+    "verify-models": cmd_verify_models,
     "eval": cmd_eval,
     "metrics": cmd_metrics,
     "fabric": cmd_fabric,

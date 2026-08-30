@@ -1,0 +1,9 @@
+#!/bin/sh
+# Relocatable repo launcher. Prefer the project virtualenv interpreter, then
+# whatever python3 is on PATH. Never depends on a host-absolute shebang.
+set -eu
+root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+if [ -x "$root/.venv/bin/python" ]; then
+  exec "$root/.venv/bin/python" -m epi13_local_harness.cli "$@"
+fi
+exec python3 -m epi13_local_harness.cli "$@"
