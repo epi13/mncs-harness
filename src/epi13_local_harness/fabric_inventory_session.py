@@ -1007,7 +1007,9 @@ class InventoryAwareFabricSession(FabricSession):
                     worker_id=requested.worker,
                     selected_model=requested.model,
                 )
-            elif self._inventory_freshness(target) not in {"CURRENT", "STALE"}:
+            elif self._inventory_freshness(target) not in (
+                {"CURRENT", "STALE"} if requested.mode == "WORKER_MODEL" else {"CURRENT"}
+            ):
                 failure = unavailable(
                     "PINNED_INVENTORY_NOT_CURRENT",
                     f"selected worker {requested.worker} has no current model inventory",

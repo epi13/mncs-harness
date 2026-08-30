@@ -12,6 +12,7 @@ from types import SimpleNamespace
 from epi13_local_harness.cli import _bounded_probe, doctor_outcome
 from epi13_local_harness.config import load_config
 from epi13_local_harness.fleet import FleetService
+from epi13_local_harness.models import resolve_execution_profile
 
 
 class DoctorProbeTests(unittest.TestCase):
@@ -92,6 +93,51 @@ class DoctorProbeTests(unittest.TestCase):
             doctor_outcome([{"name": "Fabric", "status": "ERROR"}], roles),
             "ERROR",
         )
+
+    def test_unused_local_ollama_failure_does_not_fail_fabric_backed_doctor(self) -> None:
+        subsystems = [
+            {"name": "Commons", "status": "PASS"},
+            {"name": "Fabric", "status": "PASS"},
+            {"name": "Ollama", "status": "ERROR", "required": False},
+            {"name": "Worker fabric-worker-01", "status": "PASS"},
+        ]
+        roles = [{"role": "e2b", "provider": "fabric", "available": True}]
+        self.assertEqual(doctor_outcome(subsystems, roles), "PASS")
+        self.assertEqual(
+            doctor_outcome(
+                [
+                    {"name": "Commons", "status": "PASS"},
+                    {"name": "Fabric", "status": "PASS"},
+                    {"name": "Ollama", "status": "ERROR", "required": True},
+                ],
+                roles,
+            ),
+            "ERROR",
+        )
+        self.assertEqual(
+            doctor_outcome(
+                [
+                    {"name": "Commons", "status": "PASS"},
+                    {"name": "Fabric", "status": "ERROR", "detail": "timed out"},
+                    {"name": "Ollama", "status": "PASS"},
+                ],
+                roles,
+            ),
+            "ERROR",
+        )
+
+    def test_submit_profile_uses_matching_role_not_e2b(self) -> None:
+        config = load_config(None)
+        role, profile = resolve_execution_profile(config.models, model_name="gemma4:e4b")
+        self.assertEqual(role, "e4b")
+        self.assertEqual(profile.num_ctx, config.models["e4b"].num_ctx)
+        self.assertEqual(profile.think, config.models["e4b"].think)
+        unmanaged_role, unmanaged = resolve_execution_profile(
+            config.models, model_name="unknown:tag"
+        )
+        self.assertEqual(unmanaged_role, "unmanaged")
+        self.assertEqual(unmanaged.num_ctx, 8192)
+        self.assertFalse(unmanaged.think)
 
     def test_doctor_json_stdout_is_pure_json(self) -> None:
         completed = subprocess.run(

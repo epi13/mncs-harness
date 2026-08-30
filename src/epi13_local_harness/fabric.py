@@ -1135,6 +1135,8 @@ class FabricSession:
                 placement=self._placement(model),
                 consumer_context=consumer_context,
                 idempotency_key=idempotency_key,
+                model=model.name,
+                role=model.role,
             )
         work_id = accepted.get("work_id") if isinstance(accepted, dict) else None
         return {
