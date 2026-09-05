@@ -348,6 +348,30 @@ class PersistentFabricTests(unittest.TestCase):
                 interactive=False,
             )
             executor = FabricTargetToolExecutor(session, registry)
+            # Consumer-declared observations are context, never authorization:
+            # exact-target admission refuses until an operator asserts.
+            refused = executor.execute(
+                "persistent-worker",
+                ["python", str(script)],
+                source_root=workspace,
+            )
+            self.assertFalse(refused.execution.success)
+            self.assertEqual(refused.fabric_result["disposition"], "UNKNOWN")
+            from mncs_fabric.api import FabricAdminClient
+
+            admin = FabricAdminClient.connect(
+                self.root / "controller-admin.sock",
+                client_identity="fixture-operator",
+                timeout=5,
+            )
+            try:
+                admin.assert_worker_capability(
+                    "persistent-worker",
+                    [{"kind": "runtime", "namespace": "system", "name": "python"}],
+                    observation_source="fixture-operator-asserted-capability",
+                )
+            finally:
+                admin.close()
             result = executor.execute(
                 "persistent-worker",
                 ["python", str(script)],
