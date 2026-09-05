@@ -22,7 +22,7 @@ from .evals import evaluate_routes, load_cases
 from .fabric_inventory_session import InventoryAwareFabricSession
 from .fleet import FleetService
 from .metrics import MetricsStore
-from .models import RoutingOverride, resolve_execution_profile
+from .models import RoutingOverride
 from .router import plan_route
 from .verifiers import Verifier
 

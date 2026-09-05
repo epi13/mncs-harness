@@ -1054,10 +1054,20 @@ class InventoryAwareFabricSession(FabricSession):
                 selection = failure
 
         if selection is None and requested.mode == "MODEL":
+            # A model-only pin asserts a capability without naming a worker,
+            # so it needs fresh proof: STALE remains usable for opportunistic
+            # AUTO routing and exact worker/model pairs, but never for a
+            # location-free capability assertion.
+            fresh = {
+                str(worker.get("worker_id"))
+                for worker in workers
+                if self._inventory_freshness(worker) == "CURRENT"
+            }
             eligible = [
                 (worker_id, inventory)
                 for worker_id, inventory in candidates
-                if named(inventory, str(requested.model)) is not None
+                if worker_id in fresh
+                and named(inventory, str(requested.model)) is not None
             ]
             if eligible:
                 eligible.sort(

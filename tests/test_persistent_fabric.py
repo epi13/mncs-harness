@@ -348,6 +348,30 @@ class PersistentFabricTests(unittest.TestCase):
                 interactive=False,
             )
             executor = FabricTargetToolExecutor(session, registry)
+            # Consumer-declared observations are context, never authorization:
+            # exact-target admission needs an operator-asserted (or
+            # worker-observed) observation. The refusal direction is pinned
+            # in mncs-fabric's own suite (test_targets.py); here the test
+            # operator asserts, then execution must proceed.
+            from mncs_fabric.api import FabricAdminClient
+
+            admin = FabricAdminClient.connect(
+                self.root / "controller-admin.sock",
+                client_identity="fixture-operator",
+                timeout=5,
+            )
+            try:
+                # Minimum-supported Fabric predates capability provenance
+                # classes; only assert where the operator surface exists.
+                # Older controllers authorize from consumer context as before.
+                if hasattr(admin, "assert_worker_capability"):
+                    admin.assert_worker_capability(
+                        "persistent-worker",
+                        [{"kind": "runtime", "namespace": "system", "name": "python"}],
+                        observation_source="fixture-operator-asserted-capability",
+                    )
+            finally:
+                admin.close()
             result = executor.execute(
                 "persistent-worker",
                 ["python", str(script)],
