@@ -361,11 +361,15 @@ class PersistentFabricTests(unittest.TestCase):
                 timeout=5,
             )
             try:
-                admin.assert_worker_capability(
-                    "persistent-worker",
-                    [{"kind": "runtime", "namespace": "system", "name": "python"}],
-                    observation_source="fixture-operator-asserted-capability",
-                )
+                # Minimum-supported Fabric predates capability provenance
+                # classes; only assert where the operator surface exists.
+                # Older controllers authorize from consumer context as before.
+                if hasattr(admin, "assert_worker_capability"):
+                    admin.assert_worker_capability(
+                        "persistent-worker",
+                        [{"kind": "runtime", "namespace": "system", "name": "python"}],
+                        observation_source="fixture-operator-asserted-capability",
+                    )
             finally:
                 admin.close()
             result = executor.execute(
