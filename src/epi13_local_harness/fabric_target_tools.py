@@ -8,7 +8,11 @@ from dataclasses import dataclass
 from pathlib import Path, PureWindowsPath
 from typing import Any, Sequence
 
-from .atlas_binding import FABRIC_DISPATCH_CAPABILITY_NEEDS, ExecutionRequirement
+from .atlas_binding import (
+    FABRIC_DISPATCH_CAPABILITY_NEEDS,
+    LEGACY_PROOF_ORIGIN,
+    ExecutionRequirement,
+)
 from .fabric import FabricExecutionError, FabricSession, _identity
 from .models import PolicyDecision, SessionTarget, ToolExecution
 from .policy import approval_granted
@@ -267,17 +271,24 @@ class FabricTargetToolExecutor:
             # comes from Fabric's own observation provenance
             # (worker-observed / operator-asserted vs consumer-declared)
             # and freshness from Fabric's own inventory judgment -- never
-            # from consumer context. An execution Fabric performed outside
-            # confirmed authority never reports success.
+            # from consumer context. The actual target comes from Fabric's
+            # own placement evidence, never from the declared request: a
+            # Fabric that placed elsewhere must not confirm. An execution
+            # Fabric performed outside confirmed authority never reports
+            # success; an unconfirmed one (UNKNOWN) keeps Fabric's own
+            # result but is annotated as unconfirmed.
+            evidence = fabric_result.get("target_execution_evidence") or {}
             confirmation = requirement.confirm_execution(
                 requirement_leg,
-                actual_target=target.worker_identity,
+                actual_target=str(evidence.get("worker_identity") or ""),
                 proof_origin=self._inventory_proof_origin(client, target.worker_identity),
                 proof_fresh=self._inventory_is_fresh(client, target.worker_identity),
             )
-            if confirmation.verdict != "GRANTED":
+            if confirmation.verdict == "REFUSED":
                 success = False
-                output = f"ATLAS_CONFIRM_{confirmation.verdict}: {confirmation.reason}\n{output}"
+                output = f"ATLAS_CONFIRM_REFUSED: {confirmation.reason}\n{output}"
+            elif confirmation.verdict == "UNKNOWN":
+                output = f"ATLAS_CONFIRM_UNKNOWN: {confirmation.reason}\n{output}"
         return FabricTargetToolResult(
             ToolExecution("run_command", arguments, output, success, decision),
             target,
@@ -287,11 +298,19 @@ class FabricTargetToolExecutor:
 
     @staticmethod
     def _inventory_proof_origin(client: Any, worker_identity: str) -> str:
-        """Map Fabric observation provenance to a proof channel."""
+        """Map Fabric observation provenance to a proof channel.
+
+        A Fabric implementation that predates observation provenance
+        reports the legacy channel: its observations predate the classes,
+        so a classless observation there is unproven-but-consistent
+        (UNKNOWN), never a manufactured refusal. On a provenance-capable
+        implementation a classless or consumer-declared observation stays
+        fail-closed, matching Fabric's own admission doctrine.
+        """
         try:
             from mncs_fabric.capabilities import TRUSTED_ADMISSION_CLASSES
         except ImportError:  # min-supported Fabric predates provenance classes
-            TRUSTED_ADMISSION_CLASSES = frozenset({"worker-observed", "operator-asserted"})
+            return LEGACY_PROOF_ORIGIN
         try:
             observation = client.latest_capability_observation(worker_identity) or {}
         except Exception:

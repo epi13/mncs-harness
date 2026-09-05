@@ -336,7 +336,8 @@ class PersistentFabricTests(unittest.TestCase):
                 # Minimum-supported Fabric predates capability provenance
                 # classes; only assert where the operator surface exists.
                 # Older controllers authorize from consumer context as before.
-                if hasattr(admin, "assert_worker_capability"):
+                provenance_capable = hasattr(admin, "assert_worker_capability")
+                if provenance_capable:
                     admin.assert_worker_capability(
                         "persistent-worker",
                         [{"kind": "runtime", "namespace": "system", "name": "python"}],
@@ -372,6 +373,14 @@ class PersistentFabricTests(unittest.TestCase):
                 requirement_leg="dispatch",
             )
             self.assertTrue(result.execution.success, result.execution.output)
+            if provenance_capable:
+                # Fresh operator proof: the confirm GRANTs, no annotation.
+                self.assertNotIn("ATLAS_CONFIRM_", result.execution.output)
+            else:
+                # Legacy Fabric predates observation provenance: the gate
+                # still bound the declared target, but the confirm stays
+                # UNKNOWN and Fabric's own result stands, annotated.
+                self.assertIn("ATLAS_CONFIRM_UNKNOWN", result.execution.output)
             self.assertIn("persistent-target-tool-ok", result.execution.output)
             self.assertEqual(result.target.label, "fabric-worker:persistent-worker")
             self.assertIsNotNone(result.authorization_identity)

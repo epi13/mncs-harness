@@ -58,10 +58,18 @@ class GauntletTests(unittest.TestCase):
                 self.assertTrue(row["pass"], row)
             # The CUDA leg degrades honestly without a kernel artifact.
             cuda = manifest["cuda"]
+            fabric = manifest["fabric"]
+            if fabric["verdict"] == "UNKNOWN":
+                # Legacy Fabric cannot assert worker capability, so the
+                # execution leg the CUDA leg rides on never establishes;
+                # the skip itself must stay explicit.
+                self.assertIn("min-supported", fabric["reason"])
+                self.assertEqual(cuda["reason"], "no cuda leg ran")
+                self.assertEqual(manifest["rights"]["verdict"], "UNKNOWN")
+                return
             self.assertEqual(cuda["verdict"], "UNKNOWN")
             self.assertIn("--ptx-kernel", cuda["reason"])
             # Fabric proves authorized == actual on a real execution.
-            fabric = manifest["fabric"]
             self.assertEqual(fabric["verdict"], "PASS")
             self.assertEqual(fabric["disposition"], "EXECUTED")
             self.assertEqual(fabric["actual_target"], fabric["authorized_target"])

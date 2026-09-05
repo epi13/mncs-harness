@@ -18,6 +18,7 @@ import pytest
 from atlas_fixtures import SCOPE, issue, load, payload
 
 from epi13_local_harness.atlas_binding import (
+    LEGACY_PROOF_ORIGIN,
     Acceptance,
     BindingError,
     ExecutionRequirement,
@@ -187,6 +188,28 @@ def test_12_consumer_declared_observation_refuses():
     )
     assert acceptance.verdict == "REFUSED"
     assert "not operator authority" in acceptance.reason
+
+
+def test_12b_legacy_match_is_unknown_never_granted():
+    acceptance = _bound_gpu().confirm_execution(
+        "gpu", actual_target="worker-01", proof_origin=LEGACY_PROOF_ORIGIN
+    )
+    assert acceptance.verdict == "UNKNOWN"
+    assert "predates observation provenance" in acceptance.reason
+
+
+def test_12c_legacy_mismatch_still_refuses():
+    acceptance = _bound_gpu().confirm_execution(
+        "gpu", actual_target="worker-09", proof_origin=LEGACY_PROOF_ORIGIN
+    )
+    assert acceptance.verdict == "REFUSED"
+    assert "target mismatch" in acceptance.reason
+
+
+def test_12d_legacy_without_actual_evidence_is_unknown():
+    acceptance = _bound_gpu().confirm_execution("gpu", proof_origin=LEGACY_PROOF_ORIGIN)
+    assert acceptance.verdict == "UNKNOWN"
+    assert "predates observation provenance" in acceptance.reason
 
 
 # 13. Missing conditional evidence ----------------------------------------------

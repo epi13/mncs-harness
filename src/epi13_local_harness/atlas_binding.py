@@ -50,6 +50,12 @@ FABRIC_DISPATCH_CAPABILITY_NEEDS: tuple[str, ...] = ("worker.dispatch",)
 #: manufacture authority.
 OPERATOR_PROOF_ORIGINS = ("fabric-inventory", "operator-asserted")
 
+#: Proof channel for Fabric implementations that predate observation
+#: provenance (no observation classes, no operator-assert surface). A
+#: legacy channel can never GRANT: a positive target mismatch still
+#: REFUSEs, anything else is consistent-yet-unproven UNKNOWN.
+LEGACY_PROOF_ORIGIN = "fabric-legacy"
+
 
 class BindingError(ValueError):
     """Malformed, tampered, or context-free Atlas decision/requirement."""
@@ -370,11 +376,30 @@ class ExecutionRequirement:
         identity and the proof channel it arrived on. Only fresh operator
         proof (fabric-inventory, operator-asserted) counts: consumer-declared
         observations can never authorize, and stale proof stays UNKNOWN.
+        A legacy implementation that predates observation provenance can
+        never GRANT either: a positive target mismatch still REFUSEs, and
+        anything else is UNKNOWN (gate-checked but unconfirmed).
         """
         acceptance = self.accept(leg_name, observed_artifact=observed_artifact)
         if acceptance.verdict != "GRANTED":
             return acceptance
         leg = next(item for item in self.legs if item.name == leg_name)
+        if proof_origin == LEGACY_PROOF_ORIGIN:
+            if actual_target and leg.target and actual_target != leg.target:
+                return Acceptance(
+                    "REFUSED",
+                    leg_name,
+                    f"target mismatch: authorized {leg.target}, actual {actual_target}",
+                    acceptance.binding,
+                )
+            return Acceptance(
+                "UNKNOWN",
+                leg_name,
+                f"actual target {actual_target or 'unreported'} consistent with "
+                f"authorized {leg.target or 'unbound'} but unproven: Fabric "
+                "implementation predates observation provenance",
+                acceptance.binding,
+            )
         if not actual_target:
             return Acceptance("REFUSED", leg_name, "no actual target evidence", acceptance.binding)
         if proof_origin not in OPERATOR_PROOF_ORIGINS:
