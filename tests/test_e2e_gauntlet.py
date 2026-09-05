@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from epi13_local_harness.e2e_gauntlet import MANIFEST_SCHEMA, main
+from epi13_local_harness.e2e_gauntlet import MANIFEST_SCHEMA, _cuda_leg, main
 
 
 def _canonical(payload):
@@ -15,7 +15,17 @@ def _canonical(payload):
     )
 
 
+def _atlas_checkout_present() -> bool:
+    return (
+        Path(__file__).resolve().parents[2].parent / "mncs-atlas" / "admission"
+    ).is_dir()
+
+
 class GauntletTests(unittest.TestCase):
+    @unittest.skipUnless(
+        _atlas_checkout_present(),
+        "mncs-atlas sibling checkout unavailable: gauntlet needs live Atlas issuance",
+    )
     def test_gauntlet_reproduces_full_chain(self) -> None:
         with tempfile.TemporaryDirectory(prefix="gauntlet-test-") as directory:
             manifest_path = Path(directory) / "manifest.json"
@@ -48,6 +58,10 @@ class GauntletTests(unittest.TestCase):
             self.assertEqual(manifest["adversarial"]["verdict"], "PASS")
             for row in manifest["adversarial"]["rows"]:
                 self.assertTrue(row["pass"], row)
+            # The CUDA leg degrades honestly without a kernel artifact.
+            cuda = manifest["cuda"]
+            self.assertEqual(cuda["verdict"], "UNKNOWN")
+            self.assertIn("--ptx-kernel", cuda["reason"])
             # Fabric proves authorized == actual on a real execution.
             fabric = manifest["fabric"]
             self.assertEqual(fabric["verdict"], "PASS")
@@ -60,6 +74,16 @@ class GauntletTests(unittest.TestCase):
                 binding["authorization_identity"], fabric["authorization_identity"]
             )
             self.assertEqual(binding["requirement_id"], manifest["requirement"]["requirement_id"])
+
+    def test_cuda_leg_degrades_without_kernel(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="gauntlet-cuda-") as directory:
+            workspace = Path(directory)
+            missing = _cuda_leg(None, None, None, workspace, None, "worker-01")
+            self.assertEqual(missing["verdict"], "UNKNOWN")
+            absent = _cuda_leg(
+                None, None, None, workspace, Path(directory) / "nope.ptx", "worker-01"
+            )
+            self.assertEqual(absent["verdict"], "UNKNOWN")
 
 
 if __name__ == "__main__":

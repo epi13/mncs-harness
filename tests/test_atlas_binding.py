@@ -5,6 +5,11 @@ verdict of GRANTED / UNKNOWN / REFUSED. No exception substitutes for a
 verdict once the envelope loads.
 """
 
+import sys
+from pathlib import Path as _TestPath
+
+sys.path.insert(0, str(_TestPath(__file__).resolve().parent))
+
 import hashlib
 import itertools
 import json

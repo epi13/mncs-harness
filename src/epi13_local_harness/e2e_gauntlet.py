@@ -390,7 +390,88 @@ def local_tools_phase(envelope: dict[str, Any] | None) -> dict[str, Any]:
     return {"verdict": verdict, "rows": rows}
 
 
-def fabric_phase(envelope: dict[str, Any] | None, work_root: Path) -> dict[str, Any]:
+CUDA_LAUNCH_SCRIPT = '''"""Enforced-chain CUDA leg: launch the MNCS-generated PTX kernel.
+
+Runs on the Fabric worker as an ordinary dispatched bundle (no special
+GPU path in the dispatcher). The kernel bytes are embedded below by the
+gauntlet (single-file bundle, no co-location assumptions) from the
+--ptx-kernel artifact whose sha256 is recorded in the manifest.
+Prints machine-readable CUDA_CASE lines plus CUDA_SUMMARY.
+"""
+import ctypes
+import struct
+import sys
+
+_KERNEL_PTX_HEX = "{PTX_HEX}"
+
+
+def check(code, what):
+    if code != 0:
+        raise RuntimeError(f"CUDA error {code} in {what}")
+
+
+def main() -> int:
+    cuda = ctypes.CDLL("libcuda.so.1")
+    cuda.cuInit(0)
+    dev = ctypes.c_int()
+    check(cuda.cuDeviceGet(ctypes.byref(dev), 0), "cuDeviceGet")
+    name = ctypes.create_string_buffer(128)
+    check(cuda.cuDeviceGetName(name, 128, dev), "cuDeviceGetName")
+    uuid = ctypes.create_string_buffer(32)
+    check(cuda.cuDeviceGetUuid(uuid, dev), "cuDeviceGetUuid")
+    print(f"CUDA_DEVICE name={name.value.decode()} uuid={uuid.raw.hex()}")
+    ctx = ctypes.c_void_p()
+    check(cuda.cuCtxCreate(ctypes.byref(ctx), 0, dev), "cuCtxCreate")
+    ptx = bytes.fromhex(_KERNEL_PTX_HEX)
+    mod = ctypes.c_void_p()
+    check(cuda.cuModuleLoadData(ctypes.byref(mod), ptx), "cuModuleLoadData")
+    func = ctypes.c_void_p()
+    check(cuda.cuModuleGetFunction(ctypes.byref(func), mod, b"bounded_min"),
+          "cuModuleGetFunction")
+    ok = 0
+    total = 0
+    for a, b, want in [(7, 11, 7), (11, 7, 7), (5, 5, 5), (0, 3, 0)]:
+        total += 1
+        status = ctypes.c_void_p()
+        value = ctypes.c_void_p()
+        check(cuda.cuMemAlloc(ctypes.byref(status), 4), "cuMemAlloc status")
+        check(cuda.cuMemAlloc(ctypes.byref(value), 4), "cuMemAlloc value")
+        try:
+            ca, cb = ctypes.c_uint32(a), ctypes.c_uint32(b)
+            args = (ctypes.c_void_p * 4)(
+                ctypes.cast(ctypes.byref(ca), ctypes.c_void_p),
+                ctypes.cast(ctypes.byref(cb), ctypes.c_void_p),
+                ctypes.cast(ctypes.byref(status), ctypes.c_void_p),
+                ctypes.cast(ctypes.byref(value), ctypes.c_void_p),
+            )
+            check(cuda.cuLaunchKernel(func, 1, 1, 1, 1, 1, 1, 0, None,
+                                      ctypes.cast(args, ctypes.POINTER(ctypes.c_void_p)),
+                                      None), f"cuLaunchKernel {a},{b}")
+            check(cuda.cuCtxSynchronize(), "cuCtxSynchronize")
+            sbuf, vbuf = ctypes.create_string_buffer(4), ctypes.create_string_buffer(4)
+            check(cuda.cuMemcpyDtoH(sbuf, status, 4), "DtoH status")
+            check(cuda.cuMemcpyDtoH(vbuf, value, 4), "DtoH value")
+            status_v = struct.unpack("<i", sbuf.raw)[0]
+            value_v = struct.unpack("<i", vbuf.raw)[0]
+            passed = status_v == 0 and value_v == want
+            ok += passed
+            print(f"CUDA_CASE a={a} b={b} status={status_v} value={value_v} "
+                  f"want={want} {'PASS' if passed else 'FAIL'}")
+        finally:
+            cuda.cuMemFree(status)
+            cuda.cuMemFree(value)
+    print(f"CUDA_SUMMARY ok={ok} total={total}")
+    return 0 if ok == total == 4 else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+'''
+
+
+def fabric_phase(
+    envelope: dict[str, Any] | None, work_root: Path, ptx_kernel: Path | None = None
+) -> dict[str, Any]:
     """Real dispatch through a persistent Fabric service under authority.
 
     Spins TLS + controller + enrolled local worker in a temp dir (the
@@ -419,12 +500,80 @@ def fabric_phase(envelope: dict[str, Any] | None, work_root: Path) -> dict[str, 
     root = work_root / "fabric"
     root.mkdir(parents=True, exist_ok=True)
     try:
-        return _fabric_persistent_run(envelope, root, openssl)
+        return _fabric_persistent_run(envelope, root, openssl, ptx_kernel)
     except Exception as exc:
         return {"verdict": "FAIL", "reason": f"fabric phase crashed: {exc}"}
 
 
-def _fabric_persistent_run(envelope: dict[str, Any], root: Path, openssl: str) -> dict[str, Any]:
+def _cuda_leg(session, tool_registry, requirement, workspace, ptx_kernel, worker_id):
+    """CUDA/PTX kernel launch through the same enforced dispatch path.
+
+    No special GPU path in the dispatcher: the MNCS-generated kernel ships
+    in an ordinary bundle, placement stays inside the authorized dispatch
+    leg, and the launch output binds device + artifact + worker. Absent
+    driver/hardware/kernel this leg is UNKNOWN, never a fake result.
+    """
+    import shutil
+    import subprocess
+
+    from epi13_local_harness.fabric_target_tools import FabricTargetToolExecutor
+
+    if ptx_kernel is None or not Path(ptx_kernel).is_file():
+        return {"verdict": "UNKNOWN", "reason": "no PTX kernel provided (--ptx-kernel)"}
+    if shutil.which("nvidia-smi") is None:
+        return {"verdict": "UNKNOWN", "reason": "nvidia-smi unavailable: no CUDA driver"}
+    try:
+        smi = subprocess.run(
+            ["nvidia-smi", "-L"], capture_output=True, text=True, check=True, timeout=30
+        )
+        device_line = (smi.stdout.strip().splitlines() or ["unknown"])[0]
+    except Exception as exc:
+        return {"verdict": "UNKNOWN", "reason": f"nvidia-smi probe failed: {exc}"}
+    kernel_bytes = Path(ptx_kernel).read_bytes()
+    cuda_dir = workspace / "cuda-leg"
+    cuda_dir.mkdir(exist_ok=True)
+    (cuda_dir / "cuda_launch.py").write_text(
+        CUDA_LAUNCH_SCRIPT.replace("{PTX_HEX}", kernel_bytes.hex()), encoding="utf-8"
+    )
+    executor = FabricTargetToolExecutor(session, tool_registry)
+    result = executor.execute(
+        worker_id,
+        ["python", str(cuda_dir / "cuda_launch.py")],
+        source_root=cuda_dir,
+        requirement=requirement,
+        requirement_leg="dispatch",
+    )
+    output = result.execution.output
+    cases = [line for line in output.splitlines() if line.startswith("CUDA_CASE")]
+    summary = next((line for line in output.splitlines() if line.startswith("CUDA_SUMMARY")), "")
+    device = next((line for line in output.splitlines() if line.startswith("CUDA_DEVICE")), "")
+    good = (
+        result.execution.success
+        and summary == "CUDA_SUMMARY ok=4 total=4"
+        and all(line.endswith("PASS") for line in cases)
+        and len(cases) == 4
+    )
+    if not good:
+        return {
+            "verdict": "FAIL",
+            "reason": f"cuda launch did not confirm: {output[:1500]}",
+        }
+    return {
+        "verdict": "PASS",
+        "device": device,
+        "host_probe": device_line,
+        "kernel_sha256": hashlib.sha256(kernel_bytes).hexdigest(),
+        "cases": cases,
+        "worker_identity": worker_id,
+        "authorized_target": requirement.legs[1].target if len(requirement.legs) > 1 else "",
+        "authorization_identity": result.authorization_identity,
+        "output_digest": _digest(output),
+    }
+
+
+def _fabric_persistent_run(
+    envelope: dict[str, Any], root: Path, openssl: str, ptx_kernel: Path | None = None
+) -> dict[str, Any]:
     """Persistent-service dispatch under the gauntlet requirement leg."""
     import socket
     import ssl
@@ -651,6 +800,7 @@ def _fabric_persistent_run(envelope: dict[str, Any], root: Path, openssl: str) -
                 "verdict": "FAIL",
                 "reason": f"dispatch did not confirm: {result.execution.output[:300]}",
             }
+        cuda = _cuda_leg(session, tool_registry, requirement, workspace, ptx_kernel, worker_id)
         return {
             "verdict": "PASS",
             "worker_identity": worker_id,
@@ -668,6 +818,7 @@ def _fabric_persistent_run(envelope: dict[str, Any], root: Path, openssl: str) -
             "artifact_identity": envelope["artifact_identity"],
             "acceptance_binding": requirement.accept("dispatch").binding,
             "output_digest": _digest(result.execution.output),
+            "cuda": cuda,
         }
     finally:
         if session is not None:
@@ -719,6 +870,13 @@ def commons_phase() -> dict[str, Any]:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="MNCS family E2E gauntlet")
     parser.add_argument("--manifest-out", type=Path, default=None)
+    parser.add_argument(
+        "--ptx-kernel",
+        type=Path,
+        default=None,
+        help="MNCS-generated kernel.ptx for the CUDA leg "
+        "(regenerate: mncs compile <prog> --emit backend --target mncs-ptx64)",
+    )
     args = parser.parse_args(argv)
 
     harness_root = Path(__file__).resolve().parents[2]
@@ -736,11 +894,22 @@ def main(argv: list[str] | None = None) -> int:
     manifest["adversarial"] = adversarial_phase(atlas)
     manifest["local_tools"] = local_tools_phase(envelope)
     with tempfile.TemporaryDirectory(prefix="gauntlet-") as work:
-        manifest["fabric"] = fabric_phase(envelope, Path(work))
+        manifest["fabric"] = fabric_phase(envelope, Path(work), args.ptx_kernel)
+    cuda = manifest["fabric"].pop("cuda", {"verdict": "UNKNOWN", "reason": "no cuda leg ran"})
+    manifest["cuda"] = cuda
     manifest["rights"] = rights_phase(requirement.get("requirement_id"), manifest["fabric"])
     manifest["commons"] = commons_phase()
 
-    phases = ["atlas", "requirement", "adversarial", "local_tools", "fabric", "rights", "commons"]
+    phases = [
+        "atlas",
+        "requirement",
+        "adversarial",
+        "local_tools",
+        "fabric",
+        "cuda",
+        "rights",
+        "commons",
+    ]
     manifest["gauntlet_verdict"] = (
         "PASS"
         if all(manifest[name].get("verdict") in ("PASS", "UNKNOWN") for name in phases)
