@@ -10,6 +10,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
 
+from .atlas_binding import (
+    COMMONS_PUBLISH_CAPABILITY_NEEDS,
+    TOOL_CAPABILITY_NEEDS,
+    Acceptance,
+    ExecutionRequirement,
+)
 from .commons import WRITE_TOOLS, CommonsError, CommonsSession
 from .models import PolicyConfig, PolicyDecision, ToolExecution
 from .policy import (
@@ -56,6 +62,63 @@ class ToolRegistry:
         self.commons = commons
         self.modified_paths: list[Path] = []
         self._tools = self._build_tools()
+        self._atlas_requirement: ExecutionRequirement | None = None
+        self._atlas_leg = ""
+        self._atlas_acceptance: Acceptance | None = None
+
+    def bind_atlas_requirement(
+        self,
+        requirement: ExecutionRequirement,
+        leg_name: str,
+        observed_artifact: str = "",
+    ) -> Acceptance:
+        """Bind carried Atlas authority to subsequent consequential tools.
+
+        The acceptance is evaluated once here; every consequential
+        ``execute()`` re-checks the bound verdict and that the leg covers
+        the tool's declared capability needs. Read-only tools never need
+        a binding. Missing or non-granted bindings fail closed.
+        """
+        acceptance = requirement.accept(leg_name, observed_artifact=observed_artifact)
+        self._atlas_requirement = requirement
+        self._atlas_leg = leg_name
+        self._atlas_acceptance = acceptance
+        return acceptance
+
+    @property
+    def atlas_acceptance(self) -> Acceptance | None:
+        return self._atlas_acceptance
+
+    def _atlas_gate(self, tool_name: str, needs: tuple[str, ...]) -> PolicyDecision | None:
+        """Return None when Atlas authority covers this tool, else a refusal."""
+        if self._atlas_requirement is None or self._atlas_acceptance is None:
+            return PolicyDecision(
+                False,
+                "blocked",
+                f"ATLAS_REFUSED: {tool_name} needs {list(needs)} "
+                "but no Atlas-bound requirement is attached",
+            )
+        acceptance = self._atlas_acceptance
+        if acceptance.verdict != "GRANTED":
+            return PolicyDecision(
+                False,
+                "blocked",
+                f"ATLAS_REFUSED: {tool_name} blocked by bound leg "
+                f"{acceptance.leg}: {acceptance.reason}",
+            )
+        leg = next(
+            (item for item in self._atlas_requirement.legs if item.name == acceptance.leg),
+            None,
+        )
+        uncovered = [need for need in needs if leg is None or need not in leg.needs]
+        if uncovered:
+            return PolicyDecision(
+                False,
+                "blocked",
+                f"ATLAS_REFUSED: bound leg {acceptance.leg} does not cover "
+                f"{tool_name} capability needs {uncovered}",
+            )
+        return None
 
     @property
     def workspace(self) -> Path:
@@ -174,6 +237,11 @@ class ToolRegistry:
         if not tool:
             decision = PolicyDecision(False, "blocked", f"Unknown tool: {name}")
             return ToolExecution(name, arguments, decision.reason, False, decision)
+        needs = TOOL_CAPABILITY_NEEDS.get(name)
+        if needs is not None:
+            refusal = self._atlas_gate(name, needs)
+            if refusal is not None:
+                return ToolExecution(name, arguments, refusal.reason, False, refusal)
         try:
             return tool.handler(arguments)
         except Exception as exc:  # tool boundaries must return errors to the model
@@ -189,6 +257,9 @@ class ToolRegistry:
     def _commons_call(self, name: str, args: dict[str, Any]) -> ToolExecution:
         assert self.commons is not None
         if name in WRITE_TOOLS:
+            refusal = self._atlas_gate(name, COMMONS_PUBLISH_CAPABILITY_NEEDS)
+            if refusal is not None:
+                return ToolExecution(name, args, refusal.reason, False, refusal)
             decision = PolicyDecision(
                 self.commons.config.allow_model_publication,
                 "medium" if self.commons.config.allow_model_publication else "blocked",
@@ -200,7 +271,9 @@ class ToolRegistry:
                 requires_approval=True,
             )
             if not decision.allowed:
-                return ToolExecution(name, args, "COMMONS_TOOL_DENIED: " + decision.reason, False, decision)
+                return ToolExecution(
+                    name, args, "COMMONS_TOOL_DENIED: " + decision.reason, False, decision
+                )
             if not approval_granted(decision, self.auto_approve, self.interactive):
                 return ToolExecution(
                     name,
@@ -239,9 +312,7 @@ class ToolRegistry:
         lines = text.splitlines()
         start = max(1, int(args.get("start_line", 1)))
         end = min(len(lines), int(args.get("end_line", len(lines))))
-        selected = "\n".join(
-            f"{number}: {lines[number - 1]}" for number in range(start, end + 1)
-        )
+        selected = "\n".join(f"{number}: {lines[number - 1]}" for number in range(start, end + 1))
         decision = PolicyDecision(True, "low", "Read-only workspace access")
         return ToolExecution("read_file", args, self._truncate(selected), True, decision)
 
@@ -251,7 +322,9 @@ class ToolRegistry:
             raise ValueError(f"Not a directory: {args.get('path', '.')}")
         max_entries = min(500, max(1, int(args.get("max_entries", 200))))
         entries: list[str] = []
-        for child in sorted(path.iterdir(), key=lambda item: (not item.is_dir(), item.name.lower())):
+        for child in sorted(
+            path.iterdir(), key=lambda item: (not item.is_dir(), item.name.lower())
+        ):
             if not self.policy_config.allow_hidden_paths and child.name.startswith("."):
                 continue
             suffix = "/" if child.is_dir() else ""

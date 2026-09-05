@@ -1,5 +1,11 @@
 from __future__ import annotations
 
+import sys
+from pathlib import Path as _TestPath
+
+sys.path.insert(0, str(_TestPath(__file__).resolve().parent))
+
+
 import importlib.util
 import json
 import shutil
@@ -14,6 +20,10 @@ from dataclasses import replace
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+from atlas_fixtures import issue
+from atlas_fixtures import payload as atlas_payload
+
+from epi13_local_harness.atlas_binding import ExecutionRequirement
 from epi13_local_harness.config import load_config
 from epi13_local_harness.fabric import FabricExecutionError, FabricSession
 from epi13_local_harness.fabric_target_tools import FabricTargetToolExecutor
@@ -42,48 +52,6 @@ class _OllamaFixture(BaseHTTPRequestHandler):
 
     def log_message(self, *_args: object) -> None:
         return
-
-
-def _certificates(root: Path) -> dict[str, Path]:
-    assert OPENSSL
-    ca_key, ca_cert = root / "ca.key", root / "ca.pem"
-    subprocess.run(
-        [
-            OPENSSL, "req", "-x509", "-newkey", "rsa:2048", "-nodes",
-            "-keyout", str(ca_key), "-out", str(ca_cert), "-subj",
-            "/CN=Harness Fabric test CA", "-days", "1", "-addext",
-            "basicConstraints=critical,CA:TRUE", "-addext",
-            "keyUsage=critical,keyCertSign,cRLSign",
-        ],
-        check=True,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
-    result: dict[str, Path] = {"ca": ca_cert}
-    for name in ("server", "client"):
-        key, csr, cert = root / f"{name}.key", root / f"{name}.csr", root / f"{name}.pem"
-        subprocess.run(
-            [
-                OPENSSL, "req", "-new", "-newkey", "rsa:2048", "-nodes",
-                "-keyout", str(key), "-out", str(csr), "-subj", f"/CN=Harness Fabric {name}",
-            ],
-            check=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-        subprocess.run(
-            [
-                OPENSSL, "x509", "-req", "-in", str(csr), "-CA", str(ca_cert),
-                "-CAkey", str(ca_key), "-CAcreateserial", "-out", str(cert),
-                "-days", "1", "-sha256",
-            ],
-            check=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-        result[name] = cert
-        result[f"{name}_key"] = key
-    return result
 
 
 @unittest.skipUnless(importlib.util.find_spec("mncs_fabric"), "mncs-fabric is not installed")
@@ -140,14 +108,18 @@ class PersistentFabricTests(unittest.TestCase):
         self.assertEqual(first.status().execution_transport, "unsupported")
         self.assertEqual(first.status().target_execution_transport, "unsupported")
         self.assertEqual(first.status().controller_version, self.service.status()["fabric_version"])
-        self.assertEqual(first.status().controller_contract_identity, self.service.status()["public_contract_identity"])
+        self.assertEqual(
+            first.status().controller_contract_identity,
+            self.service.status()["public_contract_identity"],
+        )
         self.assertEqual(first.status().fleet_authority, "persistent-controller")
         self.assertEqual(first.status().workers, second.status().workers)
 
-        with self.assertRaisesRegex(
-            FabricExecutionError, "FABRIC_SERVICE_EXECUTION_UNSUPPORTED"
-        ):
-            first.chat(load_config(Path("/missing/config.toml")).models["e2b"], [{"role": "user", "content": "hello"}])
+        with self.assertRaisesRegex(FabricExecutionError, "FABRIC_SERVICE_EXECUTION_UNSUPPORTED"):
+            first.chat(
+                load_config(Path("/missing/config.toml")).models["e2b"],
+                [{"role": "user", "content": "hello"}],
+            )
 
         first.close()
         self.assertEqual(self.service.status()["service_runtime"], "RUNNING")
@@ -183,7 +155,9 @@ class PersistentFabricTests(unittest.TestCase):
 
         cert_root = self.root / "certificates"
         cert_root.mkdir()
-        cert = _certificates(cert_root)
+        from epi13_local_harness.fabric_test_support import ephemeral_certificates
+
+        cert = ephemeral_certificates(cert_root, OPENSSL)
         controller_trust_path = self.root / "controller-trust.jsonl"
         worker_trust = TrustStore(self.root / "worker-trust.jsonl")
         TrustStore(controller_trust_path).enroll(
@@ -240,9 +214,7 @@ class PersistentFabricTests(unittest.TestCase):
         self.assertTrue(worker_ready, "worker TLS listener did not become ready")
 
         lifecycle = LifecycleStore(self.root / "lifecycle.jsonl")
-        authorization = lifecycle.create_authorization(
-            expected_worker_identity="persistent-worker"
-        )
+        authorization = lifecycle.create_authorization(expected_worker_identity="persistent-worker")
         public_key = subprocess.run(
             [OPENSSL, "x509", "-in", str(cert["server"]), "-pubkey", "-noout"],
             check=True,
@@ -364,7 +336,8 @@ class PersistentFabricTests(unittest.TestCase):
                 # Minimum-supported Fabric predates capability provenance
                 # classes; only assert where the operator surface exists.
                 # Older controllers authorize from consumer context as before.
-                if hasattr(admin, "assert_worker_capability"):
+                provenance_capable = hasattr(admin, "assert_worker_capability")
+                if provenance_capable:
                     admin.assert_worker_capability(
                         "persistent-worker",
                         [{"kind": "runtime", "namespace": "system", "name": "python"}],
@@ -372,12 +345,42 @@ class PersistentFabricTests(unittest.TestCase):
                     )
             finally:
                 admin.close()
+            # Fabric dispatch runs under carried Atlas authority: the
+            # operator-authorized leg names exactly this worker.
+            requirement = ExecutionRequirement.from_dict(
+                atlas_payload(
+                    atlas_decisions=[
+                        issue(
+                            "worker.dispatch",
+                            "granted",
+                            execution_target="persistent-worker",
+                        )
+                    ],
+                    legs=[
+                        {
+                            "name": "dispatch",
+                            "needs": ["worker.dispatch"],
+                            "target": "persistent-worker",
+                        }
+                    ],
+                )
+            )
             result = executor.execute(
                 "persistent-worker",
                 ["python", str(script)],
                 source_root=workspace,
+                requirement=requirement,
+                requirement_leg="dispatch",
             )
             self.assertTrue(result.execution.success, result.execution.output)
+            if provenance_capable:
+                # Fresh operator proof: the confirm GRANTs, no annotation.
+                self.assertNotIn("ATLAS_CONFIRM_", result.execution.output)
+            else:
+                # Legacy Fabric predates observation provenance: the gate
+                # still bound the declared target, but the confirm stays
+                # UNKNOWN and Fabric's own result stands, annotated.
+                self.assertIn("ATLAS_CONFIRM_UNKNOWN", result.execution.output)
             self.assertIn("persistent-target-tool-ok", result.execution.output)
             self.assertEqual(result.target.label, "fabric-worker:persistent-worker")
             self.assertIsNotNone(result.authorization_identity)
@@ -402,6 +405,8 @@ class PersistentFabricTests(unittest.TestCase):
                 "persistent-worker",
                 ["python", str(script)],
                 source_root=workspace,
+                requirement=requirement,
+                requirement_leg="dispatch",
             )
             self.assertTrue(duplicate.execution.success, duplicate.execution.output)
             self.assertEqual(
@@ -417,6 +422,8 @@ class PersistentFabricTests(unittest.TestCase):
                 "persistent-worker",
                 ["rm", "remote_tool.py"],
                 source_root=workspace,
+                requirement=requirement,
+                requirement_leg="dispatch",
             )
             self.assertFalse(denied.execution.success)
             self.assertIsNone(denied.fabric_result)
@@ -426,7 +433,9 @@ class PersistentFabricTests(unittest.TestCase):
             session.close()
             session = None
             self.assertEqual(self.service.status()["service_runtime"], "RUNNING")
-            self.assertEqual(self.service.status()["fleet"]["workers"][0]["availability"], "AVAILABLE")
+            self.assertEqual(
+                self.service.status()["fleet"]["workers"][0]["availability"], "AVAILABLE"
+            )
         finally:
             if session is not None:
                 session.close()
