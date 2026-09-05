@@ -16,9 +16,7 @@ def _canonical(payload):
 
 
 def _atlas_checkout_present() -> bool:
-    return (
-        Path(__file__).resolve().parents[2].parent / "mncs-atlas" / "admission"
-    ).is_dir()
+    return (Path(__file__).resolve().parents[2] / "mncs-atlas" / "admission").is_dir()
 
 
 class GauntletTests(unittest.TestCase):
