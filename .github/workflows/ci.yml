@@ -34,6 +34,8 @@ jobs:
         run: ruff check src tests
       - name: Unit tests
         run: python -m unittest discover -s tests -v
+      - name: Enforcement boundary
+        run: python -m pytest tests/test_atlas_binding.py tests/test_atlas_enforcement.py -q -p no:cacheprovider
       - name: Routing evaluations
         run: elh eval
 

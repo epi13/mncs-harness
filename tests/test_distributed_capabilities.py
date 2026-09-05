@@ -8,6 +8,8 @@ from dataclasses import replace
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+from atlas_fixtures import payload as atlas_payload
+
 from epi13_local_harness.agent import LocalAgent
 from epi13_local_harness.capability_graph import build_capability_graph
 from epi13_local_harness.commons import CommonsError
@@ -105,6 +107,8 @@ def _response_observation(request_id: str) -> dict[str, object]:
         "relationships": [{"type": "responds_to", "target": request_id}],
         "details": {"outcome": "UNKNOWN", "authority": "none-granted"},
     }
+
+
 class _CapabilityClient:
     def __init__(self, workers: list[dict[str, object]]) -> None:
         self._workers = workers
@@ -246,18 +250,14 @@ class DistributedCapabilityTests(unittest.TestCase):
 
     def test_missing_model_and_fabric_unavailability_are_distinct(self) -> None:
         missing = self._session([_worker("worker", [])])
-        _effective, selection = missing.resolve_model(
-            "e4b", load_config(None).models["e4b"]
-        )
+        _effective, selection = missing.resolve_model("e4b", load_config(None).models["e4b"])
         self.assertFalse(selection.available)
         self.assertEqual(selection.inventory_status, "MODEL_NOT_INSTALLED")
 
         unavailable = self._session([])
         unavailable.capability_api_available = False
         unavailable._state = "unavailable"
-        _effective, selection = unavailable.resolve_model(
-            "e4b", load_config(None).models["e4b"]
-        )
+        _effective, selection = unavailable.resolve_model("e4b", load_config(None).models["e4b"])
         self.assertFalse(selection.available)
         self.assertEqual(selection.inventory_status, "FABRIC_UNAVAILABLE")
 
@@ -387,8 +387,7 @@ class _AgentOllamaFixture(BaseHTTPRequestHandler):
             )
             type(self).received_commons_result = any(
                 message.get("role") == "tool"
-                and "commons.mncs.dev/node/local-agent/v0alpha1"
-                in message.get("content", "")
+                and "commons.mncs.dev/node/local-agent/v0alpha1" in message.get("content", "")
                 for message in request["messages"]
             )
             response = {"message": {"role": "assistant", "content": "tool result received"}}
@@ -470,7 +469,13 @@ class DistributedSessionIntegrationTests(unittest.TestCase):
                     fabric=fabric,
                     metrics=MetricsConfig(root / "metrics.sqlite3", False),
                 )
-                agent = LocalAgent(config)
+                # The controller tool loop runs under carried Atlas
+                # authority (write_file needs repo.edit on the cpu leg).
+                agent = LocalAgent(
+                    config,
+                    atlas_requirement=atlas_payload(),
+                    atlas_leg="cpu",
+                )
                 agent.fabric_session = session
                 workspace = root / "controller-workspace"
                 workspace.mkdir()
@@ -484,7 +489,9 @@ class DistributedSessionIntegrationTests(unittest.TestCase):
                 attempt = result.attempts[0]
                 self.assertTrue(result.successful, result)
                 self.assertEqual(attempt.model, "gemma4:e4b")
-                self.assertEqual(attempt.session_targets.inference.label, "fabric-worker:fabric-worker")
+                self.assertEqual(
+                    attempt.session_targets.inference.label, "fabric-worker:fabric-worker"
+                )
                 self.assertEqual(attempt.session_targets.workspace.label, "controller")
                 self.assertEqual(attempt.session_targets.tools.label, "controller")
                 self.assertEqual(
@@ -513,6 +520,7 @@ class DistributedSessionIntegrationTests(unittest.TestCase):
             import mncs_commons  # noqa: F401
         except ImportError:
             self.skipTest("Commons MCP optional dependencies are unavailable")
+
         class DisappearingSession:
             def __init__(self) -> None:
                 self.calls = 0
@@ -608,9 +616,7 @@ class DistributedSessionIntegrationTests(unittest.TestCase):
             self.assertEqual(attempt.tool_executions[0].name, "commons_describe")
             self.assertTrue(attempt.tool_executions[0].success)
             self.assertIn("WORKER_UNAVAILABLE", attempt.error or "")
-            self.assertEqual(
-                attempt.session_targets.inference.label, "fabric-worker:fabric-worker"
-            )
+            self.assertEqual(attempt.session_targets.inference.label, "fabric-worker:fabric-worker")
             self.assertEqual(attempt.session_targets.workspace.label, "controller")
             self.assertEqual(attempt.session_targets.tools.label, "controller")
 
@@ -689,9 +695,7 @@ class DistributedSessionIntegrationTests(unittest.TestCase):
                     root / "commons-operator.sock",
                     domain="controller:test",
                 )
-                commons_server = CommonsServiceServer(
-                    CommonsService(commons_service_config)
-                )
+                commons_server = CommonsServiceServer(CommonsService(commons_service_config))
                 commons_server.start()
                 self.addCleanup(commons_server.close)
                 base = load_config(None)
@@ -712,9 +716,7 @@ class DistributedSessionIntegrationTests(unittest.TestCase):
                 )
                 agent = LocalAgent(config)
                 agent.fabric_session = session
-                self.assertNotIn(
-                    "commons_publish_record", agent.commons_session.tool_names
-                )
+                self.assertNotIn("commons_publish_record", agent.commons_session.tool_names)
                 with self.assertRaises(CommonsError):
                     agent.commons_session.call("commons_work_list", {"limit": "1"})
                 workspace = root / "controller-workspace"
@@ -755,9 +757,7 @@ class DistributedSessionIntegrationTests(unittest.TestCase):
                         for record in evidence
                     )
                 )
-                self.assertIn(
-                    attempt.metrics["commons_evidence_publication"], {"PUBLISHED"}
-                )
+                self.assertIn(attempt.metrics["commons_evidence_publication"], {"PUBLISHED"})
 
                 dispatches = client.network.ledger.records(
                     record_type="protocol.controller-dispatch", limit=100
@@ -765,8 +765,7 @@ class DistributedSessionIntegrationTests(unittest.TestCase):
                 inference_dispatches = [
                     row["record"]
                     for row in dispatches
-                    if row["record"]["payload"]["job_plan"]["job_id"]
-                    == "elh-fabric-inference"
+                    if row["record"]["payload"]["job_plan"]["job_id"] == "elh-fabric-inference"
                 ]
                 self.assertEqual(len(inference_dispatches), 2)
                 self.assertTrue(
@@ -774,8 +773,7 @@ class DistributedSessionIntegrationTests(unittest.TestCase):
                 )
                 self.assertTrue(
                     all(
-                        row["payload"]["consumer_context"]["source_project"]
-                        == "mncs-harness"
+                        row["payload"]["consumer_context"]["source_project"] == "mncs-harness"
                         for row in inference_dispatches
                     )
                 )
@@ -797,8 +795,7 @@ class DistributedSessionIntegrationTests(unittest.TestCase):
                 self.assertTrue(
                     all(
                         plan["timeout_seconds"]
-                        == fabric.provider_timeout_seconds
-                        + fabric.job_timeout_overhead_seconds
+                        == fabric.provider_timeout_seconds + fabric.job_timeout_overhead_seconds
                         for plan in plans
                     )
                 )
@@ -850,9 +847,7 @@ class DistributedSessionIntegrationTests(unittest.TestCase):
                     root / "commons-operator.sock",
                     domain="controller:test",
                 )
-                commons_server = CommonsServiceServer(
-                    CommonsService(commons_service_config)
-                )
+                commons_server = CommonsServiceServer(CommonsService(commons_service_config))
                 commons_server.start()
                 self.addCleanup(commons_server.close)
                 _AgentOllamaFixture.publication_record = _response_observation(
@@ -911,7 +906,13 @@ class DistributedSessionIntegrationTests(unittest.TestCase):
                     ),
                     metrics=MetricsConfig(root / "metrics.sqlite3", False),
                 )
-                agent = LocalAgent(config)
+                # Commons publication runs under carried Atlas authority
+                # (evidence.attest is granted in the fixture).
+                agent = LocalAgent(
+                    config,
+                    atlas_requirement=atlas_payload(),
+                    atlas_leg="cpu",
+                )
                 agent.fabric_session = session
                 workspace = root / "controller-workspace"
                 workspace.mkdir()

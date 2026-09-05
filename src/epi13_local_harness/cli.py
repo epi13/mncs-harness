@@ -27,6 +27,42 @@ from .router import plan_route
 from .verifiers import Verifier
 
 
+def _add_atlas_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--atlas-requirement",
+        type=_path,
+        default=None,
+        help=(
+            "Path to an mncs.execution-requirement JSON envelope carrying "
+            "Atlas-issued capability decisions. Consequential tools "
+            "(run_command, write_file, Commons publication, Fabric dispatch) "
+            "fail closed without one."
+        ),
+    )
+    parser.add_argument(
+        "--atlas-leg",
+        default="",
+        help="Requirement leg to enforce for this invocation",
+    )
+
+
+def _load_atlas_binding(
+    args: argparse.Namespace,
+) -> tuple[Any | None, str]:
+    requirement_path = getattr(args, "atlas_requirement", None)
+    leg = getattr(args, "atlas_leg", "") or ""
+    if requirement_path is None:
+        return None, leg
+    from .atlas_binding import ExecutionRequirement
+
+    try:
+        envelope = json.loads(Path(requirement_path).read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise ValueError(f"Cannot load Atlas requirement: {exc}") from exc
+    # Fail closed: forged, tampered, or out-of-context envelopes raise.
+    return ExecutionRequirement.from_dict(envelope), leg
+
+
 def _path(value: str) -> Path:
     return Path(value).expanduser()
 
@@ -113,6 +149,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="Auto-approve policy-allowed writes and commands; blocked actions remain blocked",
     )
     ask_parser.add_argument("--verbose", action="store_true")
+    _add_atlas_arguments(ask_parser)
 
     submit_parser = subparsers.add_parser(
         "submit",
@@ -126,8 +163,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Configured model role whose context/sampling profile should be applied",
     )
     submit_parser.add_argument("--json", action="store_true")
+    _add_atlas_arguments(submit_parser)
 
-    work_parser = subparsers.add_parser("work", help="Inspect detached persistent Fabric inference work")
+    work_parser = subparsers.add_parser(
+        "work", help="Inspect detached persistent Fabric inference work"
+    )
     work_sub = work_parser.add_subparsers(dest="work_command", required=True)
     work_status = work_sub.add_parser("status")
     work_status.add_argument("work_id")
@@ -140,6 +180,7 @@ def build_parser() -> argparse.ArgumentParser:
     chat_parser.add_argument("--workspace", type=_path, default=Path.cwd())
     _add_routing_arguments(chat_parser)
     chat_parser.add_argument("--yes", action="store_true")
+    _add_atlas_arguments(chat_parser)
 
     verify_parser = subparsers.add_parser("verify", help="Run deterministic file verifiers")
     verify_parser.add_argument("paths", nargs="*", type=_path, default=[Path.cwd()])
@@ -286,9 +327,7 @@ def _fleet(
     refresh: bool = False,
     refresh_inventory: bool = True,
 ) -> tuple[InventoryAwareFabricSession, FleetService]:
-    session = InventoryAwareFabricSession(
-        config.fabric, residency_config=config.model_residency
-    )
+    session = InventoryAwareFabricSession(config.fabric, residency_config=config.model_residency)
     session.initialize(refresh_inventory=refresh_inventory)
     fleet = FleetService(config, session)
     if refresh:
@@ -430,11 +469,7 @@ def doctor_outcome(
         for item in subsystems
         if required(item) and not str(item.get("name", "")).startswith("Worker ")
     ]
-    workers = [
-        item
-        for item in subsystems
-        if str(item.get("name", "")).startswith("Worker ")
-    ]
+    workers = [item for item in subsystems if str(item.get("name", "")).startswith("Worker ")]
     fabric_roles = [item for item in route_availability if item.get("provider") == "fabric"]
     unavailable_routes = [item for item in fabric_roles if not item.get("available")]
     if any(item.get("status") == "ERROR" for item in core):
@@ -502,10 +537,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         repaired: list[str] = []
         if missing:
             repaired = [str(path.name) for path in install_portable_cli(bin_dir)]
-        present = {
-            name: (bin_dir / name).exists()
-            for name in WRAPPERS
-        }
+        present = {name: (bin_dir / name).exists() for name in WRAPPERS}
         if not present.get("mncs-harness"):
             raise RuntimeError("canonical mncs-harness launcher is still missing after repair")
         return {
@@ -526,8 +558,12 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         commons_status = {"code": commons_result["status"], "detail": commons_result["detail"]}
     fabric_detail = fabric_result.get("detail") if fabric_result["status"] == "PASS" else {}
     snapshot = {
-        "controller": fabric_detail.get("controller", {}) if isinstance(fabric_detail, dict) else {},
-        "fabric": {"workers": fabric_detail.get("workers", []) if isinstance(fabric_detail, dict) else []},
+        "controller": fabric_detail.get("controller", {})
+        if isinstance(fabric_detail, dict)
+        else {},
+        "fabric": {
+            "workers": fabric_detail.get("workers", []) if isinstance(fabric_detail, dict) else []
+        },
     }
     for worker in snapshot["fabric"]["workers"]:
         worker_id = str(worker.get("worker_id") or "unknown-worker")
@@ -688,14 +724,18 @@ def cmd_models(args: argparse.Namespace) -> int:
             f"loaded={','.join(controller['loaded_generation_models']) or 'none'}"
         )
         for model in controller["installed_models"]:
-            print(f"  {'●' if model.get('loaded') else '○'} {model.get('name') or model.get('model')}")
+            print(
+                f"  {'●' if model.get('loaded') else '○'} {model.get('name') or model.get('model')}"
+            )
     for worker in payload["workers"]:
         print(
             f"{worker['worker_id']} {worker.get('availability', 'UNKNOWN')} "
             f"version={worker.get('worker_service_version') or 'UNKNOWN'}"
         )
         for model in worker.get("model_inventory", []):
-            print(f"  {'●' if model.get('loaded') else '○'} {model.get('name') or model.get('model')}")
+            print(
+                f"  {'●' if model.get('loaded') else '○'} {model.get('name') or model.get('model')}"
+            )
     return 0
 
 
@@ -806,7 +846,14 @@ def cmd_ask(args: argparse.Namespace) -> int:
         raise ValueError(f"Workspace is not a directory: {workspace}")
     images = _validate_images(args.image)
     print("elh: starting", file=sys.stderr, flush=True)
-    result = LocalAgent(config, refresh_inventory=False, warm_residency=False).run(
+    atlas_requirement, atlas_leg = _load_atlas_binding(args)
+    result = LocalAgent(
+        config,
+        refresh_inventory=False,
+        warm_residency=False,
+        atlas_requirement=atlas_requirement,
+        atlas_leg=atlas_leg,
+    ).run(
         task,
         workspace=workspace,
         images=images,
@@ -824,9 +871,18 @@ def cmd_submit(args: argparse.Namespace) -> int:
         raise ValueError("elh submit requires exact --worker and --model-name pins")
     config = load_config(args.config)
     task = _task_text(args.task)
-    agent = LocalAgent(config, refresh_inventory=False, warm_residency=False)
-    role = override.role if override.role in config.models else (
-        "coder" if "coder" in config.models else next(iter(config.models))
+    atlas_requirement, atlas_leg = _load_atlas_binding(args)
+    agent = LocalAgent(
+        config,
+        refresh_inventory=False,
+        warm_residency=False,
+        atlas_requirement=atlas_requirement,
+        atlas_leg=atlas_leg,
+    )
+    role = (
+        override.role
+        if override.role in config.models
+        else ("coder" if "coder" in config.models else next(iter(config.models)))
     )
     base = config.models[role]
     model, selection = agent.fabric_session.resolve_model(
@@ -834,7 +890,13 @@ def cmd_submit(args: argparse.Namespace) -> int:
         replace(base, name=str(override.model)),
         override,
     )
-    agent = LocalAgent(config, refresh_inventory=False, warm_residency=False)
+    agent = LocalAgent(
+        config,
+        refresh_inventory=False,
+        warm_residency=False,
+        atlas_requirement=atlas_requirement,
+        atlas_leg=atlas_leg,
+    )
     model, selection = agent.fabric_session.resolve_model(role, model, override)
     if selection is None or not selection.available or not selection.worker_id:
         raise ValueError(selection.reason if selection else "exact pin could not be resolved")
@@ -848,7 +910,9 @@ def cmd_submit(args: argparse.Namespace) -> int:
         interactive=False,
         commons=agent.commons_session,
     )
-    tools = registry.available_schemas(tuple(dict.fromkeys((*model.tools, *agent.commons_session.tool_names))))
+    tools = registry.available_schemas(
+        tuple(dict.fromkeys((*model.tools, *agent.commons_session.tool_names)))
+    )
     accepted = agent.fabric_session.submit_chat(
         model,
         [{"role": "user", "content": task}],
@@ -903,7 +967,14 @@ def cmd_work(args: argparse.Namespace) -> int:
 def cmd_chat(args: argparse.Namespace) -> int:
     config = load_config(args.config)
     workspace = args.workspace.resolve()
-    agent = LocalAgent(config, refresh_inventory=False, warm_residency=False)
+    atlas_requirement, atlas_leg = _load_atlas_binding(args)
+    agent = LocalAgent(
+        config,
+        refresh_inventory=False,
+        warm_residency=False,
+        atlas_requirement=atlas_requirement,
+        atlas_leg=atlas_leg,
+    )
     routing_override = _routing_override(args)
     print("Local harness chat. Each message is routed independently. Type /quit to exit.")
     while True:
@@ -1016,11 +1087,7 @@ def cmd_metrics(args: argparse.Namespace) -> int:
         duration = row.get("eval_duration_ns") or 0
         tokens = row.get("eval_count") or 0
         rate = (tokens / (duration / 1_000_000_000)) if duration else 0
-        route_detail = (
-            f" lane={row['semantic_lane']}"
-            if row.get("semantic_lane")
-            else ""
-        )
+        route_detail = f" lane={row['semantic_lane']}" if row.get("semantic_lane") else ""
         print(
             f"{row['created_at']} {row['role']:8} {row['model']:18} "
             f"{'pass' if row['passed'] else 'fail'} tools={row['tool_call_count']} "
@@ -1103,7 +1170,8 @@ def cmd_fabric(args: argparse.Namespace) -> int:
         payload = {
             "path": str(path),
             "outcome": (
-                "PASS" if results and all(item.get("outcome") == "PASS" for item in results)
+                "PASS"
+                if results and all(item.get("outcome") == "PASS" for item in results)
                 else "UNKNOWN"
             ),
             "results": results,
@@ -1145,12 +1213,14 @@ def cmd_residency(args: argparse.Namespace) -> int:
             "results": list(
                 fleet.residency.release_experiment(
                     "operator-explicit-release",
-                    [{
-                        "worker_id": args.worker,
-                        "model": args.model,
-                        "provider": "ollama",
-                        "managed": True,
-                    }],
+                    [
+                        {
+                            "worker_id": args.worker,
+                            "model": args.model,
+                            "provider": "ollama",
+                            "managed": True,
+                        }
+                    ],
                 )
             ),
         }

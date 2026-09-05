@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path, PureWindowsPath
 from typing import Any, Sequence
 
+from .atlas_binding import FABRIC_DISPATCH_CAPABILITY_NEEDS, ExecutionRequirement
 from .fabric import FabricExecutionError, FabricSession, _identity
 from .models import PolicyDecision, SessionTarget, ToolExecution
 from .policy import approval_granted
@@ -41,17 +42,26 @@ class FabricTargetToolExecutor:
         tool_capability_identity: str | None = None,
         runtime_identity: str | None = None,
         request_id: str | None = None,
+        requirement: ExecutionRequirement | None = None,
+        requirement_leg: str = "",
     ) -> FabricTargetToolResult:
-        """Execute one approved argv workload against one consumer-selected worker."""
+        """Execute one approved argv workload against one consumer-selected worker.
+
+        The Atlas-bound requirement is mandatory and checked before command
+        policy: the bound leg must be GRANTED, must cover worker.dispatch,
+        and Atlas must authorize exactly this worker identity. Placement
+        outside carried authority is never dispatched.
+        """
 
         target = SessionTarget("fabric-worker", worker_identity)
         arguments = {"argv": [str(value) for value in argv]}
+        refusal = self._atlas_dispatch_gate(worker_identity, requirement, requirement_leg)
+        if refusal is not None:
+            return self._not_dispatched(target, arguments, refusal, refusal.reason)
         normalized, decision = self.registry.command_policy.evaluate(arguments["argv"])
         if not decision.allowed:
             return self._not_dispatched(target, arguments, decision, decision.reason)
-        if not approval_granted(
-            decision, self.registry.auto_approve, self.registry.interactive
-        ):
+        if not approval_granted(decision, self.registry.auto_approve, self.registry.interactive):
             return self._not_dispatched(
                 target,
                 arguments,
@@ -78,6 +88,8 @@ class FabricTargetToolExecutor:
                 required_capabilities=required_capabilities,
                 tool_capability_identity=tool_capability_identity,
                 runtime_identity=runtime_identity,
+                requirement=requirement,
+                requirement_leg=requirement_leg,
                 request_id=request_id,
             )
         except Exception as exc:
@@ -94,6 +106,56 @@ class FabricTargetToolExecutor:
                 None,
             )
 
+    @staticmethod
+    def _atlas_dispatch_gate(
+        worker_identity: str,
+        requirement: ExecutionRequirement | None,
+        requirement_leg: str,
+    ) -> PolicyDecision | None:
+        """Refuse dispatch outside carried Atlas authority (None = covered)."""
+        if requirement is None or not requirement_leg:
+            return PolicyDecision(
+                False,
+                "blocked",
+                "ATLAS_REFUSED: fabric dispatch needs an Atlas-bound "
+                "requirement leg; none was carried",
+            )
+        acceptance = requirement.accept(requirement_leg)
+        if acceptance.verdict != "GRANTED":
+            return PolicyDecision(
+                False,
+                "blocked",
+                f"ATLAS_REFUSED: fabric dispatch blocked by leg "
+                f"{requirement_leg}: {acceptance.reason}",
+            )
+        leg = next((item for item in requirement.legs if item.name == requirement_leg), None)
+        uncovered = [
+            need
+            for need in FABRIC_DISPATCH_CAPABILITY_NEEDS
+            if leg is None or need not in leg.needs
+        ]
+        if uncovered:
+            return PolicyDecision(
+                False,
+                "blocked",
+                f"ATLAS_REFUSED: leg {requirement_leg} does not cover dispatch needs {uncovered}",
+            )
+        authorized = sorted(
+            {
+                decision.execution_target
+                for decision in requirement.decisions
+                if decision.capability == "worker.dispatch" and decision.execution_target
+            }
+        )
+        if worker_identity not in authorized:
+            return PolicyDecision(
+                False,
+                "blocked",
+                f"ATLAS_REFUSED: worker {worker_identity} is not Atlas-authorized "
+                f"(authorized: {authorized})",
+            )
+        return None
+
     def _dispatch(
         self,
         target: SessionTarget,
@@ -106,6 +168,8 @@ class FabricTargetToolExecutor:
         tool_capability_identity: str | None,
         runtime_identity: str | None,
         request_id: str | None,
+        requirement: ExecutionRequirement | None = None,
+        requirement_leg: str = "",
     ) -> FabricTargetToolResult:
         from mncs_fabric.artifacts import build_manifest
         from mncs_fabric.bundles import build_bundle_archive
@@ -132,7 +196,9 @@ class FabricTargetToolExecutor:
 
         temporary_root = self.session.config.state_path.parent
         temporary_root.mkdir(parents=True, exist_ok=True)
-        with tempfile.TemporaryDirectory(prefix="elh-fabric-target-", dir=temporary_root) as directory:
+        with tempfile.TemporaryDirectory(
+            prefix="elh-fabric-target-", dir=temporary_root
+        ) as directory:
             manifest = build_manifest(source_root)
             archive = Path(directory) / "execution-bundle.zip"
             build_bundle_archive(source_root, archive)
@@ -195,12 +261,54 @@ class FabricTargetToolExecutor:
             and record.get("outcome") == "PASS"
         )
         output = self._format_result(fabric_result, record)
+        if requirement is not None and requirement_leg:
+            # The gate already proved authorized == declared; now prove
+            # actual == declared on fresh operator proof. The proof class
+            # comes from Fabric's own observation provenance
+            # (worker-observed / operator-asserted vs consumer-declared)
+            # and freshness from Fabric's own inventory judgment -- never
+            # from consumer context. An execution Fabric performed outside
+            # confirmed authority never reports success.
+            confirmation = requirement.confirm_execution(
+                requirement_leg,
+                actual_target=target.worker_identity,
+                proof_origin=self._inventory_proof_origin(client, target.worker_identity),
+                proof_fresh=self._inventory_is_fresh(client, target.worker_identity),
+            )
+            if confirmation.verdict != "GRANTED":
+                success = False
+                output = f"ATLAS_CONFIRM_{confirmation.verdict}: {confirmation.reason}\n{output}"
         return FabricTargetToolResult(
             ToolExecution("run_command", arguments, output, success, decision),
             target,
             authorization_identity,
             dict(fabric_result),
         )
+
+    @staticmethod
+    def _inventory_proof_origin(client: Any, worker_identity: str) -> str:
+        """Map Fabric observation provenance to a proof channel."""
+        try:
+            from mncs_fabric.capabilities import TRUSTED_ADMISSION_CLASSES
+        except ImportError:  # min-supported Fabric predates provenance classes
+            TRUSTED_ADMISSION_CLASSES = frozenset({"worker-observed", "operator-asserted"})
+        try:
+            observation = client.latest_capability_observation(worker_identity) or {}
+        except Exception:
+            return "consumer-declared"
+        if not isinstance(observation, dict):
+            return "consumer-declared"
+        klass = observation.get("observation_class", "consumer-declared")
+        return "fabric-inventory" if klass in TRUSTED_ADMISSION_CLASSES else "consumer-declared"
+
+    @staticmethod
+    def _inventory_is_fresh(client: Any, worker_identity: str) -> bool:
+        """Defer to Fabric's own CURRENT/STALE/UNKNOWN inventory judgment."""
+        try:
+            inventory = client.capability_inventory(worker_identity)
+        except Exception:
+            return False
+        return bool(isinstance(inventory, dict) and inventory.get("fresh"))
 
     def _source_root(self, value: Path | None) -> Path:
         root = self.registry.guard.resolve(value or self.registry.workspace, must_exist=True)
@@ -222,18 +330,14 @@ class FabricTargetToolExecutor:
                 raise ValueError("parent traversal is not allowed in Fabric target arguments")
             candidate = Path(argument)
             windows_candidate = PureWindowsPath(argument)
-            if not candidate.is_absolute() and (
-                windows_candidate.drive or windows_candidate.root
-            ):
+            if not candidate.is_absolute() and (windows_candidate.drive or windows_candidate.root):
                 raise ValueError(
                     "controller Windows paths (rooted, drive-relative, UNC, or device forms) "
                     "cannot be used as remote Fabric arguments"
                 )
             if not candidate.is_absolute():
                 if index == 1 and not argument.startswith("-"):
-                    resolved = self.registry.guard.resolve(
-                        source_root / candidate, must_exist=True
-                    )
+                    resolved = self.registry.guard.resolve(source_root / candidate, must_exist=True)
                     try:
                         result.append(resolved.relative_to(source_root).as_posix())
                     except ValueError as exc:

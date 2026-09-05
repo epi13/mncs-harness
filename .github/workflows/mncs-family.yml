@@ -1,0 +1,75 @@
+name: MNCS family
+
+on:
+  push:
+    branches: [main]
+  pull_request: {}
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  mncs:
+    uses: epi13/mncs-actions/.github/workflows/mncs-family-verify.yml@9469d8d61f4604df0f00f983aedb3d66c6ff8616
+    with:
+      required-checks: 'harness-enforcement-boundary'
+      boundary: mncs-harness-enforcement-boundary
+      fail-on-unknown: true
+      project-check-id: harness-enforcement-boundary
+      project-provider: mncs-harness-pytest
+      project-command: >-
+        python3 scripts/mncs_harness_check.py --result-file
+        .mncs/checks/harness-enforcement-boundary.json --revision ${{ github.sha }}
+      project-result-file: .mncs/checks/harness-enforcement-boundary.json
+      project-evidence-dir: .mncs/evidence-harness
+      aggregate-evidence-dir: .mncs/aggregate-evidence
+      badge-label: mncs-harness
+      badge-file: docs/mncs-badge.svg
+      badge-sidecar-file: docs/mncs-badge.json
+      carrier-revision: 9469d8d61f4604df0f00f983aedb3d66c6ff8616
+      upload-artifacts: true
+
+  publish-badge:
+    needs: mncs
+    if: ${{ always() && github.event_name == 'push' && github.ref == 'refs/heads/main' && github.actor != 'github-actions[bot]' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out the tested revision
+        # actions/checkout v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: true
+
+      - name: Render the committed badge
+        # The direct action is pinned to the same immutable implementation
+        # revision used inside the reusable workflow. Let the action resolve
+        # its own embedded revision-binding; the carrier revision is recorded
+        # separately below.
+        uses: epi13/mncs-actions/actions/render-badge@f6b70a897632e5c077633be7777847ee9c78feab
+        with:
+          verdict: ${{ needs.mncs.outputs.verdict || 'INVALID' }}
+          label: mncs-harness
+          output-file: docs/mncs-badge.svg
+          sidecar-file: docs/mncs-badge.json
+          repository: ${{ github.repository }}
+          subject-commit: ${{ github.sha }}
+          boundary: mncs-harness-enforcement-boundary
+          aggregate-digest: ${{ needs.mncs.outputs['aggregate-digest'] }}
+          manifest-digest: ${{ needs.mncs.outputs['manifest-digest'] }}
+          carrier-revision: 9469d8d61f4604df0f00f983aedb3d66c6ff8616
+
+      - name: Commit the refreshed badge
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/mncs-badge.svg docs/mncs-badge.json
+          if git diff --cached --quiet; then
+            echo 'Badge is already current.'
+            exit 0
+          fi
+          git commit -m 'chore: refresh MNCS harness badge'
+          git push origin HEAD:main

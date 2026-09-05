@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from .atlas_binding import ExecutionRequirement
 from .capability_graph import build_capability_graph
 from .commons import CommonsError, CommonsSession, CommonsStatus
 from .fabric import FabricStatus
@@ -36,8 +37,16 @@ class LocalAgent:
         *,
         refresh_inventory: bool = True,
         warm_residency: bool | None = None,
+        atlas_requirement: dict[str, Any] | ExecutionRequirement | None = None,
+        atlas_leg: str = "",
     ):
         self.config = config
+        if isinstance(atlas_requirement, dict):
+            # Fail closed at construction: forged or out-of-context
+            # authority never becomes an agent session.
+            atlas_requirement = ExecutionRequirement.from_dict(atlas_requirement)
+        self.atlas_requirement = atlas_requirement
+        self.atlas_leg = atlas_leg
         # ``client`` remains a compatibility seam used by existing callers and
         # tests. Provider selection is performed per model role below.
         self.client = OllamaClient(config.ollama)
@@ -51,13 +60,8 @@ class LocalAgent:
         self.fleet = FleetService(config, self.fabric_session)
         self._last_residency_results: tuple[dict[str, Any], ...] = ()
         self._lifecycle_stages: list[dict[str, Any]] = []
-        should_warm = (
-            config.model_residency.enabled
-            and (
-                config.model_residency.warm_on_startup
-                if warm_residency is None
-                else warm_residency
-            )
+        should_warm = config.model_residency.enabled and (
+            config.model_residency.warm_on_startup if warm_residency is None else warm_residency
         )
         if should_warm:
             self._last_residency_results = self.fleet.residency.reconcile()
@@ -88,16 +92,20 @@ class LocalAgent:
         if not callable(setter):
             return
         workload = self._provenance_identity(
-            {"source_project": "mncs-harness", "task_fingerprint": hashlib.sha256(task.encode("utf-8")).hexdigest()}
+            {
+                "source_project": "mncs-harness",
+                "task_fingerprint": hashlib.sha256(task.encode("utf-8")).hexdigest(),
+            }
         )
         setter(
             workload_identity=workload,
             provider_identity=self._provenance_identity(
-                {"provider": getattr(model, "provider", "unknown"), "model": getattr(model, "name", "unknown")}
+                {
+                    "provider": getattr(model, "provider", "unknown"),
+                    "model": getattr(model, "name", "unknown"),
+                }
             ),
-            partition_identity=self._provenance_identity(
-                {"workload": workload, "role": role}
-            ),
+            partition_identity=self._provenance_identity({"workload": workload, "role": role}),
         )
 
     def _publish_fabric_evidence(self, metadata: dict[str, Any]) -> None:
@@ -111,9 +119,7 @@ class LocalAgent:
             receipt = result.get("receipt") if isinstance(result, dict) else None
             translated_result = result.get("translated") if isinstance(result, dict) else None
             translated = (
-                translated_result.get("record")
-                if isinstance(translated_result, dict)
-                else None
+                translated_result.get("record") if isinstance(translated_result, dict) else None
             )
             metadata["commons_evidence_publication"] = "PUBLISHED"
             metadata["commons_evidence_receipt"] = (
@@ -146,7 +152,10 @@ class LocalAgent:
     @staticmethod
     def _exact_manual_route(override: RoutingOverride | None) -> bool:
         return override is not None and override.mode in {
-            "MODEL", "WORKER", "WORKER_MODEL", "WORKER_MODEL_ROLE"
+            "MODEL",
+            "WORKER",
+            "WORKER_MODEL",
+            "WORKER_MODEL_ROLE",
         }
 
     def _declared_resident(self, worker_id: str | None) -> str | None:
@@ -373,9 +382,7 @@ class LocalAgent:
         routing_override: RoutingOverride,
     ) -> ModelAttempt:
         model, model_selection = self._resolve_model(role, routing_override)
-        interactive = (
-            sys.stdin.isatty() if interactive_approval is None else interactive_approval
-        )
+        interactive = sys.stdin.isatty() if interactive_approval is None else interactive_approval
         registry = ToolRegistry(
             workspace,
             self.config.policy,
@@ -383,6 +390,10 @@ class LocalAgent:
             interactive=interactive,
             commons=self.commons_session,
         )
+        if self.atlas_requirement is not None and self.atlas_leg:
+            # Ordinary execution consumes the binding: without it the
+            # registry's consequential tools fail closed below.
+            registry.bind_atlas_requirement(self.atlas_requirement, self.atlas_leg)
         verifier = Verifier(registry.workspace, self.config.verification)
         enabled_tools = tuple(dict.fromkeys((*model.tools, *self.commons_session.tool_names)))
         tools = registry.available_schemas(enabled_tools)
@@ -492,9 +503,7 @@ class LocalAgent:
                 cumulative_modified.append(path)
         verification = verifier.verify(cumulative_modified)
 
-        tool_failures = [
-            f"{item.name}: {item.output}" for item in executions if not item.success
-        ]
+        tool_failures = [f"{item.name}: {item.output}" for item in executions if not item.success]
         failures = list(verification.failures)
         if error:
             failures.append(error)

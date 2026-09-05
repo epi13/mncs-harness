@@ -5,6 +5,8 @@ import unittest
 from dataclasses import replace
 from pathlib import Path
 
+from atlas_fixtures import payload as atlas_payload
+
 from epi13_local_harness.agent import LocalAgent
 from epi13_local_harness.config import load_config
 from epi13_local_harness.models import MetricsConfig
@@ -83,7 +85,13 @@ class AgentTests(unittest.TestCase):
                 base,
                 metrics=MetricsConfig(workspace / "metrics.sqlite3", False),
             )
-            agent = LocalAgent(config)
+            # The agent's consequential tools (write_file here) run under a
+            # carried Atlas-bound requirement, as ordinary execution must.
+            agent = LocalAgent(
+                config,
+                atlas_requirement=atlas_payload(),
+                atlas_leg="cpu",
+            )
             agent.client = FakeOllamaClient()
             result = agent.run(
                 "Fix example.py and run the tests.",
@@ -94,9 +102,7 @@ class AgentTests(unittest.TestCase):
             self.assertFalse(result.attempts[0].verification.passed)
             self.assertTrue(result.attempts[1].verification.passed)
             self.assertEqual(result.final_content, "Fixed and verified.")
-            self.assertIn(
-                "def working", (workspace / "example.py").read_text(encoding="utf-8")
-            )
+            self.assertIn("def working", (workspace / "example.py").read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":
