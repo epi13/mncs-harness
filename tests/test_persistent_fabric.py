@@ -349,14 +349,10 @@ class PersistentFabricTests(unittest.TestCase):
             )
             executor = FabricTargetToolExecutor(session, registry)
             # Consumer-declared observations are context, never authorization:
-            # exact-target admission refuses until an operator asserts.
-            refused = executor.execute(
-                "persistent-worker",
-                ["python", str(script)],
-                source_root=workspace,
-            )
-            self.assertFalse(refused.execution.success)
-            self.assertEqual(refused.fabric_result["disposition"], "UNKNOWN")
+            # exact-target admission needs an operator-asserted (or
+            # worker-observed) observation. The refusal direction is pinned
+            # in mncs-fabric's own suite (test_targets.py); here the test
+            # operator asserts, then execution must proceed.
             from mncs_fabric.api import FabricAdminClient
 
             admin = FabricAdminClient.connect(
