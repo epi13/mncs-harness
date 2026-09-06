@@ -58,16 +58,18 @@ def _ensure_pytest() -> tuple[str, str]:
     if created.returncode != 0:
         raise RuntimeError(f"check venv failed: {created.stderr[-400:]}")
     venv_python = str(venv_dir / "bin" / "python")
+    # The boundary matrix verifies Ed25519 issuance, so the check venv
+    # needs the cryptography package too (ambient left untouched).
     installed = subprocess.run(
-        [venv_python, "-m", "pip", "install", "-q", "pytest>=8.0"],
+        [venv_python, "-m", "pip", "install", "-q", "pytest>=8.0", "cryptography>=42"],
         capture_output=True,
         text=True,
         check=False,
         timeout=600,
     )
     if installed.returncode != 0:
-        raise RuntimeError(f"pytest bootstrap failed: {installed.stderr[-400:]}")
-    return venv_python, f"pytest bootstrapped in throwaway venv {venv_dir}"
+        raise RuntimeError(f"check dependency bootstrap failed: {installed.stderr[-400:]}")
+    return venv_python, f"pytest+cryptography bootstrapped in throwaway venv {venv_dir}"
 
 
 def main() -> int:

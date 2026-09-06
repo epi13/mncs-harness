@@ -11,6 +11,7 @@ import unittest
 from dataclasses import replace
 from pathlib import Path
 
+from atlas_fixtures import TRUSTED_TEST_ISSUERS
 from atlas_fixtures import payload as atlas_payload
 
 from epi13_local_harness.agent import LocalAgent
@@ -97,6 +98,7 @@ class AgentTests(unittest.TestCase):
                 config,
                 atlas_requirement=atlas_payload(),
                 atlas_leg="cpu",
+                atlas_trusted_issuers=TRUSTED_TEST_ISSUERS,
             )
             agent.client = FakeOllamaClient()
             result = agent.run(

@@ -44,6 +44,62 @@ def _add_atlas_arguments(parser: argparse.ArgumentParser) -> None:
         default="",
         help="Requirement leg to enforce for this invocation",
     )
+    parser.add_argument(
+        "--atlas-trust-roots",
+        type=_path,
+        default=None,
+        help=(
+            "Path to a JSON object mapping Atlas issuer key ids to "
+            "hex Ed25519 public keys. Required with --atlas-requirement: "
+            "decisions verify against these operator trust roots, never "
+            "against envelope claims."
+        ),
+    )
+    parser.add_argument(
+        "--atlas-expected-participant",
+        default="",
+        help=(
+            "Operator-authenticated participant the requirement session "
+            "must match; replays into another participant refuse."
+        ),
+    )
+    parser.add_argument(
+        "--atlas-expected-scope",
+        default="",
+        help=(
+            "Operator-authenticated scope the requirement session must "
+            "match; replays into another scope refuse."
+        ),
+    )
+
+
+def _load_trust_roots(path: Path | None) -> dict[str, bytes]:
+    if path is None:
+        raise ValueError(
+            "An Atlas requirement needs operator trust roots: pass "
+            "--atlas-trust-roots with a JSON object mapping issuer key "
+            "ids to hex Ed25519 public keys."
+        )
+    try:
+        raw = json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise ValueError(f"Cannot load Atlas trust roots: {exc}") from exc
+    if not isinstance(raw, dict) or not raw:
+        raise ValueError("Atlas trust roots must be a non-empty JSON object")
+    roots: dict[str, bytes] = {}
+    for key_id, public_hex in raw.items():
+        if (
+            not isinstance(key_id, str)
+            or not key_id
+            or not isinstance(public_hex, str)
+            or len(public_hex) != 64
+        ):
+            raise ValueError(f"Invalid trust root entry for {key_id!r}: need 32-byte hex")
+        try:
+            roots[key_id] = bytes.fromhex(public_hex)
+        except ValueError as exc:
+            raise ValueError(f"Invalid trust root entry for {key_id!r}: need 32-byte hex") from exc
+    return roots
 
 
 def _load_atlas_binding(
@@ -59,8 +115,11 @@ def _load_atlas_binding(
         envelope = json.loads(Path(requirement_path).read_text(encoding="utf-8"))
     except (OSError, ValueError) as exc:
         raise ValueError(f"Cannot load Atlas requirement: {exc}") from exc
-    # Fail closed: forged, tampered, or out-of-context envelopes raise.
-    return ExecutionRequirement.from_dict(envelope), leg
+    # Fail closed: forged, tampered, out-of-context, or unauthenticated
+    # envelopes raise. Trust roots are operator configuration, never
+    # envelope data.
+    trust_roots = _load_trust_roots(getattr(args, "atlas_trust_roots", None))
+    return ExecutionRequirement.from_dict(envelope, trusted_issuers=trust_roots), leg
 
 
 def _path(value: str) -> Path:
@@ -853,6 +912,8 @@ def cmd_ask(args: argparse.Namespace) -> int:
         warm_residency=False,
         atlas_requirement=atlas_requirement,
         atlas_leg=atlas_leg,
+        atlas_expected_participant=getattr(args, "atlas_expected_participant", "") or "",
+        atlas_expected_scope=getattr(args, "atlas_expected_scope", "") or "",
     ).run(
         task,
         workspace=workspace,
@@ -878,6 +939,8 @@ def cmd_submit(args: argparse.Namespace) -> int:
         warm_residency=False,
         atlas_requirement=atlas_requirement,
         atlas_leg=atlas_leg,
+        atlas_expected_participant=getattr(args, "atlas_expected_participant", "") or "",
+        atlas_expected_scope=getattr(args, "atlas_expected_scope", "") or "",
     )
     role = (
         override.role
@@ -896,6 +959,8 @@ def cmd_submit(args: argparse.Namespace) -> int:
         warm_residency=False,
         atlas_requirement=atlas_requirement,
         atlas_leg=atlas_leg,
+        atlas_expected_participant=getattr(args, "atlas_expected_participant", "") or "",
+        atlas_expected_scope=getattr(args, "atlas_expected_scope", "") or "",
     )
     model, selection = agent.fabric_session.resolve_model(role, model, override)
     if selection is None or not selection.available or not selection.worker_id:
@@ -974,6 +1039,8 @@ def cmd_chat(args: argparse.Namespace) -> int:
         warm_residency=False,
         atlas_requirement=atlas_requirement,
         atlas_leg=atlas_leg,
+        atlas_expected_participant=getattr(args, "atlas_expected_participant", "") or "",
+        atlas_expected_scope=getattr(args, "atlas_expected_scope", "") or "",
     )
     routing_override = _routing_override(args)
     print("Local harness chat. Each message is routed independently. Type /quit to exit.")

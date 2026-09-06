@@ -88,13 +88,27 @@ def collect_revisions(harness_root: Path) -> dict[str, Any]:
     return {name: _git_head(path) for name, path in family.items()}
 
 
-def atlas_phase(family_root: Path) -> dict[str, Any]:
-    """Issue real Atlas decisions for the gauntlet session."""
+def atlas_phase(family_root: Path) -> tuple[dict[str, Any], Any]:
+    """Issue real Atlas decisions for the gauntlet session.
+
+    The driver acts as the Atlas operator here: it generates an
+    ephemeral issuer keypair, issues through the real Router with that
+    issuer signing, and publishes the public half as the trust root
+    downstream phases verify against. Trust roots are operator
+    configuration even in the demo; nothing verifies against envelope
+    claims.
+    """
     try:
         sys.path.insert(0, str(family_root / "mncs-atlas"))
         from admission import Participant, Router, new_outside_session
+        from admission.issuance import AtlasIssuer
     except Exception as exc:
-        return {"verdict": "UNKNOWN", "reason": f"atlas unavailable: {exc}", "decisions": []}
+        return {"verdict": "UNKNOWN", "reason": f"atlas unavailable: {exc}", "decisions": []}, None
+    try:
+        issuer = AtlasIssuer.generate("gauntlet-atlas-ephemeral")
+    except Exception as exc:
+        return {"verdict": "UNKNOWN", "reason": f"atlas issuance unavailable: {exc}",
+                "decisions": []}, None
     try:
         session = new_outside_session()
         session.identify(
@@ -126,16 +140,26 @@ def atlas_phase(family_root: Path) -> dict[str, Any]:
         ]
         decisions = []
         for capability, target in queries:
-            decisions.append(router.query(session, capability, execution_target=target))
+            decisions.append(
+                router.query(session, capability, execution_target=target, issuer=issuer)
+            )
         if any("decision_digest" not in item for item in decisions):
             return {
                 "verdict": "UNKNOWN",
                 "reason": "atlas decisions lack provenance binding (needs epi13/mncs-atlas#28)",
                 "decisions": [],
-            }
+            }, None
+        if any("issuer_signature" not in item for item in decisions):
+            return {
+                "verdict": "UNKNOWN",
+                "reason": "atlas decisions lack issuance authenticity (needs epi13/mncs-atlas#31)",
+                "decisions": [],
+            }, None
         return {
             "verdict": "PASS",
             "session": {"participant": GAUNTLET_PARTICIPANT, "scope": GAUNTLET_SCOPE},
+            "issuer_key_id": issuer.key_id,
+            "trust_roots": {issuer.key_id: issuer.public_hex},
             "decisions": [
                 {
                     "capability": item["capability"],
@@ -143,13 +167,19 @@ def atlas_phase(family_root: Path) -> dict[str, Any]:
                     "authority": item.get("authority", ""),
                     "execution_target": item.get("execution_target", ""),
                     "decision_digest": item["decision_digest"],
+                    "issuer_key_id": item["issuer"]["key_id"],
                 }
                 for item in decisions
             ],
             "raw_decisions": decisions,
-        }
+        }, issuer
     except Exception as exc:
-        return {"verdict": "UNKNOWN", "reason": f"atlas issuance failed: {exc}", "decisions": []}
+        return {"verdict": "UNKNOWN", "reason": f"atlas issuance failed: {exc}", "decisions": []}, None
+
+
+def _trust_from_atlas(atlas: dict[str, Any]) -> dict[str, bytes]:
+    roots = atlas.get("trust_roots", {})
+    return {str(key): bytes.fromhex(value) for key, value in roots.items()}
 
 
 def requirement_phase(atlas: dict[str, Any]) -> dict[str, Any]:
@@ -183,7 +213,9 @@ def requirement_phase(atlas: dict[str, Any]) -> dict[str, Any]:
             session_participant=GAUNTLET_PARTICIPANT,
             session_scope=GAUNTLET_SCOPE,
         )
-        requirement = ExecutionRequirement.from_dict(envelope)
+        requirement = ExecutionRequirement.from_dict(
+            envelope, trusted_issuers=_trust_from_atlas(atlas)
+        )
         local = requirement.accept("local")
         dispatch = requirement.accept("dispatch")
         verdict = "PASS" if local.verdict == "GRANTED" and dispatch.verdict == "GRANTED" else "FAIL"
@@ -201,12 +233,15 @@ def requirement_phase(atlas: dict[str, Any]) -> dict[str, Any]:
         return {"verdict": "FAIL", "reason": f"requirement load failed: {exc}"}
 
 
-def adversarial_phase(atlas: dict[str, Any]) -> dict[str, Any]:
+def adversarial_phase(atlas: dict[str, Any], issuer: Any) -> dict[str, Any]:
     """Replay the hostile rows against live Atlas-issued decisions.
 
     Each row mutates a genuine issuance (status flip, session swap, scope
     replay, duplicate conflict, wrong declared target) and records whether
     the enforcement layer observes the expected fail-closed verdict.
+    Genuine re-issuance goes through the gauntlet issuer (the operator
+    role in this driver); attacker digest recomputation must fail at
+    issuance verification even with a fresh valid digest.
     """
 
     import copy
@@ -218,12 +253,30 @@ def adversarial_phase(atlas: dict[str, Any]) -> dict[str, Any]:
         canonical_envelope_bytes,
     )
 
+    trust = _trust_from_atlas(atlas)
+
     def _reissue(mutated: dict[str, Any]) -> dict[str, Any]:
-        """Recompute the digest: simulates Atlas genuinely re-issuing a
-        changed decision (e.g. deny after a context change). The folded
-        conflict is then real authority, and must still fail closed."""
+        """Genuine Atlas re-issuance through the gauntlet issuer: digest
+        AND signature refresh together (e.g. deny after a context
+        change). The folded conflict is then real authority, and must
+        still fail closed."""
+        if issuer is None:
+            raise RuntimeError("no gauntlet issuer for re-issuance")
+        return issuer.sign_decision(mutated)
+
+    def _forge_digest(mutated: dict[str, Any]) -> dict[str, Any]:
+        """Attacker digest recomputation without the issuer key: a fresh
+        valid content digest over forged content. Must fail at issuance
+        verification."""
         mutated["decision_digest"] = hashlib.sha256(canonical_envelope_bytes(mutated)).hexdigest()
         return mutated
+
+    def _loads(envelope: dict[str, Any]) -> bool:
+        try:
+            ExecutionRequirement.from_dict(envelope, trusted_issuers=trust)
+        except Exception:
+            return False
+        return True
 
     if atlas.get("verdict") != "PASS":
         return {"verdict": "UNKNOWN", "reason": "no Atlas decisions to attack", "rows": []}
@@ -262,21 +315,30 @@ def adversarial_phase(atlas: dict[str, Any]) -> dict[str, Any]:
     base = next(item for item in raw if item["capability"] == "tests.execute")
 
     # Forged grant: a genuine deny whose status is flipped to granted
-    # while keeping the deny digest. Must never load.
+    # while keeping the deny digest and signature. Must never load.
     genuine_deny = _reissue({**copy.deepcopy(base), "status": "denied"})
     forged = copy.deepcopy(genuine_deny)
     forged["status"] = "granted"
     try:
-        ExecutionRequirement.from_dict(carry([forged]))
+        ExecutionRequirement.from_dict(carry([forged]), trusted_issuers=trust)
         record("forged-grant", "BindingError", "LOADED")
     except BindingError as exc:
         record("forged-grant", "BindingError", "BindingError", str(exc))
+
+    # Full attacker effort: fresh valid content digest recomputed over the
+    # forged grant, but no issuer key. Must fail at issuance verification.
+    full_forgery = _forge_digest(copy.deepcopy(forged))
+    try:
+        ExecutionRequirement.from_dict(carry([full_forgery]), trusted_issuers=trust)
+        record("forged-grant-fresh-digest", "BindingError", "LOADED")
+    except BindingError as exc:
+        record("forged-grant-fresh-digest", "BindingError", "BindingError", str(exc))
 
     # Tampered session: valid digest, swapped participant echo.
     swapped = copy.deepcopy(base)
     swapped["session"] = {"participant": "intruder", "scope": GAUNTLET_SCOPE}
     try:
-        ExecutionRequirement.from_dict(carry([swapped]))
+        ExecutionRequirement.from_dict(carry([swapped]), trusted_issuers=trust)
         record("session-swap", "BindingError", "LOADED")
     except BindingError as exc:
         record("session-swap", "BindingError", "BindingError", str(exc))
@@ -285,7 +347,7 @@ def adversarial_phase(atlas: dict[str, Any]) -> dict[str, Any]:
     try:
         envelope = carry([copy.deepcopy(base)])
         envelope["session"] = {"participant": GAUNTLET_PARTICIPANT, "scope": "repo(other)"}
-        ExecutionRequirement.from_dict(envelope)
+        ExecutionRequirement.from_dict(envelope, trusted_issuers=trust)
         record("scope-replay", "BindingError", "LOADED")
     except BindingError as exc:
         record("scope-replay", "BindingError", "BindingError", str(exc))
@@ -294,8 +356,8 @@ def adversarial_phase(atlas: dict[str, Any]) -> dict[str, Any]:
     granted = _reissue({**copy.deepcopy(base), "status": "granted"})
     conflict = _reissue({**copy.deepcopy(base), "status": "denied"})
     try:
-        first = ExecutionRequirement.from_dict(carry([granted, conflict])).accept("probe")
-        second = ExecutionRequirement.from_dict(carry([conflict, granted])).accept("probe")
+        first = ExecutionRequirement.from_dict(carry([granted, conflict]), trusted_issuers=trust).accept("probe")
+        second = ExecutionRequirement.from_dict(carry([conflict, granted]), trusted_issuers=trust).accept("probe")
         record(
             "duplicate-conflict",
             "REFUSED/REFUSED",
@@ -315,7 +377,7 @@ def adversarial_phase(atlas: dict[str, Any]) -> dict[str, Any]:
         )
         # The leg needs worker.dispatch but the envelope leg name/needs
         # target another worker: acceptance must refuse.
-        verdict = ExecutionRequirement.from_dict(envelope).accept("probe").verdict
+        verdict = ExecutionRequirement.from_dict(envelope, trusted_issuers=trust).accept("probe").verdict
         record("wrong-target", "REFUSED", verdict)
     except BindingError as exc:
         record("wrong-target", "REFUSED", "BindingError", str(exc))
@@ -327,7 +389,7 @@ def adversarial_phase(atlas: dict[str, Any]) -> dict[str, Any]:
         {**copy.deepcopy(base), "status": "conditional", "missing": ["execution.target"]}
     )
     try:
-        verdict = ExecutionRequirement.from_dict(carry([conditional])).accept("probe").verdict
+        verdict = ExecutionRequirement.from_dict(carry([conditional]), trusted_issuers=trust).accept("probe").verdict
         record("unbound-target", "REFUSED", verdict)
     except BindingError as exc:
         record("unbound-target", "REFUSED", "BindingError", str(exc))
@@ -336,7 +398,7 @@ def adversarial_phase(atlas: dict[str, Any]) -> dict[str, Any]:
     return {"verdict": verdict, "rows": rows}
 
 
-def local_tools_phase(envelope: dict[str, Any] | None) -> dict[str, Any]:
+def local_tools_phase(envelope: dict[str, Any] | None, trust: dict[str, bytes] | None = None) -> dict[str, Any]:
     """Prove the ToolRegistry choke point with the live requirement."""
     import tempfile
 
@@ -353,7 +415,7 @@ def local_tools_phase(envelope: dict[str, Any] | None) -> dict[str, Any]:
             policy = load_config(Path("/missing/config.toml")).policy
             bound = ToolRegistry(workspace, policy, auto_approve=True, interactive=False)
             acceptance = bound.bind_atlas_requirement(
-                ExecutionRequirement.from_dict(envelope), "local"
+                ExecutionRequirement.from_dict(envelope, trusted_issuers=trust or {}), "local"
             )
             rows.append(
                 {
@@ -470,7 +532,10 @@ if __name__ == "__main__":
 
 
 def fabric_phase(
-    envelope: dict[str, Any] | None, work_root: Path, ptx_kernel: Path | None = None
+    envelope: dict[str, Any] | None,
+    work_root: Path,
+    ptx_kernel: Path | None = None,
+    trust: dict[str, bytes] | None = None,
 ) -> dict[str, Any]:
     """Real dispatch through a persistent Fabric service under authority.
 
@@ -500,7 +565,7 @@ def fabric_phase(
     root = work_root / "fabric"
     root.mkdir(parents=True, exist_ok=True)
     try:
-        return _fabric_persistent_run(envelope, root, openssl, ptx_kernel)
+        return _fabric_persistent_run(envelope, root, openssl, ptx_kernel, trust)
     except Exception as exc:
         return {"verdict": "FAIL", "reason": f"fabric phase crashed: {exc}"}
 
@@ -572,7 +637,11 @@ def _cuda_leg(session, tool_registry, requirement, workspace, ptx_kernel, worker
 
 
 def _fabric_persistent_run(
-    envelope: dict[str, Any], root: Path, openssl: str, ptx_kernel: Path | None = None
+    envelope: dict[str, Any],
+    root: Path,
+    openssl: str,
+    ptx_kernel: Path | None = None,
+    trust: dict[str, bytes] | None = None,
 ) -> dict[str, Any]:
     """Persistent-service dispatch under the gauntlet requirement leg."""
     import socket
@@ -775,7 +844,7 @@ def _fabric_persistent_run(
             auto_approve=True,
             interactive=False,
         )
-        requirement = ExecutionRequirement.from_dict(envelope)
+        requirement = ExecutionRequirement.from_dict(envelope, trusted_issuers=trust or {})
         executor = FabricTargetToolExecutor(session, tool_registry)
         result = executor.execute(
             worker_id,
@@ -783,6 +852,8 @@ def _fabric_persistent_run(
             source_root=workspace,
             requirement=requirement,
             requirement_leg="dispatch",
+            expected_participant=GAUNTLET_PARTICIPANT,
+            expected_scope=GAUNTLET_SCOPE,
         )
         evidence = (result.fabric_result or {}).get("target_execution_evidence", {})
         record = (result.fabric_result or {}).get("record", {})
@@ -827,10 +898,25 @@ def _fabric_persistent_run(
         worker_thread.join(timeout=5)
 
 
-def rights_phase(requirement_id: str | None, fabric: dict[str, Any]) -> dict[str, Any]:
-    """Bind execution evidence to authorization identities."""
+def rights_binding_projection(
+    requirement_id: str | None, fabric: dict[str, Any]
+) -> dict[str, Any]:
+    """Project execution evidence onto the Rights identity binding.
+
+    Honesty note (epi13/mncs-harness#60): this phase constructs the
+    binding dictionary locally from Fabric-phase evidence; the Rights
+    owner does NOT independently participate yet (its ``authority_verdict``
+    takes caller-computed booleans, so wiring it here would be theater).
+    The verdict therefore stays UNKNOWN with an explicit projection
+    reason, and full Rights validation remains a coverage gap. The
+    binding itself is recorded for traceability.
+    """
     if fabric.get("verdict") != "PASS":
-        return {"verdict": "UNKNOWN", "reason": "no executed leg to bind"}
+        return {
+            "verdict": "UNKNOWN",
+            "phase": "rights_binding_projection",
+            "reason": "no executed leg to bind",
+        }
     binding = {
         "requirement_id": requirement_id,
         "worker_identity": fabric.get("worker_identity"),
@@ -840,8 +926,25 @@ def rights_phase(requirement_id: str | None, fabric: dict[str, Any]) -> dict[str
         "acceptance_binding": fabric.get("acceptance_binding"),
     }
     if not binding["authorization_identity"]:
-        return {"verdict": "FAIL", "reason": "executed without authorization identity"}
-    return {"verdict": "PASS", "binding": binding}
+        return {
+            "verdict": "FAIL",
+            "phase": "rights_binding_projection",
+            "reason": "executed without authorization identity",
+        }
+    return {
+        "verdict": "UNKNOWN",
+        "phase": "rights_binding_projection",
+        "reason": (
+            "binding constructed locally from Fabric evidence; "
+            "independent Rights-owner validation not yet wired"
+        ),
+        "binding": binding,
+    }
+
+
+def rights_phase(requirement_id: str | None, fabric: dict[str, Any]) -> dict[str, Any]:
+    """Backward-compatible alias for the projection phase."""
+    return rights_binding_projection(requirement_id, fabric)
 
 
 def commons_phase() -> dict[str, Any]:
@@ -886,15 +989,17 @@ def main(argv: list[str] | None = None) -> int:
         "actions_carrier_revision": ACTIONS_CARRIER_REVISION,
         "revisions": collect_revisions(harness_root),
     }
-    atlas = atlas_phase(family_root)
+    atlas, issuer = atlas_phase(family_root)
     manifest["atlas"] = {k: v for k, v in atlas.items() if k != "raw_decisions"}
     requirement = requirement_phase(atlas)
     envelope = requirement.pop("envelope", None)
     manifest["requirement"] = requirement
-    manifest["adversarial"] = adversarial_phase(atlas)
-    manifest["local_tools"] = local_tools_phase(envelope)
+    manifest["adversarial"] = adversarial_phase(atlas, issuer)
+    manifest["local_tools"] = local_tools_phase(envelope, _trust_from_atlas(atlas))
     with tempfile.TemporaryDirectory(prefix="gauntlet-") as work:
-        manifest["fabric"] = fabric_phase(envelope, Path(work), args.ptx_kernel)
+        manifest["fabric"] = fabric_phase(
+            envelope, Path(work), args.ptx_kernel, _trust_from_atlas(atlas)
+        )
     cuda = manifest["fabric"].pop("cuda", {"verdict": "UNKNOWN", "reason": "no cuda leg ran"})
     manifest["cuda"] = cuda
     manifest["rights"] = rights_phase(requirement.get("requirement_id"), manifest["fabric"])
@@ -910,12 +1015,28 @@ def main(argv: list[str] | None = None) -> int:
         "rights",
         "commons",
     ]
-    manifest["gauntlet_verdict"] = (
+    # Behavior verdict: every observed behavior matched expected
+    # semantics (UNKNOWN tolerated per-leg, adversarial must PASS).
+    manifest["behavior_verdict"] = (
         "PASS"
         if all(manifest[name].get("verdict") in ("PASS", "UNKNOWN") for name in phases)
         and manifest["adversarial"].get("verdict") == "PASS"
         else "FAIL"
     )
+    # Coverage verdict: whether every end-to-end subsystem actually
+    # participated. A behavior-PASS with UNKNOWN legs is a partial run,
+    # never complete execution (epi13/mncs-harness#60).
+    coverage_gaps = [
+        name
+        for name in ("fabric", "cuda", "rights", "commons")
+        if manifest[name].get("verdict") != "PASS"
+    ]
+    manifest["coverage_verdict"] = "COMPLETE" if not coverage_gaps else "PARTIAL"
+    manifest["coverage_gaps"] = [
+        {"phase": name, "reason": manifest[name].get("reason", "")} for name in coverage_gaps
+    ]
+    # Kept for compatibility: the aggregate tracks behavior only.
+    manifest["gauntlet_verdict"] = manifest["behavior_verdict"]
     manifest["aggregate_digest"] = _digest(
         {k: v for k, v in manifest.items() if k != "aggregate_digest"}
     )
@@ -923,9 +1044,16 @@ def main(argv: list[str] | None = None) -> int:
     if args.manifest_out is not None:
         args.manifest_out.parent.mkdir(parents=True, exist_ok=True)
         args.manifest_out.write_text(text, encoding="utf-8")
-    print(f"gauntlet={manifest['gauntlet_verdict']} digest={manifest['aggregate_digest']}")
+    print(
+        f"gauntlet={manifest['gauntlet_verdict']} "
+        f"behavior={manifest['behavior_verdict']} "
+        f"coverage={manifest['coverage_verdict']} "
+        f"digest={manifest['aggregate_digest']}"
+    )
     for name in phases:
         print(f"  {name}: {manifest[name].get('verdict')}")
+    if manifest["coverage_gaps"]:
+        print("  coverage gaps: " + ", ".join(item["phase"] for item in manifest["coverage_gaps"]))
     return 0 if manifest["gauntlet_verdict"] == "PASS" else 1
 
 

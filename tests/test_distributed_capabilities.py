@@ -14,6 +14,7 @@ from dataclasses import replace
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+from atlas_fixtures import TRUSTED_TEST_ISSUERS
 from atlas_fixtures import payload as atlas_payload
 
 from epi13_local_harness.agent import LocalAgent
@@ -481,6 +482,7 @@ class DistributedSessionIntegrationTests(unittest.TestCase):
                     config,
                     atlas_requirement=atlas_payload(),
                     atlas_leg="cpu",
+                    atlas_trusted_issuers=TRUSTED_TEST_ISSUERS,
                 )
                 agent.fabric_session = session
                 workspace = root / "controller-workspace"
@@ -918,6 +920,7 @@ class DistributedSessionIntegrationTests(unittest.TestCase):
                     config,
                     atlas_requirement=atlas_payload(),
                     atlas_leg="cpu",
+                    atlas_trusted_issuers=TRUSTED_TEST_ISSUERS,
                 )
                 agent.fabric_session = session
                 workspace = root / "controller-workspace"

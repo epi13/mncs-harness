@@ -346,7 +346,11 @@ class PersistentFabricTests(unittest.TestCase):
             finally:
                 admin.close()
             # Fabric dispatch runs under carried Atlas authority: the
-            # operator-authorized leg names exactly this worker.
+            # operator-authorized leg names exactly this worker. Trust
+            # roots come from the fixture issuer; the operator-expected
+            # session pins the requirement against cross-session replay.
+            from atlas_fixtures import TRUSTED_TEST_ISSUERS
+
             requirement = ExecutionRequirement.from_dict(
                 atlas_payload(
                     atlas_decisions=[
@@ -363,60 +367,109 @@ class PersistentFabricTests(unittest.TestCase):
                             "target": "persistent-worker",
                         }
                     ],
+                ),
+                trusted_issuers=TRUSTED_TEST_ISSUERS,
+            )
+            dispatch_kwargs = {
+                "requirement": requirement,
+                "requirement_leg": "dispatch",
+                "expected_participant": "e2e-agent",
+                "expected_scope": "repo(mncs-language)",
+            }
+            if not provenance_capable:
+                # Legacy Fabric cannot produce operator-grade proof: the
+                # preflight gate refuses requirement-bound dispatch BEFORE
+                # any Fabric call, with no ledger side effects. Executing
+                # first and annotating UNKNOWN afterward is not allowed
+                # for consequential work (epi13/mncs-harness#59).
+                execution_count = len(worker.ledger.records(record_type="execution.record"))
+                refused = executor.execute(
+                    "persistent-worker",
+                    ["python", str(script)],
+                    source_root=workspace,
+                    **dispatch_kwargs,
                 )
-            )
-            result = executor.execute(
-                "persistent-worker",
-                ["python", str(script)],
-                source_root=workspace,
-                requirement=requirement,
-                requirement_leg="dispatch",
-            )
-            self.assertTrue(result.execution.success, result.execution.output)
-            if provenance_capable:
-                # Fresh operator proof: the confirm GRANTs, no annotation.
-                self.assertNotIn("ATLAS_CONFIRM_", result.execution.output)
+                self.assertFalse(refused.execution.success)
+                self.assertIn("ATLAS_PREFLIGHT_REFUSED", refused.execution.output)
+                self.assertIsNone(refused.fabric_result)
+                self.assertEqual(
+                    len(worker.ledger.records(record_type="execution.record")),
+                    execution_count,
+                )
+                # A replayed session also refuses, even with a valid grant.
+                replayed = executor.execute(
+                    "persistent-worker",
+                    ["python", str(script)],
+                    source_root=workspace,
+                    requirement=requirement,
+                    requirement_leg="dispatch",
+                    expected_participant="mallory",
+                    expected_scope="repo(mncs-language)",
+                )
+                self.assertFalse(replayed.execution.success)
+                self.assertIn("ATLAS_REFUSED", replayed.execution.output)
+                self.assertIsNone(replayed.fabric_result)
             else:
-                # Legacy Fabric predates observation provenance: the gate
-                # still bound the declared target, but the confirm stays
-                # UNKNOWN and Fabric's own result stands, annotated.
-                self.assertIn("ATLAS_CONFIRM_UNKNOWN", result.execution.output)
-            self.assertIn("persistent-target-tool-ok", result.execution.output)
-            self.assertEqual(result.target.label, "fabric-worker:persistent-worker")
-            self.assertIsNotNone(result.authorization_identity)
-            self.assertEqual(result.fabric_result["disposition"], "EXECUTED")
-            self.assertEqual(
-                result.fabric_result["target_execution_evidence"]["worker_identity"],
-                "persistent-worker",
-            )
-            self.assertEqual(
-                result.fabric_result["target_execution_evidence"][
-                    "consumer_authorization_identity"
-                ],
-                result.authorization_identity,
-            )
-            self.assertEqual(result.fabric_result["record"]["declared_argv"][0], "@python")
-            self.assertEqual(result.fabric_result["record"]["declared_argv"][1], "remote_tool.py")
-            self.assertNotIn(str(workspace), json.dumps(result.fabric_result))
-            self.assertEqual(observation["worker_identity"], "persistent-worker")
+                result = executor.execute(
+                    "persistent-worker",
+                    ["python", str(script)],
+                    source_root=workspace,
+                    **dispatch_kwargs,
+                )
+                self.assertTrue(result.execution.success, result.execution.output)
+                # Fresh operator proof: preflight passes and the confirm
+                # GRANTs, no annotation.
+                self.assertNotIn("ATLAS_CONFIRM_", result.execution.output)
+                self.assertNotIn("ATLAS_PREFLIGHT_", result.execution.output)
+                self.assertIn("persistent-target-tool-ok", result.execution.output)
+                self.assertEqual(result.target.label, "fabric-worker:persistent-worker")
+                self.assertIsNotNone(result.authorization_identity)
+                self.assertEqual(result.fabric_result["disposition"], "EXECUTED")
+                self.assertEqual(
+                    result.fabric_result["target_execution_evidence"]["worker_identity"],
+                    "persistent-worker",
+                )
+                self.assertEqual(
+                    result.fabric_result["target_execution_evidence"][
+                        "consumer_authorization_identity"
+                    ],
+                    result.authorization_identity,
+                )
+                self.assertEqual(result.fabric_result["record"]["declared_argv"][0], "@python")
+                self.assertEqual(result.fabric_result["record"]["declared_argv"][1], "remote_tool.py")
+                self.assertNotIn(str(workspace), json.dumps(result.fabric_result))
+                self.assertEqual(observation["worker_identity"], "persistent-worker")
 
-            execution_count = len(worker.ledger.records(record_type="execution.record"))
-            duplicate = executor.execute(
-                "persistent-worker",
-                ["python", str(script)],
-                source_root=workspace,
-                requirement=requirement,
-                requirement_leg="dispatch",
-            )
-            self.assertTrue(duplicate.execution.success, duplicate.execution.output)
-            self.assertEqual(
-                duplicate.fabric_result["disposition"],
-                "DUPLICATE_IDEMPOTENT",
-            )
-            self.assertEqual(
-                len(worker.ledger.records(record_type="execution.record")),
-                execution_count,
-            )
+                execution_count = len(worker.ledger.records(record_type="execution.record"))
+                duplicate = executor.execute(
+                    "persistent-worker",
+                    ["python", str(script)],
+                    source_root=workspace,
+                    **dispatch_kwargs,
+                )
+                self.assertTrue(duplicate.execution.success, duplicate.execution.output)
+                self.assertNotIn("ATLAS_CONFIRM_", duplicate.execution.output)
+                self.assertEqual(
+                    duplicate.fabric_result["disposition"],
+                    "DUPLICATE_IDEMPOTENT",
+                )
+                self.assertEqual(
+                    len(worker.ledger.records(record_type="execution.record")),
+                    execution_count,
+                )
+                # A replayed session refuses even with a valid grant.
+                replayed = executor.execute(
+                    "persistent-worker",
+                    ["python", str(script)],
+                    source_root=workspace,
+                    requirement=requirement,
+                    requirement_leg="dispatch",
+                    expected_participant="mallory",
+                    expected_scope="repo(mncs-language)",
+                )
+                self.assertFalse(replayed.execution.success)
+                self.assertIn("ATLAS_REFUSED", replayed.execution.output)
+                self.assertIsNone(replayed.fabric_result)
 
             denied = executor.execute(
                 "persistent-worker",

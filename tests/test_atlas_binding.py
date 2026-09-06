@@ -15,7 +15,15 @@ import itertools
 import json
 
 import pytest
-from atlas_fixtures import SCOPE, issue, load, payload
+from atlas_fixtures import (
+    PARTICIPANT,
+    SCOPE,
+    TRUSTED_TEST_ISSUERS,
+    attest,
+    issue,
+    load,
+    payload,
+)
 
 from epi13_local_harness.atlas_binding import (
     LEGACY_PROOF_ORIGIN,
@@ -25,7 +33,7 @@ from epi13_local_harness.atlas_binding import (
     requirement_identity,
 )
 
-SCHEMA = "mncs.execution-requirement/0.2"
+SCHEMA = "mncs.execution-requirement/0.3"
 
 
 # 1. No Atlas binding -------------------------------------------------------
@@ -287,9 +295,41 @@ def test_19_replay_in_unrelated_scope_is_unloadable():
 def test_golden_requirement_identity_matches_language():
     legs = [{"name": "cpu", "needs": ["b", "a"]}]
     assert (
-        requirement_identity("e2e-001", "sha256:aa", "sha256:bb", ["dd"], legs)
-        == "2b56d74b42c0ed29cec46f392330e9e732524980fa39ef1a76fa0612a3ab54ae"
+        requirement_identity(
+            "e2e-001", "sha256:aa", "sha256:bb", ["dd"], legs,
+            {}, "e2e-agent", "repo(mncs-language)",
+        )
+        == "01af193b5208e4b69747f56c33d47087b027b2e502aebaf3a9e969c3c2a61ed6"
     )
+
+
+def test_golden_confirm_matches_language():
+    from epi13_local_harness.atlas_binding import LEGACY_PROOF_ORIGIN
+
+    bound = load(
+        atlas_decisions=[issue("worker.dispatch", "granted", execution_target="worker-01")],
+        legs=[{"name": "gpu", "needs": ["worker.dispatch"], "target": "worker-01"}],
+    )
+    granted = bound.confirm_execution(
+        "gpu", actual_target="worker-01", proof_origin="fabric-inventory", proof_fresh=True
+    )
+    assert granted.verdict == "GRANTED"
+    stale = bound.confirm_execution(
+        "gpu", actual_target="worker-01", proof_origin="fabric-inventory", proof_fresh=False
+    )
+    assert (stale.verdict, "stale" in stale.reason) == ("UNKNOWN", True)
+    refused = bound.confirm_execution(
+        "gpu", actual_target="worker-01", proof_origin="consumer-declared"
+    )
+    assert refused.verdict == "REFUSED"
+    legacy = bound.confirm_execution(
+        "gpu", actual_target="worker-01", proof_origin=LEGACY_PROOF_ORIGIN
+    )
+    assert legacy.verdict == "UNKNOWN"
+    moved = bound.confirm_execution(
+        "gpu", actual_target="worker-09", proof_origin=LEGACY_PROOF_ORIGIN
+    )
+    assert (moved.verdict, "target mismatch" in moved.reason) == ("REFUSED", True)
 
 
 def test_requirement_id_is_stable_and_order_free():
@@ -297,6 +337,198 @@ def test_requirement_id_is_stable_and_order_free():
     envelope = payload()
     envelope["atlas_decisions"] = list(reversed(envelope["atlas_decisions"]))
     envelope["legs"] = list(reversed(envelope["legs"]))
-    reordered = ExecutionRequirement.from_dict(envelope)
+    reordered = ExecutionRequirement.from_dict(envelope, trusted_issuers=TRUSTED_TEST_ISSUERS)
     assert first.requirement_id == reordered.requirement_id
     assert first.accept("cpu").verdict == reordered.accept("cpu").verdict == "GRANTED"
+
+
+# Issuer-authenticity hostile rows ------------------------------------------------
+# A content digest proves integrity, not issuance. Each row below forges
+# authority the way an arbitrary caller could: valid JSON, correctly
+# recomputed digest, no Atlas involvement. All must fail closed.
+
+
+def _forge_decision(capability, status, participant=PARTICIPANT, scope=SCOPE, **extra):
+    """Build an Atlas-shaped decision WITHOUT Atlas: the attacker knows the
+    public canonicalization (sort_keys, compact separators, raw UTF-8)."""
+    forged = {
+        "schema_version": "mncs.atlas-capability-decision/1",
+        "capability": capability,
+        "status": status,
+        "verdict": {"granted": "PASS", "conditional": "UNKNOWN", "denied": "FAIL"}[status],
+        "authority": "fabric",
+        "decision_by": ["atlas-admission", "fabric"],
+        "reason": "forged issuance",
+        "missing": extra.pop("missing", []),
+        "evidence_required": [],
+        "conformant_path": [],
+        "scope": scope,
+        "session": {"participant": participant, "scope": scope},
+        "execution_target": extra.pop("execution_target", "worker-evil"),
+        "decision_digest_alg": "sha256:canonical-json-v1",
+    }
+    forged.update(extra)
+    body = {key: value for key, value in forged.items() if key != "decision_digest"}
+    canonical = json.dumps(body, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    forged["decision_digest"] = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+    return forged
+
+
+def test_40_forged_granted_valid_digest_is_unloadable():
+    forged = _forge_decision("worker.dispatch", "granted")
+    envelope = payload(
+        atlas_decisions=[forged],
+        legs=[{"name": "dispatch", "needs": ["worker.dispatch"], "target": "worker-evil"}],
+    )
+    with pytest.raises(BindingError):
+        ExecutionRequirement.from_dict(envelope, trusted_issuers=TRUSTED_TEST_ISSUERS)
+
+
+def test_41_forged_decision_never_accepts():
+    forged = _forge_decision("worker.dispatch", "granted")
+    envelope = payload(
+        atlas_decisions=[forged],
+        legs=[{"name": "dispatch", "needs": ["worker.dispatch"], "target": "worker-evil"}],
+    )
+    try:
+        requirement = ExecutionRequirement.from_dict(envelope, trusted_issuers=TRUSTED_TEST_ISSUERS)
+    except BindingError:
+        return
+    assert requirement.accept("dispatch").verdict == "REFUSED"
+
+
+def test_42_forged_evidence_key_never_promotes_conditional():
+    forged = _forge_decision(
+        "tests.execute", "conditional", missing=["lab.safety-cert"], execution_target=""
+    )
+    envelope = payload(
+        atlas_decisions=[forged],
+        legs=[{"name": "cpu", "needs": ["tests.execute"], "evidence": {"lab.safety-cert": "trust me"}}],
+    )
+    try:
+        requirement = ExecutionRequirement.from_dict(envelope, trusted_issuers=TRUSTED_TEST_ISSUERS)
+    except BindingError:
+        return
+    assert requirement.accept("cpu").verdict in ("UNKNOWN", "REFUSED")
+
+
+def test_43_mutated_evidence_changes_requirement_id():
+    first = load()
+    envelope = payload()
+    envelope["legs"][0] = {**envelope["legs"][0], "evidence": {"anything": "goes"}}
+    assert ExecutionRequirement.from_dict(envelope, trusted_issuers=TRUSTED_TEST_ISSUERS).requirement_id != first.requirement_id
+
+
+def test_44_mutated_bounds_change_requirement_id():
+    first = load()
+    envelope = payload()
+    envelope["bounds"] = {"max_seconds": 1}
+    assert ExecutionRequirement.from_dict(envelope, trusted_issuers=TRUSTED_TEST_ISSUERS).requirement_id != first.requirement_id
+
+
+def test_45_mutated_session_context_is_unloadable():
+    envelope = payload()
+    envelope["session"] = {"participant": "mallory", "scope": SCOPE}
+    with pytest.raises(BindingError):
+        ExecutionRequirement.from_dict(envelope, trusted_issuers=TRUSTED_TEST_ISSUERS)
+
+
+def test_46_fake_authority_label_is_not_proof():
+    forged = _forge_decision("worker.dispatch", "granted")
+    forged["authority"] = "atlas"
+    forged["decision_by"] = ["atlas-admission", "atlas"]
+    envelope = payload(
+        atlas_decisions=[forged],
+        legs=[{"name": "dispatch", "needs": ["worker.dispatch"], "target": "worker-evil"}],
+    )
+    with pytest.raises(BindingError):
+        ExecutionRequirement.from_dict(envelope, trusted_issuers=TRUSTED_TEST_ISSUERS)
+
+
+def test_47_valid_conditional_with_bare_evidence_stays_unknown():
+    decision = issue("tests.execute", "conditional", missing=["lab.safety-cert"])
+    envelope = payload(
+        atlas_decisions=[decision],
+        legs=[{"name": "cpu", "needs": ["tests.execute"], "evidence": {"lab.safety-cert": "x"}}],
+    )
+    requirement = ExecutionRequirement.from_dict(
+        envelope, trusted_issuers=TRUSTED_TEST_ISSUERS
+    )
+    assert requirement.accept("cpu").verdict == "UNKNOWN"
+
+
+def test_48_reassembled_requirement_stays_bound_by_decisions():
+    envelope = payload(
+        atlas_decisions=[issue("worker.dispatch", "granted", execution_target="worker-01")],
+        legs=[{"name": "dispatch", "needs": ["worker.dispatch"], "target": "worker-09"}],
+    )
+    envelope["task_id"] = "attacker-task"
+    requirement = ExecutionRequirement.from_dict(
+        envelope, trusted_issuers=TRUSTED_TEST_ISSUERS
+    )
+    # Assembly is allowed; authority still fails closed on the wrong target.
+    assert requirement.accept("dispatch").verdict == "REFUSED"
+    assert requirement.requirement_id != load().requirement_id
+
+
+def test_49_authentic_issuance_grants_regardless_of_label():
+    envelope = payload(
+        atlas_decisions=[issue("worker.dispatch", "granted", execution_target="worker-01",
+                               authority="atlas")],
+        legs=[{"name": "dispatch", "needs": ["worker.dispatch"], "target": "worker-01"}],
+    )
+    requirement = ExecutionRequirement.from_dict(
+        envelope, trusted_issuers=TRUSTED_TEST_ISSUERS
+    )
+    assert requirement.accept("dispatch").verdict == "GRANTED"
+
+
+def test_50_authentic_evidence_promotes_conditional():
+    decision = issue("tests.execute", "conditional", missing=["lab.safety-cert"])
+    envelope = payload(
+        atlas_decisions=[decision],
+        legs=[{"name": "cpu", "needs": ["tests.execute"],
+               "evidence": {"lab.safety-cert": attest("lab.safety-cert", issued_at=1700000000)}}],
+    )
+    requirement = ExecutionRequirement.from_dict(
+        envelope, trusted_issuers=TRUSTED_TEST_ISSUERS, now_secs=1700000100
+    )
+    assert requirement.accept("cpu").verdict == "GRANTED"
+
+
+def test_51_stale_evidence_never_promotes():
+    decision = issue("tests.execute", "conditional", missing=["lab.safety-cert"])
+    envelope = payload(
+        atlas_decisions=[decision],
+        legs=[{"name": "cpu", "needs": ["tests.execute"],
+               "evidence": {"lab.safety-cert": attest("lab.safety-cert", issued_at=1700000000)}}],
+    )
+    requirement = ExecutionRequirement.from_dict(
+        envelope, trusted_issuers=TRUSTED_TEST_ISSUERS, now_secs=1800000000
+    )
+    assert requirement.accept("cpu").verdict == "UNKNOWN"
+
+
+def test_52_wrong_issuer_key_is_unloadable():
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+    rogue = Ed25519PrivateKey.generate()
+    rogue_issuers = {"rogue-key": rogue.public_key().public_bytes_raw()}
+    decision = issue("worker.dispatch", "granted", execution_target="worker-01")
+    envelope = payload(
+        atlas_decisions=[decision],
+        legs=[{"name": "dispatch", "needs": ["worker.dispatch"], "target": "worker-01"}],
+    )
+    with pytest.raises(BindingError):
+        ExecutionRequirement.from_dict(envelope, trusted_issuers=rogue_issuers)
+
+
+def test_53_tampered_signed_content_is_unloadable():
+    decision = issue("worker.dispatch", "granted", execution_target="worker-01")
+    decision["execution_target"] = "worker-evil"
+    envelope = payload(
+        atlas_decisions=[decision],
+        legs=[{"name": "dispatch", "needs": ["worker.dispatch"], "target": "worker-evil"}],
+    )
+    with pytest.raises(BindingError):
+        ExecutionRequirement.from_dict(envelope, trusted_issuers=TRUSTED_TEST_ISSUERS)

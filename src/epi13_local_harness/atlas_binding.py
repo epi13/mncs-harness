@@ -5,12 +5,38 @@ transports Atlas-issued decisions into downstream execution and enforces
 them mechanically. It contains no policy tables, no capability vocabulary,
 and no admission logic of its own.
 
-Schema 0.2 (language-owned contract ``mncs-model::authority``) hardens the
-0.1 draft:
+Trust model (explicit): untrusted callers may submit requirement
+envelopes, but every authority-bearing component is independently
+authenticated at load, and Harness constructs no authority of its own:
 
-* every carried decision must prove issuance with a
-  ``sha256:canonical-json-v1`` content digest recomputed at load; a forged,
-  tampered, or provenance-less decision is unloadable, never promoted;
+* Atlas decisions are authentic only with an Ed25519 issuer signature
+  over the canonical issued bytes, verified here against
+  operator-configured trust roots (key id -> public key). A content
+  digest proves integrity, never issuance: forged JSON with a valid
+  digest is unloadable. ``authority`` / ``decision_by`` fields are
+  informational labels, never proof.
+* Harness assembles the requirement envelope (legs, bounds, session
+  echo) from caller input, but the canonical requirement identity binds
+  every consequential field (task, source, artifact, session, bounds,
+  decision digests, legs with evidence), so tampering changes the
+  identity and every decision's own signature still has to verify.
+* Conditional evidence promotes UNKNOWN to GRANTED only via
+  issuer-authenticated attestations bound to name, session, scope, and
+  freshness (subject-bound attestations are recorded and identity-bound
+  but do not promote yet: load-time verification carries no per-item
+  subject). Bare caller-written values never promote;
+  ``execution.target`` is system-derived from the verified target
+  binding, never caller-claimed.
+* At dispatch, the executor additionally requires the requirement
+  session to match operator-supplied expected participant/scope (when
+  provided) and refuses requirement-bound dispatch before any Fabric
+  call when the implementation cannot produce operator-grade proof.
+
+Schema 0.3 (language-owned contract ``mncs-model::authority``):
+
+* every carried decision must prove authentic Atlas issuance (digest +
+  Ed25519 issuer signature against trust roots); forged, tampered,
+  wrong-issuer, or provenance-less decisions are unloadable;
 * every decision must belong to the requirement's admitted session
   (participant + scope); replay out-of-context fails at load;
 * duplicate decisions for one capability fold conservatively and
@@ -18,7 +44,9 @@ Schema 0.2 (language-owned contract ``mncs-model::authority``) hardens the
   at UNKNOWN with the sorted union of outstanding evidence);
 * each leg declares the target it will run on; the declared target must
   equal the Atlas-authorized one, and ``confirm_execution`` later proves
-  the actual Fabric target is that same target on fresh operator proof.
+  the actual Fabric target is that same target on fresh operator proof
+  (canonical semantics owned by ``mncs-model::authority``; this
+  implementation is the golden-vector-pinned Python projection).
 
 Verdict lattice: GRANTED > UNKNOWN > REFUSED. UNKNOWN is never promoted.
 """
@@ -27,12 +55,19 @@ from __future__ import annotations
 
 import hashlib
 import json
+import time
 from dataclasses import dataclass, field
 from typing import Any, Mapping
 
-SCHEMA = "mncs.execution-requirement/0.2"
+SCHEMA = "mncs.execution-requirement/0.3"
 DECISION_SCHEMA = "mncs.atlas-capability-decision/1"
 DECISION_DIGEST_ALG = "sha256:canonical-json-v1"
+
+#: Issuer signature algorithm. Matches the family attestation envelope
+#: convention (mncs-rights-provenance) and ``mncs-model::authority``.
+ISSUANCE_SIGNATURE_ALG = "ed25519"
+#: Authenticated evidence attestation envelope (see ``check_attestation``).
+EVIDENCE_SCHEMA = "mncs.evidence-attestation/1"
 
 #: Harness-local declaration of which Atlas capabilities its own
 #: consequential tools consume. This is an interface contract (what the
@@ -79,9 +114,127 @@ def verify_decision_digest(envelope: Mapping[str, Any]) -> None:
         )
     digest = envelope.get("decision_digest")
     if not isinstance(digest, str) or not digest:
-        raise BindingError("atlas decision carries no digest (provenance-less grant?)")
+        raise BindingError("atlas decision carries no digest (integrity-less grant?)")
     if hashlib.sha256(canonical_envelope_bytes(envelope)).hexdigest() != digest:
         raise BindingError("atlas decision digest mismatch: modified after issuance?")
+
+
+def issuance_signed_bytes(envelope: Mapping[str, Any]) -> bytes:
+    """Canonical bytes the issuer signs: the envelope minus
+    ``decision_digest`` and ``issuer_signature``. Byte-identical with
+    ``mncs-model::authority``; the issuer block stays covered."""
+    body = {
+        key: value
+        for key, value in envelope.items()
+        if key not in ("decision_digest", "issuer_signature")
+    }
+    return json.dumps(body, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode(
+        "utf-8"
+    )
+
+
+def verify_issuance(envelope: Mapping[str, Any], trusted_issuers: Mapping[str, bytes]) -> str:
+    """Verify authentic issuance of one envelope against trust roots.
+
+    Checks the content digest, then the issuer block shape and algorithm,
+    then that the key id is trusted, then the Ed25519 signature over
+    :func:`issuance_signed_bytes`. Returns the issuing key id. Anything
+    unsigned, mislabeled, untrusted, or mathematically invalid raises
+    :class:`BindingError`: a forged envelope with a valid content digest
+    still fails here for lack of authentic issuance.
+    """
+    from cryptography.exceptions import InvalidSignature
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+
+    # Decisions always carry a digest (checked by the caller); evidence
+    # attestations carry none and skip this step.
+    if "decision_digest" in envelope:
+        verify_decision_digest(envelope)
+    issuer = envelope.get("issuer")
+    if not isinstance(issuer, Mapping) or not issuer.get("key_id"):
+        raise BindingError(
+            "envelope carries no issuer binding: content integrity is not issuance"
+        )
+    if issuer.get("algorithm") != ISSUANCE_SIGNATURE_ALG:
+        raise BindingError(f"issuer algorithm {issuer.get('algorithm')!r} is not ed25519")
+    key_id = str(issuer["key_id"])
+    public = trusted_issuers.get(key_id)
+    if public is None:
+        raise BindingError(f"issuer {key_id!r} is not trusted by this verifier")
+    signature = envelope.get("issuer_signature")
+    if (
+        not isinstance(signature, str)
+        or len(signature) != 128
+        or any(char not in "0123456789abcdefABCDEF" for char in signature)
+    ):
+        raise BindingError("issuer signature is not 64-byte hex")
+    try:
+        Ed25519PublicKey.from_public_bytes(bytes(public)).verify(
+            bytes.fromhex(signature), issuance_signed_bytes(envelope)
+        )
+    except InvalidSignature as exc:
+        raise BindingError("envelope signature does not verify against the trusted issuer key") from exc
+    except ValueError as exc:
+        raise BindingError(f"trusted issuer {key_id!r} has an invalid public key") from exc
+    return key_id
+
+
+def check_attestation(
+    value: Any,
+    *,
+    name: str,
+    participant: str,
+    scope: str,
+    subject: str,
+    trusted_issuers: Mapping[str, bytes],
+    now_secs: int,
+    max_age_secs: int,
+) -> bool:
+    """Whether one carried evidence value authentically supplies an
+    outstanding conditional item (mirrors ``mncs-model::authority``).
+
+    Only an ``mncs.evidence-attestation/1`` envelope whose issuer binding
+    verifies against the trust roots, and whose name, session, scope,
+    and freshness all match, supplies. The subject must be empty
+    (general attestation); subject-bound values stay inert until a
+    per-item subject reaches verification. Absent entries, bare values,
+    wrong subjects, stale or future-dated, and untrusted-issuer
+    attestations never supply.
+    """
+    if not isinstance(value, Mapping):
+        return False
+    if value.get("schema_version") != EVIDENCE_SCHEMA:
+        return False
+    if value.get("name") != name:
+        return False
+    if value.get("participant") != participant or value.get("scope") != scope:
+        return False
+    bound = value.get("subject", "")
+    if not isinstance(bound, str) or (bound and bound != subject):
+        return False
+    issued_at = value.get("issued_at")
+    if (
+        not isinstance(issued_at, int)
+        or isinstance(issued_at, bool)
+        or issued_at > now_secs
+        or now_secs - issued_at > max_age_secs
+    ):
+        return False
+    try:
+        verify_issuance(value, trusted_issuers)
+    except BindingError:
+        return False
+    return True
+
+
+def _canonical_json(value: Any) -> str:
+    """Strict canonical JSON for identity inputs: floats are outside the
+    contract and fail closed instead of serializing ambiguously."""
+    try:
+        return json.dumps(value, sort_keys=True, separators=(",", ":"),
+                          ensure_ascii=False, allow_nan=False)
+    except (TypeError, ValueError) as exc:
+        raise BindingError(f"identity input is not canonical JSON: {exc}") from exc
 
 
 def requirement_identity(
@@ -90,12 +243,25 @@ def requirement_identity(
     artifact_identity: str,
     decision_digests: list[str],
     legs: list[dict[str, Any]],
+    bounds: Mapping[str, Any] | None = None,
+    session_participant: str = "",
+    session_scope: str = "",
 ) -> str:
-    """Canonical requirement identity, byte-identical with mncs-language."""
+    """Canonical requirement identity, byte-identical with mncs-language.
+
+    Binds task, source, artifact, session context, bounds, decision
+    digests, and legs (names, sorted needs, backends, targets, evidence
+    pairs). Anything caller-mutable that can alter authority or execution
+    semantics changes the identity.
+    """
     canonical_legs = sorted(
         (
             {
                 "backend": str(leg.get("backend", "")),
+                "evidence": {
+                    str(name): json.loads(_canonical_json(item))
+                    for name, item in sorted((leg.get("evidence", {}) or {}).items())
+                },
                 "name": str(leg.get("name", "")),
                 "needs": sorted(str(item) for item in leg.get("needs", [])),
                 "target": str(leg.get("target", "")),
@@ -106,9 +272,11 @@ def requirement_identity(
     )
     body = {
         "artifact_identity": artifact_identity,
+        "bounds": json.loads(_canonical_json(dict(bounds or {}))),
         "decision_digests": sorted(decision_digests),
         "legs": canonical_legs,
         "schema_version": SCHEMA,
+        "session": {"participant": session_participant, "scope": session_scope},
         "source_identity": source_identity,
         "task_id": task_id,
     }
@@ -127,14 +295,19 @@ class AtlasDecision:
     authority: str = ""
     decided_by: tuple[str, ...] = ()
     decision_digest: str = ""
+    issuer_key_id: str = ""
 
     @classmethod
-    def from_dict(cls, value: Mapping[str, Any]) -> "AtlasDecision":
+    def from_dict(cls, value: Mapping[str, Any], *, trusted_issuers: Mapping[str, bytes]) -> "AtlasDecision":
         if not isinstance(value, Mapping):
             raise BindingError("atlas decision must be a mapping")
         if value.get("schema_version") != DECISION_SCHEMA:
             raise BindingError(f"atlas decision schema must be {DECISION_SCHEMA}")
         verify_decision_digest(value)
+        # Authentic issuance, not just integrity: the key id must be
+        # operator-trusted and the signature must verify. ``authority``
+        # and ``decision_by`` stay informational labels, never proof.
+        issuer_key_id = verify_issuance(value, trusted_issuers)
         capability = value.get("capability")
         status = value.get("status")
         if not isinstance(capability, str) or not capability:
@@ -170,6 +343,7 @@ class AtlasDecision:
             authority=str(value.get("authority", "")),
             decided_by=tuple(decided_by),
             decision_digest=str(value.get("decision_digest", "")),
+            issuer_key_id=issuer_key_id,
         )
 
 
@@ -202,9 +376,27 @@ class ExecutionRequirement:
     session_participant: str = ""
     session_scope: str = ""
     requirement_id: str = ""
+    #: Trusted issuer key ids, sorted. Full public keys live with the
+    #: caller (trust roots); the requirement carries only which issuers
+    #: its decisions and evidence were verified against.
+    trusted_key_ids: tuple[str, ...] = ()
+    evidence_max_age_secs: int = 86400
+    evidence_now_secs: int = 0
+    #: (leg name, evidence name) pairs whose carried attestation verified
+    #: at load against the trust roots, session, and freshness terms.
+    #: Verification concentrates at the load boundary: accept/confirm
+    #: decide from authenticated material, never re-verify.
+    verified_evidence: tuple[tuple[str, str], ...] = ()
 
     @classmethod
-    def from_dict(cls, value: Mapping[str, Any]) -> "ExecutionRequirement":
+    def from_dict(
+        cls,
+        value: Mapping[str, Any],
+        *,
+        trusted_issuers: Mapping[str, bytes],
+        evidence_max_age_secs: int = 86400,
+        now_secs: int | None = None,
+    ) -> "ExecutionRequirement":
         if not isinstance(value, Mapping):
             raise BindingError("requirement must be a mapping")
         if value.get("schema_version") != SCHEMA:
@@ -226,7 +418,18 @@ class ExecutionRequirement:
             # No Atlas binding at all: the requirement cannot be told apart
             # from a bypass attempt, so it is unloadable, not default-allowed.
             raise BindingError("requirement carries no atlas decisions")
-        parsed = tuple(AtlasDecision.from_dict(item) for item in decisions)
+        if not isinstance(trusted_issuers, Mapping) or not trusted_issuers:
+            raise BindingError("requirement needs operator trust roots (issuer key ids)")
+        if (
+            not isinstance(evidence_max_age_secs, int)
+            or isinstance(evidence_max_age_secs, bool)
+            or evidence_max_age_secs <= 0
+        ):
+            raise BindingError("evidence max age must be a positive number of seconds")
+        clock = now_secs if now_secs is not None else int(time.time())
+        parsed = tuple(
+            AtlasDecision.from_dict(item, trusted_issuers=trusted_issuers) for item in decisions
+        )
         for decision in parsed:
             if (
                 decision.session_participant != session["participant"]
@@ -241,6 +444,7 @@ class ExecutionRequirement:
         if not isinstance(legs, list) or not legs:
             raise BindingError("requirement needs at least one leg")
         parsed_legs = []
+        verified: list[tuple[str, str]] = []
         for leg in legs:
             if not isinstance(leg, Mapping) or not leg.get("name"):
                 raise BindingError("each leg needs a name")
@@ -250,6 +454,21 @@ class ExecutionRequirement:
             evidence = leg.get("evidence", {})
             if not isinstance(evidence, Mapping):
                 raise BindingError(f"leg {leg.get('name')!r} evidence must map")
+            for name, item in evidence.items():
+                # Authenticate each carried value now: only attestations
+                # bound to this name, session, scope, subject, and
+                # freshness verify. Bare values stay carried but inert.
+                if check_attestation(
+                    item,
+                    name=str(name),
+                    participant=str(session["participant"]),
+                    scope=str(session["scope"]),
+                    subject="",
+                    trusted_issuers=trusted_issuers,
+                    now_secs=clock,
+                    max_age_secs=evidence_max_age_secs,
+                ):
+                    verified.append((str(leg["name"]), str(name)))
             parsed_legs.append(
                 RequirementLeg(
                     name=str(leg["name"]),
@@ -268,6 +487,9 @@ class ExecutionRequirement:
             str(value["artifact_identity"]),
             [decision.decision_digest for decision in parsed],
             [dict(leg) for leg in legs if isinstance(leg, Mapping)],
+            dict(bounds),
+            str(session["participant"]),
+            str(session["scope"]),
         )
         return cls(
             task_id=str(value["task_id"]),
@@ -279,6 +501,10 @@ class ExecutionRequirement:
             session_participant=str(session["participant"]),
             session_scope=str(session["scope"]),
             requirement_id=requirement_id,
+            trusted_key_ids=tuple(sorted(str(key) for key in trusted_issuers)),
+            evidence_max_age_secs=evidence_max_age_secs,
+            evidence_now_secs=clock,
+            verified_evidence=tuple(verified),
         )
 
     def _folds(self) -> dict[str, Acceptance]:
@@ -301,14 +527,17 @@ class ExecutionRequirement:
         return targets
 
     def accept(self, leg_name: str, observed_artifact: str = "") -> Acceptance:
-        """Decide one leg purely from carried, digest-verified Atlas decisions.
+        """Decide one leg purely from authenticated carried material.
 
         Granted covers needs. Denied refuses. Conditional is satisfied only
-        when every missing evidence name is supplied by carried leg evidence
-        or by a target bound to an Atlas-authorized one; otherwise UNKNOWN.
-        A leg that declares no target while Atlas constrains one refuses:
-        authorized placement cannot be shown. An observed artifact digest
-        that differs from the bound one refuses (tamper fail-closed).
+        when every missing evidence name was authenticated at load (an
+        issuer-signed attestation bound to name, session, scope, and
+        freshness) or is ``execution.target`` derived from a verified
+        target binding; otherwise UNKNOWN. Bare caller-written values
+        never satisfy. A leg that declares no target while Atlas
+        constrains one refuses: authorized placement cannot be shown. An
+        observed artifact digest that differs from the bound one refuses
+        (tamper fail-closed).
         """
         leg = next((item for item in self.legs if item.name == leg_name), None)
         if leg is None:
@@ -347,7 +576,9 @@ class ExecutionRequirement:
                 verdict = "REFUSED"
                 reasons.append(f"{need}: {fold.reason}")
             elif fold.verdict == "UNKNOWN":
-                supplied = set(leg.evidence)
+                supplied = {
+                    name for leg_name, name in self.verified_evidence if leg_name == leg.name
+                }
                 if constrained:
                     supplied.add("execution.target")
                 outstanding = [item for item in fold.outstanding if item not in supplied]

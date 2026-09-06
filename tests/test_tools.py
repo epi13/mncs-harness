@@ -10,6 +10,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from atlas_fixtures import TRUSTED_TEST_ISSUERS
 from atlas_fixtures import payload as atlas_payload
 
 from epi13_local_harness.atlas_binding import ExecutionRequirement
@@ -33,7 +34,9 @@ class ToolTests(unittest.TestCase):
         # (repo.edit). Bypass behavior itself is pinned in
         # test_atlas_enforcement.py.
         self.registry.bind_atlas_requirement(
-            ExecutionRequirement.from_dict(atlas_payload()),
+            ExecutionRequirement.from_dict(
+                atlas_payload(), trusted_issuers=TRUSTED_TEST_ISSUERS
+            ),
             "cpu",
         )
 

@@ -11,6 +11,7 @@ from typing import Any, Sequence
 from .atlas_binding import (
     FABRIC_DISPATCH_CAPABILITY_NEEDS,
     LEGACY_PROOF_ORIGIN,
+    OPERATOR_PROOF_ORIGINS,
     ExecutionRequirement,
 )
 from .fabric import FabricExecutionError, FabricSession, _identity
@@ -48,18 +49,33 @@ class FabricTargetToolExecutor:
         request_id: str | None = None,
         requirement: ExecutionRequirement | None = None,
         requirement_leg: str = "",
+        expected_participant: str = "",
+        expected_scope: str = "",
     ) -> FabricTargetToolResult:
         """Execute one approved argv workload against one consumer-selected worker.
 
         The Atlas-bound requirement is mandatory and checked before command
         policy: the bound leg must be GRANTED, must cover worker.dispatch,
         and Atlas must authorize exactly this worker identity. Placement
-        outside carried authority is never dispatched.
+        outside carried authority is never dispatched. When the caller
+        supplies expected participant/scope (operator-authenticated
+        context, never the envelope), the requirement session must match:
+        a valid requirement issued for another session cannot be replayed
+        here. A preflight proof check refuses before any Fabric call when
+        the implementation cannot produce fresh operator-grade proof, so
+        consequential work never executes first and annotates UNKNOWN
+        afterward.
         """
 
         target = SessionTarget("fabric-worker", worker_identity)
         arguments = {"argv": [str(value) for value in argv]}
-        refusal = self._atlas_dispatch_gate(worker_identity, requirement, requirement_leg)
+        refusal = self._atlas_dispatch_gate(
+            worker_identity,
+            requirement,
+            requirement_leg,
+            expected_participant=expected_participant,
+            expected_scope=expected_scope,
+        )
         if refusal is not None:
             return self._not_dispatched(target, arguments, refusal, refusal.reason)
         normalized, decision = self.registry.command_policy.evaluate(arguments["argv"])
@@ -110,13 +126,25 @@ class FabricTargetToolExecutor:
                 None,
             )
 
-    @staticmethod
     def _atlas_dispatch_gate(
+        self,
         worker_identity: str,
         requirement: ExecutionRequirement | None,
         requirement_leg: str,
+        *,
+        expected_participant: str = "",
+        expected_scope: str = "",
     ) -> PolicyDecision | None:
-        """Refuse dispatch outside carried Atlas authority (None = covered)."""
+        """Refuse dispatch outside carried Atlas authority (None = covered).
+
+        Beyond the invoke-time gate (GRANTED leg, dispatch coverage,
+        authorized worker), two preflight checks run before any Fabric
+        call: the requirement session must match operator-supplied
+        expected identity (replay into another participant/scope fails
+        here, not after effects), and the Fabric implementation must be
+        able to produce fresh operator-grade proof (consequential work
+        never executes first and annotates UNKNOWN afterward).
+        """
         if requirement is None or not requirement_leg:
             return PolicyDecision(
                 False,
@@ -157,6 +185,53 @@ class FabricTargetToolExecutor:
                 "blocked",
                 f"ATLAS_REFUSED: worker {worker_identity} is not Atlas-authorized "
                 f"(authorized: {authorized})",
+            )
+        if expected_participant and requirement.session_participant != expected_participant:
+            return PolicyDecision(
+                False,
+                "blocked",
+                "ATLAS_REFUSED: requirement session participant "
+                f"{requirement.session_participant!r} is not the operator-expected "
+                f"{expected_participant!r}: replay into another participant?",
+            )
+        if expected_scope and requirement.session_scope != expected_scope:
+            return PolicyDecision(
+                False,
+                "blocked",
+                "ATLAS_REFUSED: requirement session scope "
+                f"{requirement.session_scope!r} is not the operator-expected "
+                f"{expected_scope!r}: replay into another scope?",
+            )
+        client = self.session.client
+        if client is None:
+            return PolicyDecision(
+                False,
+                "blocked",
+                "ATLAS_REFUSED: no Fabric client for preflight proof check",
+            )
+        origin = self._inventory_proof_origin(client, worker_identity)
+        if origin not in OPERATOR_PROOF_ORIGINS:
+            if origin == LEGACY_PROOF_ORIGIN:
+                reason = (
+                    "legacy Fabric implementation predates observation provenance; "
+                    "consequential Atlas-bound execution requires confirmable authority"
+                )
+            else:
+                reason = (
+                    f"proof origin {origin!r} is not operator authority; "
+                    "exact-target admission needs operator-grade proof"
+                )
+            return PolicyDecision(
+                False,
+                "blocked",
+                f"ATLAS_PREFLIGHT_REFUSED: {reason}; refusing before any Fabric call",
+            )
+        if not self._inventory_is_fresh(client, worker_identity):
+            return PolicyDecision(
+                False,
+                "blocked",
+                "ATLAS_PREFLIGHT_REFUSED: stale target evidence at dispatch time; "
+                "refusing before any Fabric call",
             )
         return None
 

@@ -71,15 +71,37 @@ class ToolRegistry:
         requirement: ExecutionRequirement,
         leg_name: str,
         observed_artifact: str = "",
+        expected_participant: str = "",
+        expected_scope: str = "",
     ) -> Acceptance:
         """Bind carried Atlas authority to subsequent consequential tools.
 
         The acceptance is evaluated once here; every consequential
         ``execute()`` re-checks the bound verdict and that the leg covers
         the tool's declared capability needs. Read-only tools never need
-        a binding. Missing or non-granted bindings fail closed.
+        a binding. Missing or non-granted bindings fail closed. When the
+        caller supplies operator-expected participant/scope, the
+        requirement session must match: a valid requirement issued for
+        another session cannot be bound here.
         """
-        acceptance = requirement.accept(leg_name, observed_artifact=observed_artifact)
+        if expected_participant and requirement.session_participant != expected_participant:
+            acceptance = Acceptance(
+                "REFUSED",
+                leg_name,
+                f"requirement session participant {requirement.session_participant!r} "
+                f"is not the operator-expected {expected_participant!r}",
+                "",
+            )
+        elif expected_scope and requirement.session_scope != expected_scope:
+            acceptance = Acceptance(
+                "REFUSED",
+                leg_name,
+                f"requirement session scope {requirement.session_scope!r} "
+                f"is not the operator-expected {expected_scope!r}",
+                "",
+            )
+        else:
+            acceptance = requirement.accept(leg_name, observed_artifact=observed_artifact)
         self._atlas_requirement = requirement
         self._atlas_leg = leg_name
         self._atlas_acceptance = acceptance

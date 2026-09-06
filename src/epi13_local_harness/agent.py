@@ -39,14 +39,28 @@ class LocalAgent:
         warm_residency: bool | None = None,
         atlas_requirement: dict[str, Any] | ExecutionRequirement | None = None,
         atlas_leg: str = "",
+        atlas_trusted_issuers: dict[str, bytes] | None = None,
+        atlas_expected_participant: str = "",
+        atlas_expected_scope: str = "",
     ):
         self.config = config
         if isinstance(atlas_requirement, dict):
-            # Fail closed at construction: forged or out-of-context
-            # authority never becomes an agent session.
-            atlas_requirement = ExecutionRequirement.from_dict(atlas_requirement)
+            # Fail closed at construction: forged, out-of-context, or
+            # unauthenticated authority never becomes an agent session.
+            # Trust roots are operator configuration, never envelope data.
+            if atlas_trusted_issuers is None:
+                raise ValueError(
+                    "an Atlas requirement envelope needs operator trust roots "
+                    "(atlas_trusted_issuers); pass an already-loaded "
+                    "ExecutionRequirement instead"
+                )
+            atlas_requirement = ExecutionRequirement.from_dict(
+                atlas_requirement, trusted_issuers=atlas_trusted_issuers
+            )
         self.atlas_requirement = atlas_requirement
         self.atlas_leg = atlas_leg
+        self.atlas_expected_participant = atlas_expected_participant
+        self.atlas_expected_scope = atlas_expected_scope
         # ``client`` remains a compatibility seam used by existing callers and
         # tests. Provider selection is performed per model role below.
         self.client = OllamaClient(config.ollama)
@@ -392,8 +406,15 @@ class LocalAgent:
         )
         if self.atlas_requirement is not None and self.atlas_leg:
             # Ordinary execution consumes the binding: without it the
-            # registry's consequential tools fail closed below.
-            registry.bind_atlas_requirement(self.atlas_requirement, self.atlas_leg)
+            # registry's consequential tools fail closed below. The
+            # operator-expected session pins the binding against replay
+            # into another participant/scope.
+            registry.bind_atlas_requirement(
+                self.atlas_requirement,
+                self.atlas_leg,
+                expected_participant=self.atlas_expected_participant,
+                expected_scope=self.atlas_expected_scope,
+            )
         verifier = Verifier(registry.workspace, self.config.verification)
         enabled_tools = tuple(dict.fromkeys((*model.tools, *self.commons_session.tool_names)))
         tools = registry.available_schemas(enabled_tools)
