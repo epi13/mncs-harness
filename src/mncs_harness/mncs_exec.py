@@ -28,6 +28,7 @@ _ATLAS = "harness_atlas"
 _PINS = "harness_pins"
 _FABRIC = "harness_fabric"
 _READINESS = "harness_readiness"
+_ELIGIBILITY = "harness_eligibility"
 
 _ROUTING_MODULE = "mncs.harness.routing.v1"
 _POLICY_MODULE = "mncs.harness.policy.v1"
@@ -36,6 +37,7 @@ _ATLAS_MODULE = "mncs.harness.atlas.v1"
 _PINS_MODULE = "mncs.harness.pins.v1"
 _FABRIC_MODULE = "mncs.harness.fabric.v1"
 _READINESS_MODULE = "mncs.harness.readiness.v1"
+_ELIGIBILITY_MODULE = "mncs.harness.eligibility.v1"
 
 
 def _finite(module: str, enum: str, variant: str) -> tuple[str, str, str]:
@@ -94,6 +96,8 @@ def _transitional(kernel: str, function: str, *args: Any) -> Any:
         (_READINESS, "fold4"): lambda quad: mncs_logic.fold_readiness(list(quad)),
         (_READINESS, "fold8"): lambda envelope: mncs_logic.fold_readiness(list(envelope)),
         (_READINESS, "is_ready"): mncs_logic.readiness_ready,
+        (_ELIGIBILITY, "capability_eligible"): mncs_logic.capability_eligible,
+        (_ELIGIBILITY, "resource_gate"): mncs_logic.resource_gate,
     }[(kernel, function)]
     return mirror(*args)
 
@@ -500,3 +504,61 @@ def readiness_ready(state: str) -> bool:
     if not isinstance(result, bool):
         raise mncs_runtime.MncsRuntimeError(f"is_ready returned non-bool {result!r}")
     return result
+
+
+_CAPABILITIES = ("COMPLETION", "TOOLS", "CODE_EDIT")
+_OBSERVED = ("NONE", "PASS", "FAIL")
+_UNKNOWN_POLICIES = ("FAIL_CLOSED", "EXPLORE", "PROVIDER_CLAIM_COMPAT", "OTHER")
+_RESOURCE_VERDICTS = ("OK", "MISSING_FACTS", "OVER_BUDGET", "OVER_AVAILABLE")
+
+
+def capability_eligible(
+    capability: str,
+    observed: str,
+    claimed: bool,
+    unknown_policy: str,
+    require_observed: bool,
+    allow_unclaimed: bool,
+) -> bool:
+    """Execute ``mncs.harness.eligibility.v1::capability_eligible``."""
+    if capability not in _CAPABILITIES:
+        raise mncs_runtime.MncsRuntimeError(f"cannot marshal capability {capability!r}")
+    if observed not in _OBSERVED:
+        raise mncs_runtime.MncsRuntimeError(f"cannot marshal observed {observed!r}")
+    if unknown_policy not in _UNKNOWN_POLICIES:
+        raise mncs_runtime.MncsRuntimeError(
+            f"cannot marshal unknown policy {unknown_policy!r}"
+        )
+    result = _call(
+        _ELIGIBILITY,
+        "capability_eligible",
+        [
+            _finite(_ELIGIBILITY_MODULE, "Capability", capability),
+            _finite(_ELIGIBILITY_MODULE, "Observed", observed),
+            claimed,
+            _finite(_ELIGIBILITY_MODULE, "UnknownPolicy", unknown_policy),
+            require_observed,
+            allow_unclaimed,
+        ],
+        (capability, observed, claimed, unknown_policy, require_observed, allow_unclaimed),
+    )
+    if isinstance(result, bool):
+        return result  # transitional mirror value
+    raise mncs_runtime.MncsRuntimeError(f"capability_eligible returned {result!r}")
+
+
+def resource_gate(
+    facts_complete: bool,
+    size: int,
+    budget: int,
+    has_available: bool,
+    available: int,
+) -> str:
+    """Execute ``mncs.harness.eligibility.v1::resource_gate``."""
+    result = _call(
+        _ELIGIBILITY,
+        "resource_gate",
+        [facts_complete, size, budget, has_available, available],
+        (facts_complete, size, budget, has_available, available),
+    )
+    return _as_variant(result, "resource_gate", _RESOURCE_VERDICTS)

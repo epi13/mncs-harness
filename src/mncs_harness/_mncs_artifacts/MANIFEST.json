@@ -211,6 +211,46 @@
    "source": "mncs/harness_readiness.mncs",
    "source_sha256": "sha256:fea7a82b3f293dee912d87bddc8a1dc63162fac6acc68a843daaf7f1c4a42a8d",
    "corpus": "corpora/harness-readiness-corpus.json"
+  },
+  "harness_eligibility.wasm.json": {
+   "module": "mncs.harness.eligibility.v1",
+   "backend": "mncs-portable-wasm-mvp",
+   "identity": "mncs:compiler:backend-artifact:23f44cdadfa91dd4d7cf9333c5dcd2c349670345512973086601d778e33f3471",
+   "bytes_sha256": "8010a7521a948d4c5b4733f5ed6f6b0634f4b77814f787bdd5ef7934fc180eae",
+   "exports": [
+    "capability_eligible",
+    "code_edit_gate",
+    "completion_fail_closed",
+    "completion_gate",
+    "completion_unknown",
+    "resource_gate",
+    "tools_compat",
+    "tools_gate",
+    "tools_unknown"
+   ],
+   "source": "mncs/harness_eligibility.mncs",
+   "source_sha256": "sha256:03c77d83c528632bde154c6cb66751610c902adb754c2d4ddbb7e87729def5dd",
+   "corpus": "corpora/harness-eligibility-corpus.json"
+  },
+  "harness_eligibility.bytecode.json": {
+   "module": "mncs.harness.eligibility.v1",
+   "backend": "mncs-research-bytecode",
+   "identity": "mncs:compiler:backend-artifact:8d388d19978fd178fe7218f58b200d4c72a43001876122bd057d7dceb55072f7",
+   "bytes_sha256": "a873ffef799fcb9931d1517074f619e6d8f8d95e1b16ca8f3726173b0a813c2b",
+   "exports": [
+    "capability_eligible",
+    "code_edit_gate",
+    "completion_fail_closed",
+    "completion_gate",
+    "completion_unknown",
+    "resource_gate",
+    "tools_compat",
+    "tools_gate",
+    "tools_unknown"
+   ],
+   "source": "mncs/harness_eligibility.mncs",
+   "source_sha256": "sha256:03c77d83c528632bde154c6cb66751610c902adb754c2d4ddbb7e87729def5dd",
+   "corpus": "corpora/harness-eligibility-corpus.json"
   }
  }
 }

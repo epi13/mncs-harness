@@ -55,59 +55,120 @@ def _observed(
     return latest_outcome(evidence, model=name, capability=capability)
 
 
+def _observed_code(observed: CapabilityEvidence | None) -> str:
+    if observed and observed.outcome == "FAIL":
+        return "FAIL"
+    if observed and observed.outcome == "PASS":
+        return "PASS"
+    return "NONE"
+
+
+def _policy_code(unknown_policy: str) -> str:
+    return {
+        "fail-closed": "FAIL_CLOSED",
+        "explore": "EXPLORE",
+        "provider-claim-compat": "PROVIDER_CLAIM_COMPAT",
+    }.get(unknown_policy, "OTHER")
+
+
 def _eligible(
     item: dict[str, Any],
     requirements: RoleRequirements,
     evidence: Sequence[CapabilityEvidence],
     policy: SelectionPolicy,
 ) -> tuple[bool, list[str]]:
+    # Eligibility verdicts EXECUTE the MNCS kernel
+    # (mncs/harness_eligibility.mncs capability_eligible via mncs_exec).
+    # Kernel gates are computed upfront for every needed capability and
+    # their conjunction IS the verdict: no Python early-return decides.
+    # Reason strings are unchanged; denials now accumulate per capability
+    # instead of truncating at the first deny.
+    from . import mncs_exec
+
     name = model_name(item)
     claims = provider_claims(item)
+    policy_code = _policy_code(requirements.unknown_policy)
+    require_observed = policy.require_observed_for_mutation
+    allow_unclaimed = policy.allow_size_policy_without_claims
+    gates: list[bool] = []
+    if requirements.needs_completion:
+        gates.append(
+            mncs_exec.capability_eligible(
+                "COMPLETION",
+                _observed_code(_observed(evidence, name, "reachability")),
+                "completion" in claims,
+                policy_code,
+                require_observed,
+                allow_unclaimed,
+            )
+        )
+    if requirements.needs_tools:
+        gates.append(
+            mncs_exec.capability_eligible(
+                "TOOLS",
+                _observed_code(_observed(evidence, name, "tool_call")),
+                "tools" in claims,
+                policy_code,
+                require_observed,
+                allow_unclaimed,
+            )
+        )
+    if requirements.needs_code_edit:
+        gates.append(
+            mncs_exec.capability_eligible(
+                "CODE_EDIT",
+                _observed_code(_observed(evidence, name, "code_edit")),
+                False,
+                policy_code,
+                require_observed,
+                allow_unclaimed,
+            )
+        )
     reasons: list[str] = []
     if requirements.needs_completion:
         observed = _observed(evidence, name, "reachability")
         if observed and observed.outcome == "FAIL":
-            return False, [f"observed reachability=FAIL ({observed.failure_class or 'failed'})"]
+            reasons.append(f"observed reachability=FAIL ({observed.failure_class or 'failed'})")
         if "completion" in claims:
             reasons.append("provider-reported completion")
         elif observed and observed.outcome == "PASS":
             reasons.append("observed reachability=PASS")
         elif requirements.unknown_policy == "fail-closed" and policy.require_observed_for_mutation:
-            return False, ["completion is unknown and fail-closed policy applies"]
+            reasons.append("completion is unknown and fail-closed policy applies")
         else:
             reasons.append("completion unknown")
 
     if requirements.needs_tools:
         observed = _observed(evidence, name, "tool_call")
         if observed and observed.outcome == "FAIL":
-            return False, [f"observed tool_call=FAIL ({observed.failure_class or 'failed'})"]
+            reasons.append(f"observed tool_call=FAIL ({observed.failure_class or 'failed'})")
         if observed and observed.outcome == "PASS":
             reasons.append("observed tool_call=PASS")
         elif "tools" in claims:
             reasons.append("provider-reported tools claim; MNCS-observed tool capability is unknown")
             if policy.require_observed_for_mutation:
-                return False, ["mutation requires observed tool capability"]
+                reasons.append("mutation requires observed tool capability")
         elif requirements.unknown_policy == "explore":
             reasons.append("tools unknown; explore policy permits a low-risk attempt")
         elif requirements.unknown_policy == "provider-claim-compat":
             if not policy.allow_size_policy_without_claims:
-                return False, ["tools unknown and compatibility size-policy is disabled"]
+                reasons.append("tools unknown and compatibility size-policy is disabled")
             reasons.append(
                 "compatibility: no provider or observed tool capability; ranked by policy only"
             )
         else:
-            return False, ["required tools capability is unknown"]
+            reasons.append("required tools capability is unknown")
 
     if requirements.needs_code_edit:
         observed = _observed(evidence, name, "code_edit")
         if observed and observed.outcome == "FAIL":
-            return False, [f"observed code_edit=FAIL ({observed.failure_class or 'failed'})"]
+            reasons.append(f"observed code_edit=FAIL ({observed.failure_class or 'failed'})")
         if observed and observed.outcome == "PASS":
             reasons.append("observed code_edit=PASS")
         elif observed is None:
             reasons.append("code_edit not demonstrated")
 
-    return True, reasons
+    return all(gates), reasons
 
 
 def _size_rank(item: dict[str, Any], requirements: RoleRequirements, policy: SelectionPolicy) -> int:

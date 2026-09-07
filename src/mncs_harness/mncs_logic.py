@@ -262,3 +262,46 @@ def fold_readiness(layers: list[str]) -> str:
 def readiness_ready(state: str) -> bool:
     """Mirror of ``mncs.harness.readiness.v1::is_ready``."""
     return state == "READY"
+
+
+def capability_eligible(
+    capability: str,
+    observed: str,
+    claimed: bool,
+    unknown_policy: str,
+    require_observed: bool,
+    allow_unclaimed: bool,
+) -> bool:
+    """Mirror of ``mncs.harness.eligibility.v1::capability_eligible``."""
+    if observed == "FAIL":
+        return False
+    if capability == "CODE_EDIT":
+        return True
+    if observed == "PASS":
+        return True
+    if claimed:
+        return not require_observed if capability == "TOOLS" else True
+    if capability == "COMPLETION":
+        return not (unknown_policy == "FAIL_CLOSED" and require_observed)
+    if unknown_policy == "EXPLORE":
+        return True
+    if unknown_policy == "PROVIDER_CLAIM_COMPAT":
+        return allow_unclaimed
+    return False
+
+
+def resource_gate(
+    facts_complete: bool,
+    size: int,
+    budget: int,
+    has_available: bool,
+    available: int,
+) -> str:
+    """Mirror of ``mncs.harness.eligibility.v1::resource_gate``."""
+    if not facts_complete:
+        return "MISSING_FACTS"
+    if size > budget:
+        return "OVER_BUDGET"
+    if has_available and size > available:
+        return "OVER_AVAILABLE"
+    return "OK"

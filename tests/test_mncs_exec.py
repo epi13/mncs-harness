@@ -126,6 +126,39 @@ class RealExecutionTests(unittest.TestCase):
                 flags,
             )
 
+    def test_eligibility_executes(self) -> None:
+        for capability in ("COMPLETION", "TOOLS", "CODE_EDIT"):
+            for observed in ("NONE", "PASS", "FAIL"):
+                for unknown in (
+                    "FAIL_CLOSED",
+                    "EXPLORE",
+                    "PROVIDER_CLAIM_COMPAT",
+                    "OTHER",
+                ):
+                    for claimed, req_obs, allow in itertools.product(
+                        [False, True], repeat=3
+                    ):
+                        self.assertEqual(
+                            mncs_exec.capability_eligible(
+                                capability, observed, claimed, unknown, req_obs, allow
+                            ),
+                            mncs_logic.capability_eligible(
+                                capability, observed, claimed, unknown, req_obs, allow
+                            ),
+                            (capability, observed, claimed, unknown, req_obs, allow),
+                        )
+        for facts, size, budget, has_avail, avail in [
+            (False, 0, 0, False, 0),
+            (True, 300, 200, False, 0),
+            (True, 150, 200, True, 100),
+            (True, 150, 200, True, 180),
+            (True, 200, 200, True, 200),
+        ]:
+            self.assertEqual(
+                mncs_exec.resource_gate(facts, size, budget, has_avail, avail),
+                mncs_logic.resource_gate(facts, size, budget, has_avail, avail),
+            )
+
     def test_readiness_executes(self) -> None:
         states = ["READY", "DEGRADED", "BLOCKED", "UNKNOWN"]
         for left, right in itertools.product(states, repeat=2):

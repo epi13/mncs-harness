@@ -35,6 +35,7 @@ KERNELS = (
     ("harness_pins", "mncs.harness.pins.v1"),
     ("harness_fabric", "mncs.harness.fabric.v1"),
     ("harness_readiness", "mncs.harness.readiness.v1"),
+    ("harness_eligibility", "mncs.harness.eligibility.v1"),
 )
 BACKENDS = ("mncs-portable-wasm-mvp", "mncs-research-bytecode")
 

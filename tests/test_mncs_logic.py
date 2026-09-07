@@ -22,6 +22,9 @@ from mncs_harness.fabric_compat import (
     EXPERIMENT_REQUIRED_CAPABILITIES,
     evaluate_experiment_fabric,
 )
+from mncs_harness.model_capabilities import RoleRequirements, SelectionPolicy
+from mncs_harness.model_evidence import CapabilityEvidence
+from mncs_harness.model_selection import _eligible
 from mncs_harness.models import RoutingOverride, TaskProfile
 from mncs_harness.policy import CommandPolicy, WorkspaceGuard
 from mncs_harness.router import _deterministic_route
@@ -90,6 +93,15 @@ def _run_mirror(module: str, function: str, args: list):
             return mncs_logic.classify_fabric(*args)
         if function == "dispatch_allowed":
             return mncs_logic.fabric_dispatch_allowed(args[0])
+    if module == "mncs.harness.eligibility.v1":
+        if function == "capability_eligible":
+            return mncs_logic.capability_eligible(
+                args[0], args[1], args[2], args[3], args[4], args[5]
+            )
+        if function == "resource_gate":
+            return mncs_logic.resource_gate(
+                args[0], args[1], args[2], args[3], args[4]
+            )
     if module == "mncs.harness.readiness.v1":
         states = [item for item in args if isinstance(item, str)]
         if function == "dominate_readiness":
@@ -147,6 +159,7 @@ class CorpusAgreementTests(unittest.TestCase):
                 "mncs.harness.pins.v1",
                 "mncs.harness.fabric.v1",
                 "mncs.harness.readiness.v1",
+                "mncs.harness.eligibility.v1",
             ):
                 args = [item[0] if isinstance(item, tuple) else item for item in args]
             got = _run_mirror(target["module"], target["function"], args)
@@ -190,6 +203,9 @@ class CorpusAgreementTests(unittest.TestCase):
 
     def test_readiness_corpus(self) -> None:
         self._check_corpus("harness-readiness", "mncs.harness.readiness.v1")
+
+    def test_eligibility_corpus(self) -> None:
+        self._check_corpus("harness-eligibility", "mncs.harness.eligibility.v1")
 
 
 class LivePathAgreementTests(unittest.TestCase):
@@ -322,6 +338,49 @@ class LivePathAgreementTests(unittest.TestCase):
             ]
             status, _ = _overall(layers, ("control", "harness", "fabric"))
             self.assertEqual(status, mncs_exec.fold_readiness(list(triple)), triple)
+
+    def test_eligibility_matches_kernel_over_cube(self) -> None:
+        policies = ["fail-closed", "explore", "provider-claim-compat"]
+        for observed_outcome, claimed, unknown, req_obs, allow_unclaimed in itertools.product(
+            ["FAIL", "PASS", None], [False, True], policies, [False, True], [False, True]
+        ):
+            item = {"provider": "p", "name": "m", "capabilities": ["tools"] if claimed else []}
+            evidence = (
+                [
+                    CapabilityEvidence(
+                        subject_worker="w",
+                        subject_model="m",
+                        capability="tool_call",
+                        outcome=observed_outcome,
+                        tier=1,
+                        freshness="fresh",
+                        recorded_at="t",
+                        validator_identity="v",
+                    )
+                ]
+                if observed_outcome is not None
+                else []
+            )
+            requirements = RoleRequirements(
+                "cube", needs_completion=False, needs_tools=True, unknown_policy=unknown
+            )
+            policy = SelectionPolicy(
+                require_observed_for_mutation=req_obs,
+                allow_size_policy_without_claims=allow_unclaimed,
+            )
+            ok, _ = _eligible(item, requirements, evidence, policy)
+            obs_code = observed_outcome if observed_outcome in ("FAIL", "PASS") else "NONE"
+            want = mncs_exec.capability_eligible(
+                "TOOLS",
+                obs_code,
+                claimed,
+                {"fail-closed": "FAIL_CLOSED", "explore": "EXPLORE"}.get(
+                    unknown, "PROVIDER_CLAIM_COMPAT"
+                ),
+                req_obs,
+                allow_unclaimed,
+            )
+            self.assertEqual(ok, want, (observed_outcome, claimed, unknown, req_obs))
 
     def test_verdict_lattice_properties(self) -> None:
         for left, right in itertools.product(["PASS", "FAIL", "UNKNOWN"], repeat=2):

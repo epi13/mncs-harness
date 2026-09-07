@@ -1,0 +1,1480 @@
+{
+ "schema_version": "0.1",
+ "name": "harness-eligibility",
+ "cases": [
+  {
+   "id": "completion-fail",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.eligibility.v1",
+     "function": "capability_eligible"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Capability",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Capability::COMPLETION",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Observed",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Observed::FAIL",
+       "discriminant": 2
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::UnknownPolicy",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::FAIL_CLOSED",
+       "discriminant": 0
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": false
+     }
+    }
+   ]
+  },
+  {
+   "id": "completion-pass",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.eligibility.v1",
+     "function": "capability_eligible"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Capability",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Capability::COMPLETION",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Observed",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Observed::PASS",
+       "discriminant": 1
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::UnknownPolicy",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::FAIL_CLOSED",
+       "discriminant": 0
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": true
+     }
+    }
+   ]
+  },
+  {
+   "id": "completion-claimed",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.eligibility.v1",
+     "function": "capability_eligible"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Capability",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Capability::COMPLETION",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Observed",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Observed::NONE",
+       "discriminant": 0
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::UnknownPolicy",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::FAIL_CLOSED",
+       "discriminant": 0
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": true
+     }
+    }
+   ]
+  },
+  {
+   "id": "completion-fc-req",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.eligibility.v1",
+     "function": "capability_eligible"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Capability",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Capability::COMPLETION",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Observed",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Observed::NONE",
+       "discriminant": 0
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::UnknownPolicy",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::FAIL_CLOSED",
+       "discriminant": 0
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": false
+     }
+    }
+   ]
+  },
+  {
+   "id": "completion-fc-noreq",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.eligibility.v1",
+     "function": "capability_eligible"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Capability",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Capability::COMPLETION",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Observed",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Observed::NONE",
+       "discriminant": 0
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::UnknownPolicy",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::FAIL_CLOSED",
+       "discriminant": 0
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": true
+     }
+    }
+   ]
+  },
+  {
+   "id": "completion-explore",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.eligibility.v1",
+     "function": "capability_eligible"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Capability",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Capability::COMPLETION",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Observed",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Observed::NONE",
+       "discriminant": 0
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::UnknownPolicy",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::EXPLORE",
+       "discriminant": 1
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": true
+     }
+    }
+   ]
+  },
+  {
+   "id": "completion-compat",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.eligibility.v1",
+     "function": "capability_eligible"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Capability",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Capability::COMPLETION",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Observed",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Observed::NONE",
+       "discriminant": 0
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::UnknownPolicy",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::PROVIDER_CLAIM_COMPAT",
+       "discriminant": 2
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": true
+     }
+    }
+   ]
+  },
+  {
+   "id": "completion-other",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.eligibility.v1",
+     "function": "capability_eligible"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Capability",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Capability::COMPLETION",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Observed",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Observed::NONE",
+       "discriminant": 0
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::UnknownPolicy",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::OTHER",
+       "discriminant": 3
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": true
+     }
+    }
+   ]
+  },
+  {
+   "id": "tools-fail",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.eligibility.v1",
+     "function": "capability_eligible"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Capability",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Capability::TOOLS",
+       "discriminant": 1
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Observed",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Observed::FAIL",
+       "discriminant": 2
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::UnknownPolicy",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::PROVIDER_CLAIM_COMPAT",
+       "discriminant": 2
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": false
+     }
+    }
+   ]
+  },
+  {
+   "id": "tools-pass",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.eligibility.v1",
+     "function": "capability_eligible"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Capability",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Capability::TOOLS",
+       "discriminant": 1
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Observed",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Observed::PASS",
+       "discriminant": 1
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::UnknownPolicy",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::FAIL_CLOSED",
+       "discriminant": 0
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": true
+     }
+    }
+   ]
+  },
+  {
+   "id": "tools-claimed-req",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.eligibility.v1",
+     "function": "capability_eligible"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Capability",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Capability::TOOLS",
+       "discriminant": 1
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Observed",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Observed::NONE",
+       "discriminant": 0
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::UnknownPolicy",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::PROVIDER_CLAIM_COMPAT",
+       "discriminant": 2
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": false
+     }
+    }
+   ]
+  },
+  {
+   "id": "tools-claimed-noreq",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.eligibility.v1",
+     "function": "capability_eligible"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Capability",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Capability::TOOLS",
+       "discriminant": 1
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Observed",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Observed::NONE",
+       "discriminant": 0
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::UnknownPolicy",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::EXPLORE",
+       "discriminant": 1
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": true
+     }
+    }
+   ]
+  },
+  {
+   "id": "tools-fc",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.eligibility.v1",
+     "function": "capability_eligible"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Capability",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Capability::TOOLS",
+       "discriminant": 1
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Observed",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Observed::NONE",
+       "discriminant": 0
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::UnknownPolicy",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::FAIL_CLOSED",
+       "discriminant": 0
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": false
+     }
+    }
+   ]
+  },
+  {
+   "id": "tools-explore",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.eligibility.v1",
+     "function": "capability_eligible"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Capability",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Capability::TOOLS",
+       "discriminant": 1
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Observed",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Observed::NONE",
+       "discriminant": 0
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::UnknownPolicy",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::EXPLORE",
+       "discriminant": 1
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": true
+     }
+    }
+   ]
+  },
+  {
+   "id": "tools-compat-allowed",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.eligibility.v1",
+     "function": "capability_eligible"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Capability",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Capability::TOOLS",
+       "discriminant": 1
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Observed",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Observed::NONE",
+       "discriminant": 0
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::UnknownPolicy",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::PROVIDER_CLAIM_COMPAT",
+       "discriminant": 2
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": true
+     }
+    }
+   ]
+  },
+  {
+   "id": "tools-compat-denied",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.eligibility.v1",
+     "function": "capability_eligible"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Capability",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Capability::TOOLS",
+       "discriminant": 1
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Observed",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Observed::NONE",
+       "discriminant": 0
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::UnknownPolicy",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::PROVIDER_CLAIM_COMPAT",
+       "discriminant": 2
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": false
+     }
+    }
+   ]
+  },
+  {
+   "id": "tools-other",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.eligibility.v1",
+     "function": "capability_eligible"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Capability",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Capability::TOOLS",
+       "discriminant": 1
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Observed",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Observed::NONE",
+       "discriminant": 0
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::UnknownPolicy",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::OTHER",
+       "discriminant": 3
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": false
+     }
+    }
+   ]
+  },
+  {
+   "id": "codeedit-fail",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.eligibility.v1",
+     "function": "capability_eligible"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Capability",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Capability::CODE_EDIT",
+       "discriminant": 2
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Observed",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Observed::FAIL",
+       "discriminant": 2
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::UnknownPolicy",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::FAIL_CLOSED",
+       "discriminant": 0
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": false
+     }
+    }
+   ]
+  },
+  {
+   "id": "codeedit-pass",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.eligibility.v1",
+     "function": "capability_eligible"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Capability",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Capability::CODE_EDIT",
+       "discriminant": 2
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Observed",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Observed::PASS",
+       "discriminant": 1
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::UnknownPolicy",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::FAIL_CLOSED",
+       "discriminant": 0
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": true
+     }
+    }
+   ]
+  },
+  {
+   "id": "codeedit-none",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.eligibility.v1",
+     "function": "capability_eligible"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Capability",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Capability::CODE_EDIT",
+       "discriminant": 2
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Observed",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Observed::NONE",
+       "discriminant": 0
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::UnknownPolicy",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::FAIL_CLOSED",
+       "discriminant": 0
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": true
+     }
+    }
+   ]
+  },
+  {
+   "id": "res-missing",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.eligibility.v1",
+     "function": "resource_gate"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "integer": {
+       "value": 100,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 200,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::ResourceVerdict",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::ResourceVerdict::MISSING_FACTS",
+      "discriminant": 1
+     }
+    }
+   ]
+  },
+  {
+   "id": "res-over-budget",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.eligibility.v1",
+     "function": "resource_gate"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "integer": {
+       "value": 300,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 200,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::ResourceVerdict",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::ResourceVerdict::OVER_BUDGET",
+      "discriminant": 2
+     }
+    }
+   ]
+  },
+  {
+   "id": "res-over-available",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.eligibility.v1",
+     "function": "resource_gate"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "integer": {
+       "value": 150,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 200,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "integer": {
+       "value": 100,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::ResourceVerdict",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::ResourceVerdict::OVER_AVAILABLE",
+      "discriminant": 3
+     }
+    }
+   ]
+  },
+  {
+   "id": "res-ok",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.eligibility.v1",
+     "function": "resource_gate"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "integer": {
+       "value": 150,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 200,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "integer": {
+       "value": 180,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::ResourceVerdict",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::ResourceVerdict::OK",
+      "discriminant": 0
+     }
+    }
+   ]
+  },
+  {
+   "id": "res-ok-unmeasured",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.eligibility.v1",
+     "function": "resource_gate"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "integer": {
+       "value": 150,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 200,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "integer": {
+       "value": 0,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::ResourceVerdict",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::ResourceVerdict::OK",
+      "discriminant": 0
+     }
+    }
+   ]
+  },
+  {
+   "id": "res-boundary",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.eligibility.v1",
+     "function": "resource_gate"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "integer": {
+       "value": 200,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "integer": {
+       "value": 200,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "integer": {
+       "value": 200,
+       "type": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::ResourceVerdict",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::ResourceVerdict::OK",
+      "discriminant": 0
+     }
+    }
+   ]
+  }
+ ]
+}
