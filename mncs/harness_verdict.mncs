@@ -1,0 +1,66 @@
+mncs 0.6;
+
+// mncs.harness.verdict.v1 — deterministic verifier-evidence combination.
+//
+// The harness verifier runs workspace-scoped syntax checks (Python
+// py_compile, shell `bash -n`, JSON/TOML parses, configured unit tests) and
+// must combine per-check outcomes into one acceptance verdict. Combination
+// can only weaken a claim: FAIL dominates UNKNOWN dominates PASS, and no
+// operation here maps UNKNOWN to PASS or deletes FAIL.
+//
+// NOTE on stdlib reuse: this lattice intentionally mirrors
+// `mncs.core.status.v1` (`dominate`/`combine`/`dominate4`) instead of
+// importing it. The research CLI resolves `use` names relative to the
+// importing file's directory and has no cross-repository package registry,
+// so `use mncs.core.status.v1` from this repository cannot resolve to the
+// mncs-language checkout without vendoring the stdlib tree. That resolver
+// gap is recorded as HARNESS-PRESSURE-008; the mirror is bounded to these
+// three functions and its agreement with the stdlib is pinned by
+// `tests/test_mncs_logic.py`.
+module mncs.harness.verdict.v1;
+
+enum Status { PASS, FAIL, UNKNOWN }
+
+fn dominate(left: Status, right: Status) -> (result: Status) {
+    return match left {
+        PASS => right,
+        FAIL => Status.FAIL,
+        UNKNOWN => match right {
+            PASS => Status.UNKNOWN,
+            FAIL => Status.FAIL,
+            UNKNOWN => Status.UNKNOWN,
+        },
+    };
+}
+
+fn combine4(first: Status, second: Status, third: Status, fourth: Status) -> (result: Status) {
+    let left: Status = dominate(first, second);
+    let right: Status = dominate(third, fourth);
+    return dominate(left, right);
+}
+
+// Eight-check verifier envelope folded as two halves. Unused slots must be
+// passed as PASS by the host with the active count enforced host-side; no
+// missing slot is silently interpreted here.
+fn combine8(
+    first: Status,
+    second: Status,
+    third: Status,
+    fourth: Status,
+    fifth: Status,
+    sixth: Status,
+    seventh: Status,
+    eighth: Status
+) -> (result: Status) {
+    let left: Status = combine4(first, second, third, fourth);
+    let right: Status = combine4(fifth, sixth, seventh, eighth);
+    return dominate(left, right);
+}
+
+fn is_decided(subject: Status) -> (result: bool) {
+    return match subject {
+        PASS => true,
+        FAIL => true,
+        UNKNOWN => false,
+    };
+}

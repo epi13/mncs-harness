@@ -1,0 +1,1684 @@
+{
+  "schema_version": "0.1",
+  "contract_id": "mncs:language:experiment-result:0.1",
+  "identity": "mncs:language:experiment:result:652876d208d217b99419680c5c6ef8a55bb3905bd27a5c2c3cb5cc3437047cc2",
+  "definition_identity": "mncs:language:experiment:definition:773af91f4473f4a9806d98e0e2545b3212b1742fba9974e0b370e7049a88d6c6",
+  "definition": {
+    "schema_version": "0.1",
+    "contract_id": "mncs:language:experiment-definition:0.1",
+    "identity": "mncs:language:experiment:definition:773af91f4473f4a9806d98e0e2545b3212b1742fba9974e0b370e7049a88d6c6",
+    "name": "harness_atlas",
+    "source_artifact_identity": "mncs:source:artifact:5775151e7cb3ddb9e58511db17973cb587b9231ce58e8058c7a1112c68c0e799",
+    "source_profile": "0.6",
+    "compiler_identity": "mncs:compiler:compiler:f862227638ca7fbc716123d8378cddfef4f76a9ef10ab0e99cc791e65207e45d",
+    "compiler_configuration": {
+      "backend": "mncs-portable-wasm-mvp"
+    },
+    "realization": {
+      "schema_version": "0.1",
+      "identity": "mncs:compiler:realization-request:4716033a6d6b95540ad77de335647ad7d20ef1458087d51e0d1e0df6ca9e32eb",
+      "selected_ssa": {
+        "identity": "mncs:compiler:compiler-artifact:66d3d95c7738b16f6eef044cdbc0d587d0b94a52ef4c25f60f157a884d4e31b1",
+        "representation": "selected_ssa",
+        "schema_version": "0.4",
+        "fingerprint": "2f0e11972d1654f41fbc474502a381452cce8dd32738fb384cb7c003b25a04bd"
+      },
+      "target": {
+        "identity": "mncs:compiler:target-contract:7db47a6485cddf8e3bbaa129f3cc126ee396c799b7ff1fb243a0b1bb4663f902",
+        "candidate": "mncs:target:portable-wasm-mvp-0.1",
+        "facts": {
+          "abi": "one exported wasm function per MNCS function; scalars pass directly, composites pass as pointers to arena cells",
+          "bounded-iteration": "language-owned bounded SSA backedges use the private dispatcher loop; iteration metadata remains selected-SSA-bound",
+          "data-layout": "scalar two's-complement; i8/i16/i32 in wasm i32; i64 in wasm i64; composites are immutable 8-byte-slot cells in linear memory addressed by i32 pointers",
+          "integer": "wrapping=wasm wrapping; checked=explicit overflow test then trap; saturating=explicit clamp; widening=exact extended-width arithmetic",
+          "trap": "failure terminators and checked overflow map to wasm unreachable"
+        },
+        "evidence": [
+          "mncs:target-evidence:portable-wasm-mvp-0.1:declared-research-contract"
+        ],
+        "assumptions": [
+          "portable WASM MVP is a research execution envelope, not a native ABI",
+          "the embedded interpreter defines research execution, not a host wasm CLI"
+        ]
+      },
+      "acceptable_backends": [
+        {
+          "identity": "mncs:compiler:backend:6bbc6f37c38ffa3353787ff9ea565d07db3755b42efa8a59871374123adbca15",
+          "name": "mncs-portable-wasm-mvp",
+          "version": "0.1"
+        }
+      ],
+      "required_machine_intents": [
+        "checked_integer",
+        "explicit_failure"
+      ],
+      "required_artifact_kinds": [
+        "wasm_module"
+      ],
+      "required_validators": [
+        "bounded_execution_agreement"
+      ],
+      "fallback_policy": "fail_closed_no_backend_fallback"
+    },
+    "corpus": {
+      "schema_version": "0.1",
+      "name": "harness-atlas",
+      "cases": [
+        {
+          "id": "fold-gg",
+          "request": {
+            "schema_version": "0.1",
+            "target": {
+              "module": "mncs.harness.atlas.v1",
+              "function": "fold_pair"
+            },
+            "arguments": [
+              {
+                "finite": {
+                  "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                  "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+                  "discriminant": 0
+                }
+              },
+              {
+                "finite": {
+                  "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                  "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+                  "discriminant": 0
+                }
+              }
+            ],
+            "step_budget": 1024,
+            "policy": {
+              "effects": "unsupported"
+            }
+          },
+          "expected": [
+            {
+              "finite": {
+                "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+                "discriminant": 0
+              }
+            }
+          ]
+        },
+        {
+          "id": "fold-gu",
+          "request": {
+            "schema_version": "0.1",
+            "target": {
+              "module": "mncs.harness.atlas.v1",
+              "function": "fold_pair"
+            },
+            "arguments": [
+              {
+                "finite": {
+                  "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                  "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+                  "discriminant": 0
+                }
+              },
+              {
+                "finite": {
+                  "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                  "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+                  "discriminant": 1
+                }
+              }
+            ],
+            "step_budget": 1024,
+            "policy": {
+              "effects": "unsupported"
+            }
+          },
+          "expected": [
+            {
+              "finite": {
+                "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+                "discriminant": 1
+              }
+            }
+          ]
+        },
+        {
+          "id": "fold-gr",
+          "request": {
+            "schema_version": "0.1",
+            "target": {
+              "module": "mncs.harness.atlas.v1",
+              "function": "fold_pair"
+            },
+            "arguments": [
+              {
+                "finite": {
+                  "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                  "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+                  "discriminant": 0
+                }
+              },
+              {
+                "finite": {
+                  "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                  "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+                  "discriminant": 2
+                }
+              }
+            ],
+            "step_budget": 1024,
+            "policy": {
+              "effects": "unsupported"
+            }
+          },
+          "expected": [
+            {
+              "finite": {
+                "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+                "discriminant": 2
+              }
+            }
+          ]
+        },
+        {
+          "id": "fold-rg",
+          "request": {
+            "schema_version": "0.1",
+            "target": {
+              "module": "mncs.harness.atlas.v1",
+              "function": "fold_pair"
+            },
+            "arguments": [
+              {
+                "finite": {
+                  "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                  "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+                  "discriminant": 2
+                }
+              },
+              {
+                "finite": {
+                  "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                  "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+                  "discriminant": 0
+                }
+              }
+            ],
+            "step_budget": 1024,
+            "policy": {
+              "effects": "unsupported"
+            }
+          },
+          "expected": [
+            {
+              "finite": {
+                "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+                "discriminant": 2
+              }
+            }
+          ]
+        },
+        {
+          "id": "fold-rr",
+          "request": {
+            "schema_version": "0.1",
+            "target": {
+              "module": "mncs.harness.atlas.v1",
+              "function": "fold_pair"
+            },
+            "arguments": [
+              {
+                "finite": {
+                  "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                  "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+                  "discriminant": 2
+                }
+              },
+              {
+                "finite": {
+                  "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                  "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+                  "discriminant": 2
+                }
+              }
+            ],
+            "step_budget": 1024,
+            "policy": {
+              "effects": "unsupported"
+            }
+          },
+          "expected": [
+            {
+              "finite": {
+                "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+                "discriminant": 2
+              }
+            }
+          ]
+        },
+        {
+          "id": "fold-uu",
+          "request": {
+            "schema_version": "0.1",
+            "target": {
+              "module": "mncs.harness.atlas.v1",
+              "function": "fold_pair"
+            },
+            "arguments": [
+              {
+                "finite": {
+                  "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                  "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+                  "discriminant": 1
+                }
+              },
+              {
+                "finite": {
+                  "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                  "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+                  "discriminant": 1
+                }
+              }
+            ],
+            "step_budget": 1024,
+            "policy": {
+              "effects": "unsupported"
+            }
+          },
+          "expected": [
+            {
+              "finite": {
+                "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+                "discriminant": 1
+              }
+            }
+          ]
+        },
+        {
+          "id": "fold-ur",
+          "request": {
+            "schema_version": "0.1",
+            "target": {
+              "module": "mncs.harness.atlas.v1",
+              "function": "fold_pair"
+            },
+            "arguments": [
+              {
+                "finite": {
+                  "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                  "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+                  "discriminant": 1
+                }
+              },
+              {
+                "finite": {
+                  "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                  "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+                  "discriminant": 2
+                }
+              }
+            ],
+            "step_budget": 1024,
+            "policy": {
+              "effects": "unsupported"
+            }
+          },
+          "expected": [
+            {
+              "finite": {
+                "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+                "discriminant": 2
+              }
+            }
+          ]
+        },
+        {
+          "id": "fold4-all-grant",
+          "request": {
+            "schema_version": "0.1",
+            "target": {
+              "module": "mncs.harness.atlas.v1",
+              "function": "fold4"
+            },
+            "arguments": [
+              {
+                "finite": {
+                  "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                  "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+                  "discriminant": 0
+                }
+              },
+              {
+                "finite": {
+                  "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                  "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+                  "discriminant": 0
+                }
+              },
+              {
+                "finite": {
+                  "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                  "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+                  "discriminant": 0
+                }
+              },
+              {
+                "finite": {
+                  "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                  "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+                  "discriminant": 0
+                }
+              }
+            ],
+            "step_budget": 1024,
+            "policy": {
+              "effects": "unsupported"
+            }
+          },
+          "expected": [
+            {
+              "finite": {
+                "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+                "discriminant": 0
+              }
+            }
+          ]
+        },
+        {
+          "id": "fold4-denial-wins",
+          "request": {
+            "schema_version": "0.1",
+            "target": {
+              "module": "mncs.harness.atlas.v1",
+              "function": "fold4"
+            },
+            "arguments": [
+              {
+                "finite": {
+                  "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                  "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+                  "discriminant": 0
+                }
+              },
+              {
+                "finite": {
+                  "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                  "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+                  "discriminant": 1
+                }
+              },
+              {
+                "finite": {
+                  "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                  "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+                  "discriminant": 2
+                }
+              },
+              {
+                "finite": {
+                  "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                  "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+                  "discriminant": 0
+                }
+              }
+            ],
+            "step_budget": 1024,
+            "policy": {
+              "effects": "unsupported"
+            }
+          },
+          "expected": [
+            {
+              "finite": {
+                "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+                "discriminant": 2
+              }
+            }
+          ]
+        },
+        {
+          "id": "fold4-unknown-held",
+          "request": {
+            "schema_version": "0.1",
+            "target": {
+              "module": "mncs.harness.atlas.v1",
+              "function": "fold4"
+            },
+            "arguments": [
+              {
+                "finite": {
+                  "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                  "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+                  "discriminant": 0
+                }
+              },
+              {
+                "finite": {
+                  "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                  "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+                  "discriminant": 1
+                }
+              },
+              {
+                "finite": {
+                  "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                  "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+                  "discriminant": 0
+                }
+              },
+              {
+                "finite": {
+                  "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                  "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+                  "discriminant": 0
+                }
+              }
+            ],
+            "step_budget": 1024,
+            "policy": {
+              "effects": "unsupported"
+            }
+          },
+          "expected": [
+            {
+              "finite": {
+                "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+                "discriminant": 1
+              }
+            }
+          ]
+        },
+        {
+          "id": "gate-grant-match",
+          "request": {
+            "schema_version": "0.1",
+            "target": {
+              "module": "mncs.harness.atlas.v1",
+              "function": "dispatch_gate"
+            },
+            "arguments": [
+              {
+                "finite": {
+                  "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                  "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+                  "discriminant": 0
+                }
+              },
+              {
+                "boolean": {
+                  "value": true
+                }
+              }
+            ],
+            "step_budget": 1024,
+            "policy": {
+              "effects": "unsupported"
+            }
+          },
+          "expected": [
+            {
+              "finite": {
+                "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+                "discriminant": 0
+              }
+            }
+          ]
+        },
+        {
+          "id": "gate-grant-mismatch",
+          "request": {
+            "schema_version": "0.1",
+            "target": {
+              "module": "mncs.harness.atlas.v1",
+              "function": "dispatch_gate"
+            },
+            "arguments": [
+              {
+                "finite": {
+                  "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                  "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+                  "discriminant": 0
+                }
+              },
+              {
+                "boolean": {
+                  "value": false
+                }
+              }
+            ],
+            "step_budget": 1024,
+            "policy": {
+              "effects": "unsupported"
+            }
+          },
+          "expected": [
+            {
+              "finite": {
+                "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+                "discriminant": 2
+              }
+            }
+          ]
+        },
+        {
+          "id": "gate-refused-mismatch",
+          "request": {
+            "schema_version": "0.1",
+            "target": {
+              "module": "mncs.harness.atlas.v1",
+              "function": "dispatch_gate"
+            },
+            "arguments": [
+              {
+                "finite": {
+                  "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                  "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+                  "discriminant": 2
+                }
+              },
+              {
+                "boolean": {
+                  "value": false
+                }
+              }
+            ],
+            "step_budget": 1024,
+            "policy": {
+              "effects": "unsupported"
+            }
+          },
+          "expected": [
+            {
+              "finite": {
+                "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+                "discriminant": 2
+              }
+            }
+          ]
+        },
+        {
+          "id": "gate-unknown-mismatch",
+          "request": {
+            "schema_version": "0.1",
+            "target": {
+              "module": "mncs.harness.atlas.v1",
+              "function": "dispatch_gate"
+            },
+            "arguments": [
+              {
+                "finite": {
+                  "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                  "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+                  "discriminant": 1
+                }
+              },
+              {
+                "boolean": {
+                  "value": false
+                }
+              }
+            ],
+            "step_budget": 1024,
+            "policy": {
+              "effects": "unsupported"
+            }
+          },
+          "expected": [
+            {
+              "finite": {
+                "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+                "discriminant": 1
+              }
+            }
+          ]
+        },
+        {
+          "id": "gate-unknown-match",
+          "request": {
+            "schema_version": "0.1",
+            "target": {
+              "module": "mncs.harness.atlas.v1",
+              "function": "dispatch_gate"
+            },
+            "arguments": [
+              {
+                "finite": {
+                  "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                  "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+                  "discriminant": 1
+                }
+              },
+              {
+                "boolean": {
+                  "value": true
+                }
+              }
+            ],
+            "step_budget": 1024,
+            "policy": {
+              "effects": "unsupported"
+            }
+          },
+          "expected": [
+            {
+              "finite": {
+                "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+                "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+                "discriminant": 1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "validators": [
+      {
+        "relation": "bounded_observational_agreement",
+        "validator_profile": "backend-lowering-bounded-agreement:0.1",
+        "required": true,
+        "allow_unknown": false
+      }
+    ],
+    "requested_result_artifacts": [
+      "backend_artifact",
+      "case_observations",
+      "compiler_study",
+      "realization_plan",
+      "stateful_case_observations",
+      "translation_validation"
+    ],
+    "expected_invariants": [
+      "FAIL_dominates_UNKNOWN_dominates_PASS",
+      "source_to_ssa_identity_chain_is_exact"
+    ],
+    "comparison_relation": "bounded_public_behavior_agreement",
+    "environment_observations_are_non_semantic": true,
+    "parent_experiment": null,
+    "provenance": []
+  },
+  "compiler_study": {
+    "schema_version": "0.1",
+    "contract_id": "mncs:language:compilation-study-result:0.1",
+    "identity": "mncs:compiler:compilation-study-result:cc1991d314e735affff32aa7925074a8df77ee02301d91994bcc006a0d2e8efa",
+    "study_request_identity": "mncs:compiler:compilation-study-request:9fd6597fcd63247bfcd9c60a8473cf3c49ee80585256d0266c1180b7ba512c6b",
+    "compilation_request_identity": "mncs:compiler:compilation-request:4b7160c4c63f6acc788e93fdba02d1c7741bf58ff546587392292ce078f7f558",
+    "run_identity": "mncs:compiler:study-run:d4215bddeb6ccfee6a2bd1daebc16f7e52849c1d92dfef8cf41ca6997940a4a6",
+    "node": {
+      "node_identity": "local-experiment-node",
+      "architecture": "x86_64",
+      "operating_system": "linux",
+      "environment": "native-linux",
+      "observations": {}
+    },
+    "compiler_identity": "mncs:compiler:compiler:f862227638ca7fbc716123d8378cddfef4f76a9ef10ab0e99cc791e65207e45d",
+    "pipeline_identity": "mncs:compiler:pass-pipeline:95cfa1b3b0a540659ed1b7735465c35f8ada62806dc2238f32ee65a3d8e0cc4b",
+    "compiler_host_identity": "mncs:compiler:compiler-host:2655f21d8ccc4b6b4dac35c07954dbab0d8e3d968a6dd88a5f0f5e487045231d",
+    "build_host_identity": "mncs:compiler:build-host:466aa1989749fbdde3815c85a1db08d8a97d2e74e101f1b01608d196750ea36c",
+    "target_identity": "mncs:compiler:target-contract:7db47a6485cddf8e3bbaa129f3cc126ee396c799b7ff1fb243a0b1bb4663f902",
+    "backend_identity": "mncs:compiler:backend:6bbc6f37c38ffa3353787ff9ea565d07db3755b42efa8a59871374123adbca15",
+    "realization_plan_identity": "mncs:compiler:target-lowering-plan:2ede6408e80344af0b539cbccd3bfa53e397700628395305e7a2a044859b2a49",
+    "selected_ssa_identity": "mncs:compiler:compiler-artifact:66d3d95c7738b16f6eef044cdbc0d587d0b94a52ef4c25f60f157a884d4e31b1",
+    "backend_artifact_identity": "mncs:compiler:backend-artifact:0ffb51afd093a9996b7a4106fc6e3bb9cc079eaad4eb0d2b8024a7499dd38dd6",
+    "backend_artifact_kind": "wasm_module",
+    "compilation_status": "completed",
+    "stage_fingerprints": {
+      "source": "e049a1d2c6bfe69dec372f0ffb40d4bb62e4ca2ce80959233368374d053e7f24",
+      "lexical_tokens": "f4a09a2fd6c34e6f8139b20d9a2869babf5131d8a26dd499771e7b15e8a3b71d",
+      "concrete_syntax_tree": "01ea3d0f8ae721f701dbc4bba9e24b41a177467334aa839a8e02d37c7faa2bcd",
+      "abstract_syntax_tree": "03fcea9f1464448ec843dc0eb39764bfb3c728aab3f5c1d340230c0cbe6b0041",
+      "semantic": "d3ef33d790c528f0b1a46cd206a96f465cfc36a7523eeba434208d88db8119f0",
+      "semantic_graph": "e2ab505baea956f259ddacac6eee4cfe877467ded3577be01bbd1e97b9d1e20b",
+      "identity_map": "896322bd847017b918e95d9c73ead495a8bee8d167a8234a211fe6eb073f2c62",
+      "validation": "30a1a94c0ac5a1294020b02cab2dfc4e048c7045f10cca09bf105b6e809ae12f",
+      "hir": "3e2b1d6e24de1e5a1269f1e2b74b887bcee52d3c92734293009535ab16f1b286",
+      "ssa": "2f0e11972d1654f41fbc474502a381452cce8dd32738fb384cb7c003b25a04bd",
+      "selected_ssa": "2f0e11972d1654f41fbc474502a381452cce8dd32738fb384cb7c003b25a04bd",
+      "target_lowering_plan": "e07b7037454d0daae2b94028174777deaffe902fb8b46e5957671f288109500f",
+      "backend_artifact": "cf28ca825b13aa0782fb115e9649ef046786cd3daabf2a486a59929892344387",
+      "evidence_bundle": "91ec45aaf28fb3966594537580fe3cd8398b142d16097b87c78389672a540438"
+    },
+    "pass_executions": [
+      {
+        "edge_identity": "mncs:compiler:transformation-edge:7538d200bde614d541fe241625891195e3ae60aa2531e5b402ff9dcbae0e8745",
+        "pass_identity": "mncs:compiler:compiler-pass:75bbef53c4144ef433396b4083023176bdabdaab451c5feb1d145c788f3be8c8",
+        "pass_id": "lex-source",
+        "input_artifact": "mncs:compiler:compiler-artifact:e0bd165b8260a2a2e643d8d71e3f425a8dbe03d2f51e9da46e17183471896ceb",
+        "output_artifact": "mncs:compiler:compiler-artifact:49ed97a26a59c8f7e708d25a63acef9eaf0eaaef4868e18e1773cb558ed05987",
+        "status": "PASS"
+      },
+      {
+        "edge_identity": "mncs:compiler:transformation-edge:7fcd88ec03aae948baed124349cb430a9d1617086f595e4a1ba157bad82a6204",
+        "pass_identity": "mncs:compiler:compiler-pass:fbf23355ec1d8e84bed5b2d1371d3417e5d5ea0d6f35aa916c24b372f2d1f07c",
+        "pass_id": "parse-source-to-cst",
+        "input_artifact": "mncs:compiler:compiler-artifact:49ed97a26a59c8f7e708d25a63acef9eaf0eaaef4868e18e1773cb558ed05987",
+        "output_artifact": "mncs:compiler:compiler-artifact:8e815a52179327022079ce996e8b3e4730fd4f4674bda9bf53edd2c3cbb605e9",
+        "status": "PASS"
+      },
+      {
+        "edge_identity": "mncs:compiler:transformation-edge:e15903fd683c2662049d601b027dabb3a6dee775f82e6001f3d7cc4718226b1a",
+        "pass_identity": "mncs:compiler:compiler-pass:25af70a2cc2eca9879106c46f6bdfa71a82818054b7a5e9f8945282dc6d1e5d1",
+        "pass_id": "derive-ast",
+        "input_artifact": "mncs:compiler:compiler-artifact:8e815a52179327022079ce996e8b3e4730fd4f4674bda9bf53edd2c3cbb605e9",
+        "output_artifact": "mncs:compiler:compiler-artifact:1f8e27f955c121b08b931cdc37d35e3a2a8cfa66c18d8e4a5bf30bdd5732ffeb",
+        "status": "PASS"
+      },
+      {
+        "edge_identity": "mncs:compiler:transformation-edge:b7796e36b6a11a4e72d9df4976f3be1800ab5fac33d345256ad96144b37a677c",
+        "pass_identity": "mncs:compiler:compiler-pass:3917fcd9e05a0fc7b6eba161eaddf8928e18dafeb76f97bd8a8886856274b52c",
+        "pass_id": "elaborate-ast-to-semantic",
+        "input_artifact": "mncs:compiler:compiler-artifact:1f8e27f955c121b08b931cdc37d35e3a2a8cfa66c18d8e4a5bf30bdd5732ffeb",
+        "output_artifact": "mncs:compiler:compiler-artifact:8b453dbe70c97ed1b875ef80ccb39fe420ea3b2fc5e2919ef3d302cfa3c69d44",
+        "status": "PASS"
+      },
+      {
+        "edge_identity": "mncs:compiler:transformation-edge:4bf1abd0f59d016b57e96220b51602f1883873e6d09282fd003bab0dc353f5b1",
+        "pass_identity": "mncs:compiler:compiler-pass:54bc75c3145d3cf987799fa65190e7af6d49705cb4f9acc5a7e283183cd572fc",
+        "pass_id": "construct-semantic-graph",
+        "input_artifact": "mncs:compiler:compiler-artifact:8b453dbe70c97ed1b875ef80ccb39fe420ea3b2fc5e2919ef3d302cfa3c69d44",
+        "output_artifact": "mncs:compiler:compiler-artifact:456d9b5050ee5958e44ae2ac7047d1f02559249b5639055278e600cb2feef7ad",
+        "status": "PASS"
+      },
+      {
+        "edge_identity": "mncs:compiler:transformation-edge:18e8c8956cbb8d42c58f24cc3f6f9ee858a862a20ee3c367737643504d8ca1f7",
+        "pass_identity": "mncs:compiler:compiler-pass:6886c509bc91a279546bc2998d4eb144e46c3087096c47d456459941fed2306e",
+        "pass_id": "resolve-semantic-identities",
+        "input_artifact": "mncs:compiler:compiler-artifact:456d9b5050ee5958e44ae2ac7047d1f02559249b5639055278e600cb2feef7ad",
+        "output_artifact": "mncs:compiler:compiler-artifact:02f89a8470508e7f3f6bca8aff2e01caea0777836e03a15497b6bfbb86710cfd",
+        "status": "PASS"
+      },
+      {
+        "edge_identity": "mncs:compiler:transformation-edge:59d6be32aeb6a8cc61a2fa63147e5395d071c2623b77d1f7b3fcc2679eaaaf59",
+        "pass_identity": "mncs:compiler:compiler-pass:d3725d529aa43227dc3e424ee6fb0f06ac9597c18331dc29f3afc3cf74cceed2",
+        "pass_id": "analyze-types-and-contracts",
+        "input_artifact": "mncs:compiler:compiler-artifact:02f89a8470508e7f3f6bca8aff2e01caea0777836e03a15497b6bfbb86710cfd",
+        "output_artifact": "mncs:compiler:compiler-artifact:b7f92152c313ba7c4f4eb11803dc5fec060a1b93ca072edb175f263397ea4f4b",
+        "status": "PASS"
+      },
+      {
+        "edge_identity": "mncs:compiler:transformation-edge:38b4dc82e85eacd5679976ec20de81687ecf3457f9c729f4bb9b47fa31c485b8",
+        "pass_identity": "mncs:compiler:compiler-pass:e0abd232e265021e689a1ee2c91bffc60bc1fb5b3a8390be81006d6d25cde380",
+        "pass_id": "lower-semantic-to-hir",
+        "input_artifact": "mncs:compiler:compiler-artifact:8b453dbe70c97ed1b875ef80ccb39fe420ea3b2fc5e2919ef3d302cfa3c69d44",
+        "output_artifact": "mncs:compiler:compiler-artifact:8d06e66660aca193c25fe346b2a754372b57579f096d12874e851d14ec357b4a",
+        "status": "PASS"
+      },
+      {
+        "edge_identity": "mncs:compiler:transformation-edge:34d3eff5a1e97ad6a5cb4cd9416090e79df9c5493cee95cbf0a58fa3cba57500",
+        "pass_identity": "mncs:compiler:compiler-pass:91add27f135f4335f617e1fe728d62c4aac6f004c10400b14120bc9776119a5c",
+        "pass_id": "lower-hir-to-ssa",
+        "input_artifact": "mncs:compiler:compiler-artifact:8d06e66660aca193c25fe346b2a754372b57579f096d12874e851d14ec357b4a",
+        "output_artifact": "mncs:compiler:compiler-artifact:bedb8e4d098d46bd830724d9ac373dfe5fcd7633e84b983880a9018e25ea7d6a",
+        "status": "PASS"
+      },
+      {
+        "edge_identity": "mncs:compiler:transformation-edge:21e28326cf706b309c6a2fcdbbbded5c12848ea3988fea13093a76e6e0f3abea",
+        "pass_identity": "mncs:compiler:compiler-pass:c2bade6ad1ffdf553fdd8001da1b2ce204bf35876122208b87bf7861c6f493a3",
+        "pass_id": "select-canonical-ssa",
+        "input_artifact": "mncs:compiler:compiler-artifact:bedb8e4d098d46bd830724d9ac373dfe5fcd7633e84b983880a9018e25ea7d6a",
+        "output_artifact": "mncs:compiler:compiler-artifact:66d3d95c7738b16f6eef044cdbc0d587d0b94a52ef4c25f60f157a884d4e31b1",
+        "status": "PASS"
+      },
+      {
+        "edge_identity": "mncs:compiler:transformation-edge:4d13ee6ea6adc49ec71167e4f267227929ca6e6e54fd18cabbabd4453d6fc005",
+        "pass_identity": "mncs:compiler:compiler-pass:c008afb9fb90413d912e4683bc0e196f70a37d2971b71771ce6b749759aa4d11",
+        "pass_id": "plan-target-lowering",
+        "input_artifact": "mncs:compiler:compiler-artifact:66d3d95c7738b16f6eef044cdbc0d587d0b94a52ef4c25f60f157a884d4e31b1",
+        "output_artifact": "mncs:compiler:compiler-artifact:89cafbf4cf4b58f45bdd45c5faef0aeb775436cd091857638dc1e23255404bea",
+        "status": "PASS"
+      },
+      {
+        "edge_identity": "mncs:compiler:transformation-edge:c470b668ffeba80458cac098b9dcf23eb4771fa1f5bce8d20b5a7f3ef1c1567f",
+        "pass_identity": "mncs:compiler:compiler-pass:2a6c7d900c7bb4c87a547f14ebfa5c669a7a55095c3244f322c2a8eb0c868833",
+        "pass_id": "realize-selected-ssa",
+        "input_artifact": "mncs:compiler:compiler-artifact:66d3d95c7738b16f6eef044cdbc0d587d0b94a52ef4c25f60f157a884d4e31b1",
+        "output_artifact": "mncs:compiler:compiler-artifact:b07e8777231b5fce9a7badf7f20e9fd38c35a922afdb436cb84232cee95032be",
+        "status": "PASS"
+      }
+    ],
+    "semantic_fingerprint": "d3ef33d790c528f0b1a46cd206a96f465cfc36a7523eeba434208d88db8119f0",
+    "hir_fingerprint": "3e2b1d6e24de1e5a1269f1e2b74b887bcee52d3c92734293009535ab16f1b286",
+    "ssa_fingerprint": "2f0e11972d1654f41fbc474502a381452cce8dd32738fb384cb7c003b25a04bd",
+    "compilation_result_identity": "mncs:compiler:compilation-result:ebdabc30b991fa3e0ec1f5431e8e33abdc0b9cc60c2273bfdb0547ddfceeefa3",
+    "execution_result_references": [],
+    "diagnostics": [],
+    "unresolved_obligations": [],
+    "unresolved_assumptions": [
+      "portable WASM MVP is a research execution envelope, not a native ABI",
+      "the embedded interpreter defines research execution, not a host wasm CLI"
+    ],
+    "invariants": {
+      "expected_equal": [
+        "compiler_identity",
+        "pipeline_identity",
+        "semantic_fingerprint",
+        "hir_fingerprint",
+        "ssa_fingerprint"
+      ],
+      "expected_distinct": [
+        "compiler_host_identity",
+        "build_host_identity",
+        "compilation_request_identity",
+        "compilation_result_identity"
+      ]
+    },
+    "interpretation": "observation_only_not_assurance_or_conformance"
+  },
+  "backend": {
+    "identity": "mncs:compiler:backend:6bbc6f37c38ffa3353787ff9ea565d07db3755b42efa8a59871374123adbca15",
+    "name": "mncs-portable-wasm-mvp",
+    "version": "0.1"
+  },
+  "backend_capabilities": {
+    "schema_version": "0.1",
+    "identity": "mncs:compiler:backend-capability:5d3606b96e9a8ba8ae6b231c38883155e85e2ee0a41df87aeca36a383a4088d6",
+    "backend": {
+      "identity": "mncs:compiler:backend:6bbc6f37c38ffa3353787ff9ea565d07db3755b42efa8a59871374123adbca15",
+      "name": "mncs-portable-wasm-mvp",
+      "version": "0.1"
+    },
+    "realization_profile": "mncs:selected-ssa-to-portable-wasm-mvp:0.1",
+    "target_families": [
+      "mncs:target:portable-wasm-mvp-0.1"
+    ],
+    "accepted_ir_versions": [
+      "0.4"
+    ],
+    "required_target_facts": [
+      "abi",
+      "data-layout",
+      "integer",
+      "trap"
+    ],
+    "supported_machine_intents": [
+      "boolean_sequence_elements",
+      "bounded_sequences_internal",
+      "bounded_views_internal",
+      "byte_operations",
+      "checked_integer",
+      "explicit_failure",
+      "explicit_scalar_conversion",
+      "immutable_record_values",
+      "integer_shifts",
+      "nested_composite_sequence_elements",
+      "packed_mask_realization",
+      "payload_bearing_finite_variants",
+      "saturating_integer_bounded_width",
+      "scalarized_vector_realization",
+      "semantic_bounded_iteration",
+      "semantic_branchless_select",
+      "semantic_integer_vectors",
+      "semantic_masks",
+      "sequence_or_view_boundary_crossing",
+      "sequence_traversal",
+      "strict_boolean_operators",
+      "vector_or_mask_boundary_crossing",
+      "widening_integer_bounded_width",
+      "wrapping_integer"
+    ],
+    "unsupported_operations": [
+      "effects",
+      "memory",
+      "saturating_integer_above_bounded_width",
+      "unbounded_sequences",
+      "widening_integer_above_64_bits"
+    ],
+    "artifact_kinds": [
+      "wasm_module"
+    ],
+    "validator_capabilities": [
+      "bounded_execution_agreement"
+    ],
+    "runtime_requirements": [
+      "embedded_mncs_wasm_interpreter",
+      "language_stateful_trace_runner"
+    ],
+    "abi_layout_requirements": [
+      "composite_pointer_abi",
+      "scalar_parameter_result_abi"
+    ],
+    "failure_behavior": "checked overflow, declared failure, division by zero, and MIN/-1 trap through WASM unreachable",
+    "deterministic": true
+  },
+  "realization_plan": {
+    "identity": "mncs:compiler:target-lowering-plan:2ede6408e80344af0b539cbccd3bfa53e397700628395305e7a2a044859b2a49",
+    "selected_ssa": {
+      "identity": "mncs:compiler:compiler-artifact:66d3d95c7738b16f6eef044cdbc0d587d0b94a52ef4c25f60f157a884d4e31b1",
+      "representation": "selected_ssa",
+      "schema_version": "0.4",
+      "fingerprint": "2f0e11972d1654f41fbc474502a381452cce8dd32738fb384cb7c003b25a04bd"
+    },
+    "target": {
+      "identity": "mncs:compiler:target-contract:7db47a6485cddf8e3bbaa129f3cc126ee396c799b7ff1fb243a0b1bb4663f902",
+      "candidate": "mncs:target:portable-wasm-mvp-0.1",
+      "facts": {
+        "abi": "one exported wasm function per MNCS function; scalars pass directly, composites pass as pointers to arena cells",
+        "bounded-iteration": "language-owned bounded SSA backedges use the private dispatcher loop; iteration metadata remains selected-SSA-bound",
+        "data-layout": "scalar two's-complement; i8/i16/i32 in wasm i32; i64 in wasm i64; composites are immutable 8-byte-slot cells in linear memory addressed by i32 pointers",
+        "integer": "wrapping=wasm wrapping; checked=explicit overflow test then trap; saturating=explicit clamp; widening=exact extended-width arithmetic",
+        "trap": "failure terminators and checked overflow map to wasm unreachable"
+      },
+      "evidence": [
+        "mncs:target-evidence:portable-wasm-mvp-0.1:declared-research-contract"
+      ],
+      "assumptions": [
+        "portable WASM MVP is a research execution envelope, not a native ABI",
+        "the embedded interpreter defines research execution, not a host wasm CLI"
+      ]
+    },
+    "backend": {
+      "backend": {
+        "identity": "mncs:compiler:backend:6bbc6f37c38ffa3353787ff9ea565d07db3755b42efa8a59871374123adbca15",
+        "name": "mncs-portable-wasm-mvp",
+        "version": "0.1"
+      },
+      "options": {
+        "format": "application/wasm; mncs-portable-wasm-mvp-0.1"
+      },
+      "target_features": [
+        "linear-memory-arena",
+        "mvp",
+        "no-wasi"
+      ],
+      "linker_toolchain": null,
+      "assumptions": [
+        "composites (records and payload-bearing finite variants) are immutable cells in linear memory allocated from a bump arena",
+        "checked overflow traps as unreachable; checked division traps on zero and MIN/-1",
+        "saturating uses explicit bounded-width clamp logic; widening uses exact i64 intermediates"
+      ]
+    },
+    "target_layout_assumptions": [
+      "bounded iteration metadata remains in the selected SSA identity",
+      "no aggregate or pointer layout",
+      "scalar two's-complement integers"
+    ],
+    "abi_assumptions": [
+      "no memory, tables, or imported host functions",
+      "wasm function parameters and a single result"
+    ],
+    "integer_lowering": {
+      "checked": "explicit overflow test then unreachable",
+      "saturating": "explicit bounded-width clamp",
+      "unsupported": "saturating, widening, effects, runtime-check",
+      "widening": "exact extended-width arithmetic",
+      "wrapping": "wasm wrapping add/sub/mul/and/or/xor"
+    },
+    "trap_failure_mapping": {
+      "failure_terminator": "unreachable",
+      "overflow": "unreachable"
+    },
+    "linker_requirements": [],
+    "promises_consumed": [
+      "preserve public return and declared failure"
+    ],
+    "assumptions_introduced": [
+      "checked overflow traps as unreachable; checked division traps on zero and MIN/-1",
+      "composites (records and payload-bearing finite variants) are immutable cells in linear memory allocated from a bump arena",
+      "portable WASM MVP is a research execution envelope, not a native ABI",
+      "saturating uses explicit bounded-width clamp logic; widening uses exact i64 intermediates",
+      "the embedded interpreter defines research execution, not a host wasm CLI"
+    ],
+    "status": "PASS"
+  },
+  "artifact": {
+    "schema_version": "0.2",
+    "identity": "mncs:compiler:backend-artifact:0ffb51afd093a9996b7a4106fc6e3bb9cc079eaad4eb0d2b8024a7499dd38dd6",
+    "backend": {
+      "identity": "mncs:compiler:backend:6bbc6f37c38ffa3353787ff9ea565d07db3755b42efa8a59871374123adbca15",
+      "name": "mncs-portable-wasm-mvp",
+      "version": "0.1"
+    },
+    "input": {
+      "identity": "mncs:compiler:compiler-artifact:66d3d95c7738b16f6eef044cdbc0d587d0b94a52ef4c25f60f157a884d4e31b1",
+      "representation": "selected_ssa",
+      "schema_version": "0.4",
+      "fingerprint": "2f0e11972d1654f41fbc474502a381452cce8dd32738fb384cb7c003b25a04bd"
+    },
+    "target": {
+      "identity": "mncs:compiler:target-contract:7db47a6485cddf8e3bbaa129f3cc126ee396c799b7ff1fb243a0b1bb4663f902",
+      "candidate": "mncs:target:portable-wasm-mvp-0.1",
+      "facts": {
+        "abi": "one exported wasm function per MNCS function; scalars pass directly, composites pass as pointers to arena cells",
+        "bounded-iteration": "language-owned bounded SSA backedges use the private dispatcher loop; iteration metadata remains selected-SSA-bound",
+        "data-layout": "scalar two's-complement; i8/i16/i32 in wasm i32; i64 in wasm i64; composites are immutable 8-byte-slot cells in linear memory addressed by i32 pointers",
+        "integer": "wrapping=wasm wrapping; checked=explicit overflow test then trap; saturating=explicit clamp; widening=exact extended-width arithmetic",
+        "trap": "failure terminators and checked overflow map to wasm unreachable"
+      },
+      "evidence": [
+        "mncs:target-evidence:portable-wasm-mvp-0.1:declared-research-contract"
+      ],
+      "assumptions": [
+        "portable WASM MVP is a research execution envelope, not a native ABI",
+        "the embedded interpreter defines research execution, not a host wasm CLI"
+      ]
+    },
+    "artifact_kind": "wasm_module",
+    "format": "application/wasm; mncs-portable-wasm-mvp-0.1",
+    "bytes_sha256": "cf28ca825b13aa0782fb115e9649ef046786cd3daabf2a486a59929892344387",
+    "bytes_hex": "0061736d0100000001150360027f7f017f60047f7f7f7f017f60027f7f017f0304030001020725030d64697370617463685f67617465000005666f6c6434000109666f6c645f7061697200020afd0403ed0108017f017f017f017f017f017f017f017f41002109034020094100460440200104404101210905410221090b0c010b2009410146044020000f0b20094102460440410321090c010b2009410346044020004100462102200204404105210905410821090b0c010b2009410446044020030f0b200941054604404102210420042103410421090c010b200941064604404102210520052103410421090c010b200941074604404101210620062103410421090c010b2009410846044020004102462107200704404106210905410921090b0c010b20094109460440410721090c010b2009410a460440000b0b000b4005017f017f017f017f017f4100210803402008410046044020002001100221042002200310022105200420051002210620060f0b20084101460440000b0b000bca020c017f017f017f017f017f017f017f017f017f017f017f017f4100210d0340200d410046044020004100462102200204404102210d054105210d0b0c010b200d410146044020030f0b200d4102460440200121034101210d0c010b200d410346044041022104200421034101210d0c010b200d410446044020014100462105200504404108210d05410b210d0b0c010b200d410546044020004102462106200604404103210d054106210d0b0c010b200d41064604404104210d0c010b200d4107460440200721034101210d0c010b200d410846044041012108200821074107210d0c010b200d410946044041022109200921074107210d0c010b200d410a4604404101210a200a21074107210d0c010b200d410b4604402001410246210b200b04404109210d05410c210d0b0c010b200d410c460440410a210d0c010b200d410d460440000b0b000b",
+    "exports": [
+      "dispatch_gate",
+      "fold4",
+      "fold_pair"
+    ],
+    "function_value_contracts": {
+      "dispatch_gate": {
+        "inputs": [
+          {
+            "finite": {
+              "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+              "variants": {
+                "0": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+                "1": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+                "2": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED"
+              }
+            }
+          },
+          {
+            "scalar": {
+              "semantic_type": "bool"
+            }
+          }
+        ],
+        "outputs": [
+          {
+            "finite": {
+              "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+              "variants": {
+                "0": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+                "1": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+                "2": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED"
+              }
+            }
+          }
+        ]
+      },
+      "fold4": {
+        "inputs": [
+          {
+            "finite": {
+              "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+              "variants": {
+                "0": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+                "1": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+                "2": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED"
+              }
+            }
+          },
+          {
+            "finite": {
+              "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+              "variants": {
+                "0": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+                "1": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+                "2": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED"
+              }
+            }
+          },
+          {
+            "finite": {
+              "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+              "variants": {
+                "0": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+                "1": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+                "2": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED"
+              }
+            }
+          },
+          {
+            "finite": {
+              "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+              "variants": {
+                "0": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+                "1": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+                "2": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED"
+              }
+            }
+          }
+        ],
+        "outputs": [
+          {
+            "finite": {
+              "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+              "variants": {
+                "0": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+                "1": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+                "2": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED"
+              }
+            }
+          }
+        ]
+      },
+      "fold_pair": {
+        "inputs": [
+          {
+            "finite": {
+              "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+              "variants": {
+                "0": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+                "1": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+                "2": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED"
+              }
+            }
+          },
+          {
+            "finite": {
+              "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+              "variants": {
+                "0": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+                "1": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+                "2": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED"
+              }
+            }
+          }
+        ],
+        "outputs": [
+          {
+            "finite": {
+              "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+              "variants": {
+                "0": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+                "1": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+                "2": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "composite_value_contracts": {
+      "Grant": {
+        "finite": {
+          "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+          "variants": {
+            "0": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+            "1": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+            "2": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED"
+          },
+          "payloads": {
+            "0": [],
+            "1": [],
+            "2": []
+          }
+        }
+      },
+      "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant": {
+        "finite": {
+          "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+          "variants": {
+            "0": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+            "1": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+            "2": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED"
+          },
+          "payloads": {
+            "0": [],
+            "1": [],
+            "2": []
+          }
+        }
+      }
+    },
+    "assumptions": [
+      "checked overflow traps as unreachable; checked division traps on zero and MIN/-1",
+      "composites (records and payload-bearing finite variants) are immutable cells in linear memory allocated from a bump arena",
+      "portable WASM MVP is a research execution envelope, not a native ABI",
+      "saturating uses explicit bounded-width clamp logic; widening uses exact i64 intermediates",
+      "the embedded interpreter defines research execution, not a host wasm CLI"
+    ],
+    "obligations_generated": [],
+    "execution_applicability": [
+      "embedded mncs-portable-wasm-mvp interpreter",
+      "no WASI",
+      "no host CLI"
+    ],
+    "evidence_dependencies": [
+      "mncs:target-evidence:portable-wasm-mvp-0.1:declared-research-contract"
+    ],
+    "unsupported": [],
+    "status": "PASS"
+  },
+  "translation_validations": [
+    {
+      "schema_version": "0.1",
+      "contract_id": "mncs:language:translation-validation-result:0.1",
+      "identity": "mncs:compiler:translation-validation:c13618e4f44ecdf1bc466162b092a9430ef8c6d3329c40276de8122d311739ae",
+      "validator": {
+        "identity": "mncs:validator:backend-lowering-bounded-agreement:0.1",
+        "name": "backend-lowering-bounded-agreement",
+        "version": "0.1",
+        "independence": "independent_implementation"
+      },
+      "input": {
+        "identity": "mncs:compiler:compiler-artifact:66d3d95c7738b16f6eef044cdbc0d587d0b94a52ef4c25f60f157a884d4e31b1",
+        "representation": "selected_ssa",
+        "schema_version": "0.4",
+        "fingerprint": "2f0e11972d1654f41fbc474502a381452cce8dd32738fb384cb7c003b25a04bd"
+      },
+      "output": {
+        "identity": "mncs:compiler:compiler-artifact:b07e8777231b5fce9a7badf7f20e9fd38c35a922afdb436cb84232cee95032be",
+        "representation": "backend_artifact",
+        "schema_version": "0.2",
+        "fingerprint": "cf28ca825b13aa0782fb115e9649ef046786cd3daabf2a486a59929892344387"
+      },
+      "claimed_relation": {
+        "kind": "observational-equivalence",
+        "observation_model": {
+          "identity": "mncs:compiler:observation-model:c92632b55e0eabdabeae878a6cd2db16ec113162f4c5276853d1c8342686c475",
+          "name": "mncs-public-behavior",
+          "version": "0.1",
+          "observable_kinds": [
+            "declared_failure",
+            "return_value"
+          ]
+        }
+      },
+      "transformation_kind": "backend-realization:mncs-portable-wasm-mvp",
+      "judgement": "PASS",
+      "assumptions": [
+        "empirical_bounded_agreement_not_universal_equivalence"
+      ],
+      "evidence_dependencies": [
+        "mncs:target-evidence:portable-wasm-mvp-0.1:declared-research-contract"
+      ],
+      "dependency_fingerprints": {},
+      "counterexample": null,
+      "limitations": [
+        "PASS is empirical bounded agreement over the declared corpus",
+        "this is not a proof of universal semantic equivalence"
+      ],
+      "residual_trust": "shares mncs-model integer evaluation and mncs-codegen research execution with the compiler; does not share transformation algorithms with candidate generators",
+      "freshness": "current"
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "fold-gg",
+      "status": "returned",
+      "returned": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+            "discriminant": 0
+          }
+        }
+      ],
+      "expected": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+            "discriminant": 0
+          }
+        }
+      ],
+      "expectation_met": true,
+      "steps": 48,
+      "failure_reason": null
+    },
+    {
+      "case_id": "fold-gr",
+      "status": "returned",
+      "returned": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+            "discriminant": 2
+          }
+        }
+      ],
+      "expected": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+            "discriminant": 2
+          }
+        }
+      ],
+      "expectation_met": true,
+      "steps": 48,
+      "failure_reason": null
+    },
+    {
+      "case_id": "fold-gu",
+      "status": "returned",
+      "returned": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+            "discriminant": 1
+          }
+        }
+      ],
+      "expected": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+            "discriminant": 1
+          }
+        }
+      ],
+      "expectation_met": true,
+      "steps": 48,
+      "failure_reason": null
+    },
+    {
+      "case_id": "fold-rg",
+      "status": "returned",
+      "returned": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+            "discriminant": 2
+          }
+        }
+      ],
+      "expected": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+            "discriminant": 2
+          }
+        }
+      ],
+      "expectation_met": true,
+      "steps": 94,
+      "failure_reason": null
+    },
+    {
+      "case_id": "fold-rr",
+      "status": "returned",
+      "returned": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+            "discriminant": 2
+          }
+        }
+      ],
+      "expected": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+            "discriminant": 2
+          }
+        }
+      ],
+      "expectation_met": true,
+      "steps": 94,
+      "failure_reason": null
+    },
+    {
+      "case_id": "fold-ur",
+      "status": "returned",
+      "returned": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+            "discriminant": 2
+          }
+        }
+      ],
+      "expected": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+            "discriminant": 2
+          }
+        }
+      ],
+      "expectation_met": true,
+      "steps": 308,
+      "failure_reason": null
+    },
+    {
+      "case_id": "fold-uu",
+      "status": "returned",
+      "returned": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+            "discriminant": 1
+          }
+        }
+      ],
+      "expected": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+            "discriminant": 1
+          }
+        }
+      ],
+      "expectation_met": true,
+      "steps": 379,
+      "failure_reason": null
+    },
+    {
+      "case_id": "fold4-all-grant",
+      "status": "returned",
+      "returned": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+            "discriminant": 0
+          }
+        }
+      ],
+      "expected": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+            "discriminant": 0
+          }
+        }
+      ],
+      "expectation_met": true,
+      "steps": 165,
+      "failure_reason": null
+    },
+    {
+      "case_id": "fold4-denial-wins",
+      "status": "returned",
+      "returned": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+            "discriminant": 2
+          }
+        }
+      ],
+      "expected": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+            "discriminant": 2
+          }
+        }
+      ],
+      "expectation_met": true,
+      "steps": 471,
+      "failure_reason": null
+    },
+    {
+      "case_id": "fold4-unknown-held",
+      "status": "returned",
+      "returned": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+            "discriminant": 1
+          }
+        }
+      ],
+      "expected": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+            "discriminant": 1
+          }
+        }
+      ],
+      "expectation_met": true,
+      "steps": 351,
+      "failure_reason": null
+    },
+    {
+      "case_id": "gate-grant-match",
+      "status": "returned",
+      "returned": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+            "discriminant": 0
+          }
+        }
+      ],
+      "expected": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+            "discriminant": 0
+          }
+        }
+      ],
+      "expectation_met": true,
+      "steps": 25,
+      "failure_reason": null
+    },
+    {
+      "case_id": "gate-grant-mismatch",
+      "status": "returned",
+      "returned": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+            "discriminant": 2
+          }
+        }
+      ],
+      "expected": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+            "discriminant": 2
+          }
+        }
+      ],
+      "expectation_met": true,
+      "steps": 122,
+      "failure_reason": null
+    },
+    {
+      "case_id": "gate-refused-mismatch",
+      "status": "returned",
+      "returned": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+            "discriminant": 2
+          }
+        }
+      ],
+      "expected": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+            "discriminant": 2
+          }
+        }
+      ],
+      "expectation_met": true,
+      "steps": 181,
+      "failure_reason": null
+    },
+    {
+      "case_id": "gate-unknown-match",
+      "status": "returned",
+      "returned": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+            "discriminant": 1
+          }
+        }
+      ],
+      "expected": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+            "discriminant": 1
+          }
+        }
+      ],
+      "expectation_met": true,
+      "steps": 25,
+      "failure_reason": null
+    },
+    {
+      "case_id": "gate-unknown-mismatch",
+      "status": "returned",
+      "returned": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+            "discriminant": 1
+          }
+        }
+      ],
+      "expected": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+            "discriminant": 1
+          }
+        }
+      ],
+      "expectation_met": true,
+      "steps": 237,
+      "failure_reason": null
+    }
+  ],
+  "status": "PASS",
+  "unresolved_reasons": [],
+  "interpretation": "bounded_language_observation_not_universal_equivalence_or_conformance"
+}

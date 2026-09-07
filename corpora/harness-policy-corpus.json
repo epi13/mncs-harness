@@ -1,0 +1,704 @@
+{
+ "schema_version": "0.1",
+ "name": "harness-policy",
+ "cases": [
+  {
+   "id": "clean-pytest",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.policy.v1",
+     "function": "evaluate_command"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Allow",
+      "discriminant": 0
+     }
+    }
+   ]
+  },
+  {
+   "id": "blocked-executable",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.policy.v1",
+     "function": "evaluate_command"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block",
+      "discriminant": 1,
+      "payload": [
+       [
+        "reason",
+        {
+         "integer": {
+          "value": 1,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "not-allowlisted",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.policy.v1",
+     "function": "evaluate_command"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block",
+      "discriminant": 1,
+      "payload": [
+       [
+        "reason",
+        {
+         "integer": {
+          "value": 2,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "shell-operator",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.policy.v1",
+     "function": "evaluate_command"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block",
+      "discriminant": 1,
+      "payload": [
+       [
+        "reason",
+        {
+         "integer": {
+          "value": 3,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "shell-rule",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.policy.v1",
+     "function": "evaluate_command"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block",
+      "discriminant": 1,
+      "payload": [
+       [
+        "reason",
+        {
+         "integer": {
+          "value": 4,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "python-rule",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.policy.v1",
+     "function": "evaluate_command"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block",
+      "discriminant": 1,
+      "payload": [
+       [
+        "reason",
+        {
+         "integer": {
+          "value": 5,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "git-rule",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.policy.v1",
+     "function": "evaluate_command"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block",
+      "discriminant": 1,
+      "payload": [
+       [
+        "reason",
+        {
+         "integer": {
+          "value": 6,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "path-escape",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.policy.v1",
+     "function": "evaluate_command"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block",
+      "discriminant": 1,
+      "payload": [
+       [
+        "reason",
+        {
+         "integer": {
+          "value": 7,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "write-protected",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.policy.v1",
+     "function": "evaluate_write"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block",
+      "discriminant": 1,
+      "payload": [
+       [
+        "reason",
+        {
+         "integer": {
+          "value": 8,
+          "type": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        }
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "write-ok",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.policy.v1",
+     "function": "evaluate_write"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": false
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Allow",
+      "discriminant": 0
+     }
+    }
+   ]
+  },
+  {
+   "id": "reason-allow",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.policy.v1",
+     "function": "reason_of"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Allow",
+       "discriminant": 0
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": 0,
+      "type": {
+       "bits": 64,
+       "signed": true
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "reason-block5",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.policy.v1",
+     "function": "reason_of"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block",
+       "discriminant": 1,
+       "payload": [
+        [
+         "reason",
+         {
+          "integer": {
+           "value": 5,
+           "type": {
+            "bits": 64,
+            "signed": true
+           }
+          }
+         }
+        ]
+       ]
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "integer": {
+      "value": 5,
+      "type": {
+       "bits": 64,
+       "signed": true
+      }
+     }
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,795 @@
+{
+ "schema_version": "0.1",
+ "name": "harness-verdict",
+ "cases": [
+  {
+   "id": "dom-pp",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.verdict.v1",
+     "function": "dominate"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "discriminant": 0
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+      "discriminant": 0
+     }
+    }
+   ]
+  },
+  {
+   "id": "dom-pf",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.verdict.v1",
+     "function": "dominate"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "discriminant": 1
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+      "discriminant": 1
+     }
+    }
+   ]
+  },
+  {
+   "id": "dom-pu",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.verdict.v1",
+     "function": "dominate"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN",
+       "discriminant": 2
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN",
+      "discriminant": 2
+     }
+    }
+   ]
+  },
+  {
+   "id": "dom-fp",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.verdict.v1",
+     "function": "dominate"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "discriminant": 1
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "discriminant": 0
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+      "discriminant": 1
+     }
+    }
+   ]
+  },
+  {
+   "id": "dom-ff",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.verdict.v1",
+     "function": "dominate"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "discriminant": 1
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "discriminant": 1
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+      "discriminant": 1
+     }
+    }
+   ]
+  },
+  {
+   "id": "dom-fu",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.verdict.v1",
+     "function": "dominate"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "discriminant": 1
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN",
+       "discriminant": 2
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+      "discriminant": 1
+     }
+    }
+   ]
+  },
+  {
+   "id": "dom-up",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.verdict.v1",
+     "function": "dominate"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN",
+       "discriminant": 2
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "discriminant": 0
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN",
+      "discriminant": 2
+     }
+    }
+   ]
+  },
+  {
+   "id": "dom-uf",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.verdict.v1",
+     "function": "dominate"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN",
+       "discriminant": 2
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "discriminant": 1
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+      "discriminant": 1
+     }
+    }
+   ]
+  },
+  {
+   "id": "dom-uu",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.verdict.v1",
+     "function": "dominate"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN",
+       "discriminant": 2
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN",
+       "discriminant": 2
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN",
+      "discriminant": 2
+     }
+    }
+   ]
+  },
+  {
+   "id": "c4-all-pass",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.verdict.v1",
+     "function": "combine4"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "discriminant": 0
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+      "discriminant": 0
+     }
+    }
+   ]
+  },
+  {
+   "id": "c4-one-fail",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.verdict.v1",
+     "function": "combine4"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "discriminant": 1
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "discriminant": 0
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+      "discriminant": 1
+     }
+    }
+   ]
+  },
+  {
+   "id": "c4-unknown",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.verdict.v1",
+     "function": "combine4"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN",
+       "discriminant": 2
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "discriminant": 0
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN",
+      "discriminant": 2
+     }
+    }
+   ]
+  },
+  {
+   "id": "c8-all-pass",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.verdict.v1",
+     "function": "combine8"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "discriminant": 0
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+      "discriminant": 0
+     }
+    }
+   ]
+  },
+  {
+   "id": "c8-one-fail",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.verdict.v1",
+     "function": "combine8"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "discriminant": 1
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+      "discriminant": 1
+     }
+    }
+   ]
+  },
+  {
+   "id": "c8-unknown",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.verdict.v1",
+     "function": "combine8"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN",
+       "discriminant": 2
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN",
+      "discriminant": 2
+     }
+    }
+   ]
+  },
+  {
+   "id": "decided-pass",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.verdict.v1",
+     "function": "is_decided"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "discriminant": 0
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": true
+     }
+    }
+   ]
+  },
+  {
+   "id": "decided-fail",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.verdict.v1",
+     "function": "is_decided"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "discriminant": 1
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": true
+     }
+    }
+   ]
+  },
+  {
+   "id": "decided-unknown",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.verdict.v1",
+     "function": "is_decided"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN",
+       "discriminant": 2
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": false
+     }
+    }
+   ]
+  }
+ ]
+}

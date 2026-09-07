@@ -1,0 +1,578 @@
+{
+ "schema_version": "0.1",
+ "name": "harness-atlas",
+ "cases": [
+  {
+   "id": "fold-gg",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.atlas.v1",
+     "function": "fold_pair"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+       "discriminant": 0
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+      "discriminant": 0
+     }
+    }
+   ]
+  },
+  {
+   "id": "fold-gu",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.atlas.v1",
+     "function": "fold_pair"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+       "discriminant": 1
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+      "discriminant": 1
+     }
+    }
+   ]
+  },
+  {
+   "id": "fold-gr",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.atlas.v1",
+     "function": "fold_pair"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+       "discriminant": 2
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+      "discriminant": 2
+     }
+    }
+   ]
+  },
+  {
+   "id": "fold-rg",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.atlas.v1",
+     "function": "fold_pair"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+       "discriminant": 2
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+       "discriminant": 0
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+      "discriminant": 2
+     }
+    }
+   ]
+  },
+  {
+   "id": "fold-rr",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.atlas.v1",
+     "function": "fold_pair"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+       "discriminant": 2
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+       "discriminant": 2
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+      "discriminant": 2
+     }
+    }
+   ]
+  },
+  {
+   "id": "fold-uu",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.atlas.v1",
+     "function": "fold_pair"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+       "discriminant": 1
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+       "discriminant": 1
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+      "discriminant": 1
+     }
+    }
+   ]
+  },
+  {
+   "id": "fold-ur",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.atlas.v1",
+     "function": "fold_pair"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+       "discriminant": 1
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+       "discriminant": 2
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+      "discriminant": 2
+     }
+    }
+   ]
+  },
+  {
+   "id": "fold4-all-grant",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.atlas.v1",
+     "function": "fold4"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+       "discriminant": 0
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+      "discriminant": 0
+     }
+    }
+   ]
+  },
+  {
+   "id": "fold4-denial-wins",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.atlas.v1",
+     "function": "fold4"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+       "discriminant": 1
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+       "discriminant": 2
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+       "discriminant": 0
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+      "discriminant": 2
+     }
+    }
+   ]
+  },
+  {
+   "id": "fold4-unknown-held",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.atlas.v1",
+     "function": "fold4"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+       "discriminant": 1
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+       "discriminant": 0
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+      "discriminant": 1
+     }
+    }
+   ]
+  },
+  {
+   "id": "gate-grant-match",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.atlas.v1",
+     "function": "dispatch_gate"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+       "discriminant": 0
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+      "discriminant": 0
+     }
+    }
+   ]
+  },
+  {
+   "id": "gate-grant-mismatch",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.atlas.v1",
+     "function": "dispatch_gate"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+       "discriminant": 0
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+      "discriminant": 2
+     }
+    }
+   ]
+  },
+  {
+   "id": "gate-refused-mismatch",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.atlas.v1",
+     "function": "dispatch_gate"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+       "discriminant": 2
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+      "discriminant": 2
+     }
+    }
+   ]
+  },
+  {
+   "id": "gate-unknown-mismatch",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.atlas.v1",
+     "function": "dispatch_gate"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+       "discriminant": 1
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+      "discriminant": 1
+     }
+    }
+   ]
+  },
+  {
+   "id": "gate-unknown-match",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.atlas.v1",
+     "function": "dispatch_gate"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+       "discriminant": 1
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+      "discriminant": 1
+     }
+    }
+   ]
+  }
+ ]
+}
