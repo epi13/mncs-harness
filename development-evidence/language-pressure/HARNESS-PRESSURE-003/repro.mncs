@@ -1,0 +1,21 @@
+mncs 0.4;
+module probe.bounds;
+
+enum Evidence { PASS, FAIL, UNKNOWN }
+
+fn observe(i: i64) -> (result: Evidence)
+    capability retry_authority
+    effect observe authorized_by retry_authority
+{
+    return Evidence.PASS;
+}
+
+fn scan(n: i64) -> (result: Evidence)
+    capability retry_authority
+    effect observe authorized_by retry_authority
+{
+    iterate retries up_to n carrying acc: Evidence = Evidence.PASS {
+        next acc = observe(0);
+    }
+    return acc;
+}

@@ -1,0 +1,7 @@
+mncs 0.6;
+
+module probe.floats;
+
+fn score_blend(base: f32, bonus: f32) -> (result: f32) {
+    return base;
+}

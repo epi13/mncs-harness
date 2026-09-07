@@ -1,0 +1,7 @@
+mncs 0.6;
+
+module probe.strings;
+
+fn has_code(text: string) -> (result: bool) {
+    return true;
+}
