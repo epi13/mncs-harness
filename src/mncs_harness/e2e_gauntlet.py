@@ -183,7 +183,7 @@ def _trust_from_atlas(atlas: dict[str, Any]) -> dict[str, bytes]:
 
 
 def requirement_phase(atlas: dict[str, Any]) -> dict[str, Any]:
-    from epi13_local_harness.atlas_binding import ExecutionRequirement, build_requirement
+    from mncs_harness.atlas_binding import ExecutionRequirement, build_requirement
 
     if atlas.get("verdict") != "PASS":
         return {
@@ -247,7 +247,7 @@ def adversarial_phase(atlas: dict[str, Any], issuer: Any) -> dict[str, Any]:
     import copy
     import hashlib
 
-    from epi13_local_harness.atlas_binding import (
+    from mncs_harness.atlas_binding import (
         BindingError,
         ExecutionRequirement,
         canonical_envelope_bytes,
@@ -284,7 +284,7 @@ def adversarial_phase(atlas: dict[str, Any], issuer: Any) -> dict[str, Any]:
     raw: list[dict[str, Any]] = atlas["raw_decisions"]
 
     def carry(decisions: list[dict[str, Any]], **leg_override: Any) -> dict[str, Any]:
-        from epi13_local_harness.atlas_binding import build_requirement as carry_fn
+        from mncs_harness.atlas_binding import build_requirement as carry_fn
 
         leg: dict[str, Any] = {"name": "probe", "needs": ["tests.execute"]}
         leg.update(leg_override)
@@ -402,9 +402,9 @@ def local_tools_phase(envelope: dict[str, Any] | None, trust: dict[str, bytes] |
     """Prove the ToolRegistry choke point with the live requirement."""
     import tempfile
 
-    from epi13_local_harness.atlas_binding import ExecutionRequirement
-    from epi13_local_harness.config import load_config
-    from epi13_local_harness.tools import ToolRegistry
+    from mncs_harness.atlas_binding import ExecutionRequirement
+    from mncs_harness.config import load_config
+    from mncs_harness.tools import ToolRegistry
 
     if not envelope:
         return {"verdict": "UNKNOWN", "reason": "no requirement envelope", "rows": []}
@@ -581,7 +581,7 @@ def _cuda_leg(session, tool_registry, requirement, workspace, ptx_kernel, worker
     import shutil
     import subprocess
 
-    from epi13_local_harness.fabric_target_tools import FabricTargetToolExecutor
+    from mncs_harness.fabric_target_tools import FabricTargetToolExecutor
 
     if ptx_kernel is None or not Path(ptx_kernel).is_file():
         return {"verdict": "UNKNOWN", "reason": "no PTX kernel provided (--ptx-kernel)"}
@@ -658,13 +658,13 @@ def _fabric_persistent_run(
     from mncs_fabric.transport import TLSWorkerServer
     from mncs_fabric.worker import LocalWorker
 
-    from epi13_local_harness.atlas_binding import ExecutionRequirement
-    from epi13_local_harness.config import load_config
-    from epi13_local_harness.fabric import FabricSession
-    from epi13_local_harness.fabric_target_tools import FabricTargetToolExecutor
-    from epi13_local_harness.fabric_test_support import ephemeral_certificates
-    from epi13_local_harness.models import FabricConfig
-    from epi13_local_harness.tools import ToolRegistry
+    from mncs_harness.atlas_binding import ExecutionRequirement
+    from mncs_harness.config import load_config
+    from mncs_harness.fabric import FabricSession
+    from mncs_harness.fabric_target_tools import FabricTargetToolExecutor
+    from mncs_harness.fabric_test_support import ephemeral_certificates
+    from mncs_harness.models import FabricConfig
+    from mncs_harness.tools import ToolRegistry
 
     worker_id = GAUNTLET_WORKER
     socket_path = root / "controller.sock"
@@ -950,8 +950,8 @@ def rights_phase(requirement_id: str | None, fabric: dict[str, Any]) -> dict[str
 def commons_phase() -> dict[str, Any]:
     """Record Commons confirmation evidence (read-only; never force publication)."""
     try:
-        from epi13_local_harness.commons import CommonsSession
-        from epi13_local_harness.config import load_config
+        from mncs_harness.commons import CommonsSession
+        from mncs_harness.config import load_config
     except ImportError as exc:
         return {"verdict": "UNKNOWN", "reason": f"commons unavailable: {exc}"}
     try:

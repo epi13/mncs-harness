@@ -170,7 +170,7 @@ def configure_remote(args: argparse.Namespace) -> int:
             "kind": "remote",
             "host": args.host,
             "port": args.port,
-            "state_path": f"~/.local/state/epi13-local-harness/fabric-{args.worker_id}.jsonl",
+            "state_path": f"~/.local/state/mncs-harness/fabric-{args.worker_id}.jsonl",
             "capabilities": capabilities,
             "ca_file": str(ca_file),
             "client_certificate": str(client_certificate),

@@ -17,9 +17,9 @@ import unittest
 from dataclasses import replace
 from pathlib import Path
 
-from epi13_local_harness.commons import CommonsSession
-from epi13_local_harness.config import load_config
-from epi13_local_harness.fabric_inventory_session import InventoryAwareFabricSession
+from mncs_harness.commons import CommonsSession
+from mncs_harness.config import load_config
+from mncs_harness.fabric_inventory_session import InventoryAwareFabricSession
 
 LINUX_WORKER = os.environ.get("MNCS_E2E_LINUX_WORKER")
 WINDOWS_WORKER = os.environ.get("MNCS_E2E_WINDOWS_WORKER")
@@ -210,7 +210,7 @@ class LiveCliAskTests(unittest.TestCase):
                 [
                     sys.executable,
                     "-m",
-                    "epi13_local_harness.cli",
+                    "mncs_harness.cli",
                     "ask",
                     f"Reply with exactly: {marker}",
                     "--worker",

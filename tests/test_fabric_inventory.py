@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from epi13_local_harness import fabric_inventory, fabric_profile_inventory
+from mncs_harness import fabric_inventory, fabric_profile_inventory
 
 
 class FabricInventoryTests(unittest.TestCase):

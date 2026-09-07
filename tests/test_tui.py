@@ -7,12 +7,12 @@ from pathlib import Path
 
 from rich.console import Console
 
-from epi13_local_harness.commons import CommonsStatus
-from epi13_local_harness.config import load_config
-from epi13_local_harness.fabric import FabricStatus
-from epi13_local_harness.models import RoutePlan, TaskProfile
-from epi13_local_harness.semantic_router import RouterRuntimeStatus
-from epi13_local_harness.tui import (
+from mncs_harness.commons import CommonsStatus
+from mncs_harness.config import load_config
+from mncs_harness.fabric import FabricStatus
+from mncs_harness.models import RoutePlan, TaskProfile
+from mncs_harness.semantic_router import RouterRuntimeStatus
+from mncs_harness.tui import (
     HarnessTui,
     commons_status_summary,
     fabric_status_renderable,

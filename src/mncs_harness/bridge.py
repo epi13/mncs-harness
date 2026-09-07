@@ -187,7 +187,7 @@ class BridgeRuntime:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="epi13_local_harness.bridge")
+    parser = argparse.ArgumentParser(prog="mncs_harness.bridge")
     parser.add_argument("--stdio", action="store_true", help="Run the JSON-line stdio bridge")
     parser.add_argument("--repository", type=Path, default=Path.cwd())
     parser.add_argument("--config", type=Path, default=default_config_path())

@@ -59,6 +59,8 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Mapping
 
+from . import mncs_logic
+
 SCHEMA = "mncs.execution-requirement/0.3"
 DECISION_SCHEMA = "mncs.atlas-capability-decision/1"
 DECISION_DIGEST_ALG = "sha256:canonical-json-v1"
@@ -654,7 +656,11 @@ class ExecutionRequirement:
                 f"target unbound end-to-end: actual {actual_target} has no declared leg target",
                 acceptance.binding,
             )
-        if actual_target != leg.target:
+        # Final target gate is the MNCS kernel (mncs/harness_atlas.mncs
+        # dispatch_gate): a granted fold authorizes dispatch only while the
+        # observed target still matches the Atlas-authorized one.
+        gate: str = mncs_logic.dispatch_gate("GRANTED", actual_target == leg.target)
+        if gate != "GRANTED":
             return Acceptance(
                 "REFUSED",
                 leg_name,
@@ -670,8 +676,20 @@ class ExecutionRequirement:
         )
 
 
+def _decision_grant(decision: AtlasDecision) -> mncs_logic.Grant:
+    """Project one carried decision onto the MNCS Atlas verdict lattice."""
+    if decision.status == "denied":
+        return "REFUSED"
+    if decision.status == "conditional" and sorted(set(decision.missing)):
+        return "UNKNOWN"
+    return "GRANTED"
+
+
 def _fold_capability(capability: str, matches: list[AtlasDecision]) -> Acceptance:
-    verdict = "GRANTED"
+    # The fold verdict is the MNCS kernel (mncs/harness_atlas.mncs, mirrored
+    # in mncs_logic.fold): duplicate decisions fold conservatively and
+    # order-independently with denial winning; UNKNOWN is never promoted.
+    verdict: str = mncs_logic.fold([_decision_grant(decision) for decision in matches])
     outstanding: list[str] = []
     reasons: list[str] = []
     binding = ""
@@ -682,13 +700,10 @@ def _fold_capability(capability: str, matches: list[AtlasDecision]) -> Acceptanc
             f" scope={decision.session_scope}"
         )
         if decision.status == "denied":
-            verdict = "REFUSED"
             reasons.append(f"{decision.capability}: atlas denied")
         elif decision.status == "conditional":
             missing = sorted(set(decision.missing))
             if missing:
-                if verdict == "GRANTED":
-                    verdict = "UNKNOWN"
                 for item in missing:
                     if item not in outstanding:
                         outstanding.append(item)

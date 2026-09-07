@@ -1,0 +1,9 @@
+mncs 0.6;
+
+module probe.consumer;
+
+use mncs.core.status.v1;
+
+fn check(left: Status, right: Status) -> (result: Status) {
+    return dominate(left, right);
+}

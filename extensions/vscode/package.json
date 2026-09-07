@@ -1,5 +1,5 @@
 {
-  "name": "epi13-local-harness-vscode",
+  "name": "mncs-harness-vscode",
   "displayName": "MNCS Harness",
   "description": "Use the existing MNCS Harness from the VS Code Chat window via a trusted Python sidecar.",
   "version": "0.1.0",
@@ -10,81 +10,81 @@
   "categories": ["AI", "Other"],
   "icon": "resources/icon.png",
   "activationEvents": [
-    "onCommand:epi13-local-harness.startBackend",
-    "onCommand:epi13-local-harness.stopBackend",
-    "onCommand:epi13-local-harness.restartBackend",
-    "onCommand:epi13-local-harness.runDoctor",
-    "onCommand:epi13-local-harness.previewRoute",
-    "onCommand:epi13-local-harness.showModels",
-    "onCommand:epi13-local-harness.showLanes",
-    "onCommand:epi13-local-harness.showMetrics",
-    "onCommand:epi13-local-harness.openConfig",
-    "onCommand:epi13-local-harness.openSettings",
-    "onCommand:epi13-local-harness.showLogs",
-    "onCommand:epi13-local-harness.selectPythonInterpreter",
-    "onCommand:epi13-local-harness.selectRepository",
-    "onLanguageModelChatProvider:epi13-local"
+    "onCommand:mncs-harness.startBackend",
+    "onCommand:mncs-harness.stopBackend",
+    "onCommand:mncs-harness.restartBackend",
+    "onCommand:mncs-harness.runDoctor",
+    "onCommand:mncs-harness.previewRoute",
+    "onCommand:mncs-harness.showModels",
+    "onCommand:mncs-harness.showLanes",
+    "onCommand:mncs-harness.showMetrics",
+    "onCommand:mncs-harness.openConfig",
+    "onCommand:mncs-harness.openSettings",
+    "onCommand:mncs-harness.showLogs",
+    "onCommand:mncs-harness.selectPythonInterpreter",
+    "onCommand:mncs-harness.selectRepository",
+    "onLanguageModelChatProvider:mncs"
   ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "epi13-local-harness.startBackend",
+        "command": "mncs-harness.startBackend",
         "title": "MNCS Harness: Start Backend"
       },
       {
-        "command": "epi13-local-harness.stopBackend",
+        "command": "mncs-harness.stopBackend",
         "title": "MNCS Harness: Stop Backend"
       },
       {
-        "command": "epi13-local-harness.restartBackend",
+        "command": "mncs-harness.restartBackend",
         "title": "MNCS Harness: Restart Backend"
       },
       {
-        "command": "epi13-local-harness.runDoctor",
+        "command": "mncs-harness.runDoctor",
         "title": "MNCS Harness: Run Doctor"
       },
       {
-        "command": "epi13-local-harness.previewRoute",
+        "command": "mncs-harness.previewRoute",
         "title": "MNCS Harness: Preview Route"
       },
       {
-        "command": "epi13-local-harness.showModels",
+        "command": "mncs-harness.showModels",
         "title": "MNCS Harness: Show Models"
       },
       {
-        "command": "epi13-local-harness.showLanes",
+        "command": "mncs-harness.showLanes",
         "title": "MNCS Harness: Show Lanes"
       },
       {
-        "command": "epi13-local-harness.showMetrics",
+        "command": "mncs-harness.showMetrics",
         "title": "MNCS Harness: Show Metrics"
       },
       {
-        "command": "epi13-local-harness.openConfig",
+        "command": "mncs-harness.openConfig",
         "title": "MNCS Harness: Open Harness Configuration"
       },
       {
-        "command": "epi13-local-harness.openSettings",
+        "command": "mncs-harness.openSettings",
         "title": "MNCS Harness: Open Extension Settings"
       },
       {
-        "command": "epi13-local-harness.showLogs",
+        "command": "mncs-harness.showLogs",
         "title": "MNCS Harness: Show Logs"
       },
       {
-        "command": "epi13-local-harness.selectPythonInterpreter",
+        "command": "mncs-harness.selectPythonInterpreter",
         "title": "MNCS Harness: Select Python Interpreter"
       },
       {
-        "command": "epi13-local-harness.selectRepository",
+        "command": "mncs-harness.selectRepository",
         "title": "MNCS Harness: Select Repository"
       }
     ],
     "chatParticipants": [
       {
-        "id": "epi13.localHarness",
-        "name": "epi13",
+        "id": "mncs.harness",
+        "name": "mncs",
         "fullName": "MNCS Harness",
         "isDefault": false,
         "commands": [
@@ -102,51 +102,51 @@
     ],
     "languageModelChatProviders": [
       {
-        "vendor": "epi13-local",
-        "id": "epi13-local",
+        "vendor": "mncs",
+        "id": "mncs",
         "name": "MNCS Harness"
       }
     ],
     "configuration": {
       "title": "MNCS Harness",
       "properties": {
-        "epi13LocalHarness.pythonPath": {
+        "mncsHarness.pythonPath": {
           "type": "string",
           "default": "",
           "description": "Absolute Python interpreter path for the trusted backend sidecar."
         },
-        "epi13LocalHarness.repositoryPath": {
+        "mncsHarness.repositoryPath": {
           "type": "string",
           "default": "",
           "description": "Absolute path to the local harness repository root."
         },
-        "epi13LocalHarness.configPath": {
+        "mncsHarness.configPath": {
           "type": "string",
           "default": "",
           "description": "Absolute path to the harness configuration file."
         },
-        "epi13LocalHarness.autoStart": {
+        "mncsHarness.autoStart": {
           "type": "boolean",
           "default": false,
           "description": "Automatically start the Python sidecar when the extension activates."
         },
-        "epi13LocalHarness.showRouting": {
+        "mncsHarness.showRouting": {
           "type": "boolean",
           "default": true,
           "description": "Show route preview and routing status in chat responses."
         },
-        "epi13LocalHarness.logLevel": {
+        "mncsHarness.logLevel": {
           "type": "string",
           "default": "info",
           "enum": ["debug", "info", "warning", "error"],
           "description": "Log verbosity for the VS Code extension output channel."
         },
-        "epi13LocalHarness.requestTimeoutSeconds": {
+        "mncsHarness.requestTimeoutSeconds": {
           "type": "number",
           "default": 120,
           "description": "Timeout for backend requests before returning a response error."
         },
-        "epi13LocalHarness.maxImageBytes": {
+        "mncsHarness.maxImageBytes": {
           "type": "number",
           "default": 4194304,
           "description": "Maximum size for an attached image payload to be sent to the backend."
@@ -162,8 +162,8 @@
     "test": "npm run test:unit",
     "test:unit": "npm run compile && node --test ./dist/test/**/*.test.js",
     "test:integration": "node -e \"console.log('Integration tests are opt-in and require ELH_RUN_VSCODE_INTEGRATION=1 or ELH_RUN_OLLAMA_INTEGRATION=1.')\"",
-    "package": "npx @vscode/vsce package --out ./epi13-local-harness-vscode-0.1.0.vsix",
-    "install-local": "code --install-extension ./epi13-local-harness-vscode-0.1.0.vsix --force"
+    "package": "npx @vscode/vsce package --out ./mncs-harness-vscode-0.1.0.vsix",
+    "install-local": "code --install-extension ./mncs-harness-vscode-0.1.0.vsix --force"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

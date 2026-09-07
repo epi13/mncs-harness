@@ -17,17 +17,17 @@ from pathlib import Path
 from atlas_fixtures import TRUSTED_TEST_ISSUERS
 from atlas_fixtures import payload as atlas_payload
 
-from epi13_local_harness.agent import LocalAgent
-from epi13_local_harness.capability_graph import build_capability_graph
-from epi13_local_harness.commons import CommonsError
-from epi13_local_harness.config import load_config
-from epi13_local_harness.fabric import FabricExecutionError, FabricStatus
-from epi13_local_harness.fabric_inventory_session import (
+from mncs_harness.agent import LocalAgent
+from mncs_harness.capability_graph import build_capability_graph
+from mncs_harness.commons import CommonsError
+from mncs_harness.config import load_config
+from mncs_harness.fabric import FabricExecutionError, FabricStatus
+from mncs_harness.fabric_inventory_session import (
     InventoryAwareFabricSession,
     _FreshDispatchClient,
 )
-from epi13_local_harness.model_selection import ModelSelection
-from epi13_local_harness.models import (
+from mncs_harness.model_selection import ModelSelection
+from mncs_harness.models import (
     FabricConfig,
     MetricsConfig,
     SessionTarget,
@@ -198,7 +198,7 @@ class DistributedCapabilityTests(unittest.TestCase):
         _effective, auto = session.resolve_model("e4b", configured)
         self.assertTrue(auto.available)
         self.assertEqual(auto.worker_id, "stale")
-        from epi13_local_harness.models import RoutingOverride
+        from mncs_harness.models import RoutingOverride
 
         _effective, pinned = session.resolve_model(
             "e4b",

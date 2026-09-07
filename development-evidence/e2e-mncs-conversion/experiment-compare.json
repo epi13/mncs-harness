@@ -1,0 +1,16 @@
+{
+  "schema_version": "0.1",
+  "left": "mncs:language:experiment:result:c066ffe49c4756943c7bd25be3bc4b2c7093292d1dcd99631e0a0892c0d1aca5",
+  "right": "mncs:language:experiment:result:99e8d57fea739e899ab3b8019c1da768be716f35539d99ff795ea9c996fabdb4",
+  "same_source": true,
+  "same_semantics": true,
+  "same_hir": true,
+  "same_ssa": true,
+  "same_realization_request": false,
+  "same_backend": false,
+  "same_backend_artifact": false,
+  "same_stateful_behavior": true,
+  "bounded_behavior_agrees": true,
+  "earliest_divergence": "realization_request",
+  "interpretation": "bounded_language_observation_not_universal_equivalence_or_conformance"
+}

@@ -174,6 +174,28 @@ ruff check .
 pytest
 ```
 
+## MNCS implementation
+
+The harness decision kernels are implemented in mncs-language under `mncs/`
+(`harness_routing`, `harness_policy`, `harness_verdict`, `harness_atlas`)
+with executable corpora under `corpora/` and sealed backend evidence under
+`development-evidence/mncs-execution/`. `src/mncs_harness/mncs_logic.py` is
+the evidence-pinned host projection of those kernels — not a second
+authority — and `tests/test_mncs_logic.py` proves host/MNCS agreement.
+
+Known language gaps encountered during conversion are recorded with
+evidence in [docs/language-pressure.md](docs/language-pressure.md), with
+executable reproducers under `development-evidence/language-pressure/`.
+
+To re-verify the MNCS kernels against the language toolchain (from an
+`mncs-language` checkout):
+
+```bash
+cargo run -p mncs-cli -- experiment run mncs/harness_routing.mncs \
+  --backend mncs-portable-wasm-mvp \
+  --corpus corpora/harness-routing-corpus.json --output-dir /tmp/harness-check
+```
+
 ## License
 
 Apache License 2.0.

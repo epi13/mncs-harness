@@ -1,0 +1,1958 @@
+{
+  "schema_version": "0.1",
+  "contract_id": "mncs:language:experiment-result:0.1",
+  "identity": "mncs:language:experiment:result:0d7dab9142c06e71ca47d7b174d34aa1eb467f25571ffd1c5ca7c5879579c12d",
+  "definition_identity": "mncs:language:experiment:definition:697796da7576cc688069773d6ef23c3a7b9dc5739b671bd1d6a0ee8e01748779",
+  "definition": {
+    "schema_version": "0.1",
+    "contract_id": "mncs:language:experiment-definition:0.1",
+    "identity": "mncs:language:experiment:definition:697796da7576cc688069773d6ef23c3a7b9dc5739b671bd1d6a0ee8e01748779",
+    "name": "harness_policy",
+    "source_artifact_identity": "mncs:source:artifact:9ca41627c6feace8260260a1f9761b76b5c771d5674de4110d298c9700b2149a",
+    "source_profile": "0.6",
+    "compiler_identity": "mncs:compiler:compiler:f862227638ca7fbc716123d8378cddfef4f76a9ef10ab0e99cc791e65207e45d",
+    "compiler_configuration": {
+      "backend": "mncs-portable-wasm-mvp"
+    },
+    "realization": {
+      "schema_version": "0.1",
+      "identity": "mncs:compiler:realization-request:21370e87e5b4cd72b7eefbf58f751b2fe8f08254aa35c23a370ffe39b247a784",
+      "selected_ssa": {
+        "identity": "mncs:compiler:compiler-artifact:79f4a8c7759866042f255f5f56ffd528599ad9a76282a40415c5e7983b02465e",
+        "representation": "selected_ssa",
+        "schema_version": "0.4",
+        "fingerprint": "774c8dc07732653538161e00f74e53354dfa2deeaee40182d83fc61f4a7e8e7d"
+      },
+      "target": {
+        "identity": "mncs:compiler:target-contract:7db47a6485cddf8e3bbaa129f3cc126ee396c799b7ff1fb243a0b1bb4663f902",
+        "candidate": "mncs:target:portable-wasm-mvp-0.1",
+        "facts": {
+          "abi": "one exported wasm function per MNCS function; scalars pass directly, composites pass as pointers to arena cells",
+          "bounded-iteration": "language-owned bounded SSA backedges use the private dispatcher loop; iteration metadata remains selected-SSA-bound",
+          "data-layout": "scalar two's-complement; i8/i16/i32 in wasm i32; i64 in wasm i64; composites are immutable 8-byte-slot cells in linear memory addressed by i32 pointers",
+          "integer": "wrapping=wasm wrapping; checked=explicit overflow test then trap; saturating=explicit clamp; widening=exact extended-width arithmetic",
+          "trap": "failure terminators and checked overflow map to wasm unreachable"
+        },
+        "evidence": [
+          "mncs:target-evidence:portable-wasm-mvp-0.1:declared-research-contract"
+        ],
+        "assumptions": [
+          "portable WASM MVP is a research execution envelope, not a native ABI",
+          "the embedded interpreter defines research execution, not a host wasm CLI"
+        ]
+      },
+      "acceptable_backends": [
+        {
+          "identity": "mncs:compiler:backend:6bbc6f37c38ffa3353787ff9ea565d07db3755b42efa8a59871374123adbca15",
+          "name": "mncs-portable-wasm-mvp",
+          "version": "0.1"
+        }
+      ],
+      "required_machine_intents": [
+        "checked_integer",
+        "explicit_failure"
+      ],
+      "required_artifact_kinds": [
+        "wasm_module"
+      ],
+      "required_validators": [
+        "bounded_execution_agreement"
+      ],
+      "fallback_policy": "fail_closed_no_backend_fallback"
+    },
+    "corpus": {
+      "schema_version": "0.1",
+      "name": "harness-policy",
+      "cases": [
+        {
+          "id": "clean-pytest",
+          "request": {
+            "schema_version": "0.1",
+            "target": {
+              "module": "mncs.harness.policy.v1",
+              "function": "evaluate_command"
+            },
+            "arguments": [
+              {
+                "boolean": {
+                  "value": false
+                }
+              },
+              {
+                "boolean": {
+                  "value": true
+                }
+              },
+              {
+                "boolean": {
+                  "value": false
+                }
+              },
+              {
+                "boolean": {
+                  "value": true
+                }
+              },
+              {
+                "boolean": {
+                  "value": true
+                }
+              },
+              {
+                "boolean": {
+                  "value": true
+                }
+              },
+              {
+                "boolean": {
+                  "value": true
+                }
+              }
+            ],
+            "step_budget": 1024,
+            "policy": {
+              "effects": "unsupported"
+            }
+          },
+          "expected": [
+            {
+              "finite": {
+                "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+                "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Allow",
+                "discriminant": 0
+              }
+            }
+          ]
+        },
+        {
+          "id": "blocked-executable",
+          "request": {
+            "schema_version": "0.1",
+            "target": {
+              "module": "mncs.harness.policy.v1",
+              "function": "evaluate_command"
+            },
+            "arguments": [
+              {
+                "boolean": {
+                  "value": true
+                }
+              },
+              {
+                "boolean": {
+                  "value": true
+                }
+              },
+              {
+                "boolean": {
+                  "value": false
+                }
+              },
+              {
+                "boolean": {
+                  "value": true
+                }
+              },
+              {
+                "boolean": {
+                  "value": true
+                }
+              },
+              {
+                "boolean": {
+                  "value": true
+                }
+              },
+              {
+                "boolean": {
+                  "value": true
+                }
+              }
+            ],
+            "step_budget": 1024,
+            "policy": {
+              "effects": "unsupported"
+            }
+          },
+          "expected": [
+            {
+              "finite": {
+                "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+                "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block",
+                "discriminant": 1,
+                "payload": [
+                  [
+                    "reason",
+                    {
+                      "integer": {
+                        "value": 1,
+                        "type": {
+                          "bits": 64,
+                          "signed": true
+                        }
+                      }
+                    }
+                  ]
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "not-allowlisted",
+          "request": {
+            "schema_version": "0.1",
+            "target": {
+              "module": "mncs.harness.policy.v1",
+              "function": "evaluate_command"
+            },
+            "arguments": [
+              {
+                "boolean": {
+                  "value": false
+                }
+              },
+              {
+                "boolean": {
+                  "value": false
+                }
+              },
+              {
+                "boolean": {
+                  "value": false
+                }
+              },
+              {
+                "boolean": {
+                  "value": true
+                }
+              },
+              {
+                "boolean": {
+                  "value": true
+                }
+              },
+              {
+                "boolean": {
+                  "value": true
+                }
+              },
+              {
+                "boolean": {
+                  "value": true
+                }
+              }
+            ],
+            "step_budget": 1024,
+            "policy": {
+              "effects": "unsupported"
+            }
+          },
+          "expected": [
+            {
+              "finite": {
+                "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+                "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block",
+                "discriminant": 1,
+                "payload": [
+                  [
+                    "reason",
+                    {
+                      "integer": {
+                        "value": 2,
+                        "type": {
+                          "bits": 64,
+                          "signed": true
+                        }
+                      }
+                    }
+                  ]
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "shell-operator",
+          "request": {
+            "schema_version": "0.1",
+            "target": {
+              "module": "mncs.harness.policy.v1",
+              "function": "evaluate_command"
+            },
+            "arguments": [
+              {
+                "boolean": {
+                  "value": false
+                }
+              },
+              {
+                "boolean": {
+                  "value": true
+                }
+              },
+              {
+                "boolean": {
+                  "value": true
+                }
+              },
+              {
+                "boolean": {
+                  "value": true
+                }
+              },
+              {
+                "boolean": {
+                  "value": true
+                }
+              },
+              {
+                "boolean": {
+                  "value": true
+                }
+              },
+              {
+                "boolean": {
+                  "value": true
+                }
+              }
+            ],
+            "step_budget": 1024,
+            "policy": {
+              "effects": "unsupported"
+            }
+          },
+          "expected": [
+            {
+              "finite": {
+                "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+                "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block",
+                "discriminant": 1,
+                "payload": [
+                  [
+                    "reason",
+                    {
+                      "integer": {
+                        "value": 3,
+                        "type": {
+                          "bits": 64,
+                          "signed": true
+                        }
+                      }
+                    }
+                  ]
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "shell-rule",
+          "request": {
+            "schema_version": "0.1",
+            "target": {
+              "module": "mncs.harness.policy.v1",
+              "function": "evaluate_command"
+            },
+            "arguments": [
+              {
+                "boolean": {
+                  "value": false
+                }
+              },
+              {
+                "boolean": {
+                  "value": true
+                }
+              },
+              {
+                "boolean": {
+                  "value": false
+                }
+              },
+              {
+                "boolean": {
+                  "value": false
+                }
+              },
+              {
+                "boolean": {
+                  "value": true
+                }
+              },
+              {
+                "boolean": {
+                  "value": true
+                }
+              },
+              {
+                "boolean": {
+                  "value": true
+                }
+              }
+            ],
+            "step_budget": 1024,
+            "policy": {
+              "effects": "unsupported"
+            }
+          },
+          "expected": [
+            {
+              "finite": {
+                "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+                "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block",
+                "discriminant": 1,
+                "payload": [
+                  [
+                    "reason",
+                    {
+                      "integer": {
+                        "value": 4,
+                        "type": {
+                          "bits": 64,
+                          "signed": true
+                        }
+                      }
+                    }
+                  ]
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "python-rule",
+          "request": {
+            "schema_version": "0.1",
+            "target": {
+              "module": "mncs.harness.policy.v1",
+              "function": "evaluate_command"
+            },
+            "arguments": [
+              {
+                "boolean": {
+                  "value": false
+                }
+              },
+              {
+                "boolean": {
+                  "value": true
+                }
+              },
+              {
+                "boolean": {
+                  "value": false
+                }
+              },
+              {
+                "boolean": {
+                  "value": true
+                }
+              },
+              {
+                "boolean": {
+                  "value": false
+                }
+              },
+              {
+                "boolean": {
+                  "value": true
+                }
+              },
+              {
+                "boolean": {
+                  "value": true
+                }
+              }
+            ],
+            "step_budget": 1024,
+            "policy": {
+              "effects": "unsupported"
+            }
+          },
+          "expected": [
+            {
+              "finite": {
+                "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+                "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block",
+                "discriminant": 1,
+                "payload": [
+                  [
+                    "reason",
+                    {
+                      "integer": {
+                        "value": 5,
+                        "type": {
+                          "bits": 64,
+                          "signed": true
+                        }
+                      }
+                    }
+                  ]
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "git-rule",
+          "request": {
+            "schema_version": "0.1",
+            "target": {
+              "module": "mncs.harness.policy.v1",
+              "function": "evaluate_command"
+            },
+            "arguments": [
+              {
+                "boolean": {
+                  "value": false
+                }
+              },
+              {
+                "boolean": {
+                  "value": true
+                }
+              },
+              {
+                "boolean": {
+                  "value": false
+                }
+              },
+              {
+                "boolean": {
+                  "value": true
+                }
+              },
+              {
+                "boolean": {
+                  "value": true
+                }
+              },
+              {
+                "boolean": {
+                  "value": false
+                }
+              },
+              {
+                "boolean": {
+                  "value": true
+                }
+              }
+            ],
+            "step_budget": 1024,
+            "policy": {
+              "effects": "unsupported"
+            }
+          },
+          "expected": [
+            {
+              "finite": {
+                "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+                "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block",
+                "discriminant": 1,
+                "payload": [
+                  [
+                    "reason",
+                    {
+                      "integer": {
+                        "value": 6,
+                        "type": {
+                          "bits": 64,
+                          "signed": true
+                        }
+                      }
+                    }
+                  ]
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "path-escape",
+          "request": {
+            "schema_version": "0.1",
+            "target": {
+              "module": "mncs.harness.policy.v1",
+              "function": "evaluate_command"
+            },
+            "arguments": [
+              {
+                "boolean": {
+                  "value": false
+                }
+              },
+              {
+                "boolean": {
+                  "value": true
+                }
+              },
+              {
+                "boolean": {
+                  "value": false
+                }
+              },
+              {
+                "boolean": {
+                  "value": true
+                }
+              },
+              {
+                "boolean": {
+                  "value": true
+                }
+              },
+              {
+                "boolean": {
+                  "value": true
+                }
+              },
+              {
+                "boolean": {
+                  "value": false
+                }
+              }
+            ],
+            "step_budget": 1024,
+            "policy": {
+              "effects": "unsupported"
+            }
+          },
+          "expected": [
+            {
+              "finite": {
+                "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+                "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block",
+                "discriminant": 1,
+                "payload": [
+                  [
+                    "reason",
+                    {
+                      "integer": {
+                        "value": 7,
+                        "type": {
+                          "bits": 64,
+                          "signed": true
+                        }
+                      }
+                    }
+                  ]
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "write-protected",
+          "request": {
+            "schema_version": "0.1",
+            "target": {
+              "module": "mncs.harness.policy.v1",
+              "function": "evaluate_write"
+            },
+            "arguments": [
+              {
+                "boolean": {
+                  "value": true
+                }
+              }
+            ],
+            "step_budget": 1024,
+            "policy": {
+              "effects": "unsupported"
+            }
+          },
+          "expected": [
+            {
+              "finite": {
+                "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+                "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block",
+                "discriminant": 1,
+                "payload": [
+                  [
+                    "reason",
+                    {
+                      "integer": {
+                        "value": 8,
+                        "type": {
+                          "bits": 64,
+                          "signed": true
+                        }
+                      }
+                    }
+                  ]
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "write-ok",
+          "request": {
+            "schema_version": "0.1",
+            "target": {
+              "module": "mncs.harness.policy.v1",
+              "function": "evaluate_write"
+            },
+            "arguments": [
+              {
+                "boolean": {
+                  "value": false
+                }
+              }
+            ],
+            "step_budget": 1024,
+            "policy": {
+              "effects": "unsupported"
+            }
+          },
+          "expected": [
+            {
+              "finite": {
+                "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+                "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Allow",
+                "discriminant": 0
+              }
+            }
+          ]
+        },
+        {
+          "id": "reason-allow",
+          "request": {
+            "schema_version": "0.1",
+            "target": {
+              "module": "mncs.harness.policy.v1",
+              "function": "reason_of"
+            },
+            "arguments": [
+              {
+                "finite": {
+                  "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+                  "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Allow",
+                  "discriminant": 0
+                }
+              }
+            ],
+            "step_budget": 1024,
+            "policy": {
+              "effects": "unsupported"
+            }
+          },
+          "expected": [
+            {
+              "integer": {
+                "value": 0,
+                "type": {
+                  "bits": 64,
+                  "signed": true
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "reason-block5",
+          "request": {
+            "schema_version": "0.1",
+            "target": {
+              "module": "mncs.harness.policy.v1",
+              "function": "reason_of"
+            },
+            "arguments": [
+              {
+                "finite": {
+                  "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+                  "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block",
+                  "discriminant": 1,
+                  "payload": [
+                    [
+                      "reason",
+                      {
+                        "integer": {
+                          "value": 5,
+                          "type": {
+                            "bits": 64,
+                            "signed": true
+                          }
+                        }
+                      }
+                    ]
+                  ]
+                }
+              }
+            ],
+            "step_budget": 1024,
+            "policy": {
+              "effects": "unsupported"
+            }
+          },
+          "expected": [
+            {
+              "integer": {
+                "value": 5,
+                "type": {
+                  "bits": 64,
+                  "signed": true
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "validators": [
+      {
+        "relation": "bounded_observational_agreement",
+        "validator_profile": "backend-lowering-bounded-agreement:0.1",
+        "required": true,
+        "allow_unknown": false
+      }
+    ],
+    "requested_result_artifacts": [
+      "backend_artifact",
+      "case_observations",
+      "compiler_study",
+      "realization_plan",
+      "stateful_case_observations",
+      "translation_validation"
+    ],
+    "expected_invariants": [
+      "FAIL_dominates_UNKNOWN_dominates_PASS",
+      "source_to_ssa_identity_chain_is_exact"
+    ],
+    "comparison_relation": "bounded_public_behavior_agreement",
+    "environment_observations_are_non_semantic": true,
+    "parent_experiment": null,
+    "provenance": []
+  },
+  "compiler_study": {
+    "schema_version": "0.1",
+    "contract_id": "mncs:language:compilation-study-result:0.1",
+    "identity": "mncs:compiler:compilation-study-result:6d186f4cd18568d83c882f38679dadf1001130ffb499ca8fbca8855f03aa095d",
+    "study_request_identity": "mncs:compiler:compilation-study-request:35a86076f03d5f55048e439e650a15be170304e167dea8aeb14d5dc0ca001c7e",
+    "compilation_request_identity": "mncs:compiler:compilation-request:fadb4007921e89fbe2ee81075e1bf562e5fde0bfd66c1e8a82b46823f8d503aa",
+    "run_identity": "mncs:compiler:study-run:28905d89c26655795cb02ca1f7dabd4b8e6fac6d6cc6f8e2e856ea2dbb1a1744",
+    "node": {
+      "node_identity": "local-experiment-node",
+      "architecture": "x86_64",
+      "operating_system": "linux",
+      "environment": "native-linux",
+      "observations": {}
+    },
+    "compiler_identity": "mncs:compiler:compiler:f862227638ca7fbc716123d8378cddfef4f76a9ef10ab0e99cc791e65207e45d",
+    "pipeline_identity": "mncs:compiler:pass-pipeline:95cfa1b3b0a540659ed1b7735465c35f8ada62806dc2238f32ee65a3d8e0cc4b",
+    "compiler_host_identity": "mncs:compiler:compiler-host:2655f21d8ccc4b6b4dac35c07954dbab0d8e3d968a6dd88a5f0f5e487045231d",
+    "build_host_identity": "mncs:compiler:build-host:466aa1989749fbdde3815c85a1db08d8a97d2e74e101f1b01608d196750ea36c",
+    "target_identity": "mncs:compiler:target-contract:7db47a6485cddf8e3bbaa129f3cc126ee396c799b7ff1fb243a0b1bb4663f902",
+    "backend_identity": "mncs:compiler:backend:6bbc6f37c38ffa3353787ff9ea565d07db3755b42efa8a59871374123adbca15",
+    "realization_plan_identity": "mncs:compiler:target-lowering-plan:1237250d1d2c856b59b7d6074823c8b5d865769757a05e3427943fc65f819055",
+    "selected_ssa_identity": "mncs:compiler:compiler-artifact:79f4a8c7759866042f255f5f56ffd528599ad9a76282a40415c5e7983b02465e",
+    "backend_artifact_identity": "mncs:compiler:backend-artifact:f7638e93439ced63026652caf1946edc89ec11c5cfff35501618a08685f7f055",
+    "backend_artifact_kind": "wasm_module",
+    "compilation_status": "completed",
+    "stage_fingerprints": {
+      "source": "1d84be39bb09bc341fbd80499c97fee6edce8c99b735c629fa0aae0513a0fda7",
+      "lexical_tokens": "b8ab66f2d3deea197a4d466250807bdc625a6e1a57f78cdd074e3f5f0f19c91d",
+      "concrete_syntax_tree": "cbbf0043b65bff23574c2e0b989304af1d0c8d414f7141abc4d329cb59d29dec",
+      "abstract_syntax_tree": "427cc6cab17421edc969dc0e13563e2d578aa14846e94ce268c431e5315fd144",
+      "semantic": "2c01ba807f7b9447317bad44f87f6e9e63c06044259a441c0988cbaefb41d08b",
+      "semantic_graph": "bf41e289aeac03073f4280bc3b927057d3a622cac22b791b6018785314ec7bfc",
+      "identity_map": "6a97418ce703af74e8b57df8ecfeb531a0bd2ea1c332dd8ba25097b0ea092cdf",
+      "validation": "30a1a94c0ac5a1294020b02cab2dfc4e048c7045f10cca09bf105b6e809ae12f",
+      "hir": "7e65f71d643c4be75e70c0874304b977ab65316643aa998721dd900663d57d35",
+      "ssa": "774c8dc07732653538161e00f74e53354dfa2deeaee40182d83fc61f4a7e8e7d",
+      "selected_ssa": "774c8dc07732653538161e00f74e53354dfa2deeaee40182d83fc61f4a7e8e7d",
+      "target_lowering_plan": "7771384d38fe888e2f659dc5234c336320317d528d55e7c8e029381fcf86c421",
+      "backend_artifact": "a6c54954b3dc19ccf7db23affef274ffd8897d36cd789222ebbf78e56554d503",
+      "evidence_bundle": "6dc7a3360ad1404d8fd116819cbbde59b9958bbbc172c19c5aeb08ccc6af6a2e"
+    },
+    "pass_executions": [
+      {
+        "edge_identity": "mncs:compiler:transformation-edge:f63acbb5c3401b5095655cc90a9cdd6fcab601748394543843836319598470e0",
+        "pass_identity": "mncs:compiler:compiler-pass:75bbef53c4144ef433396b4083023176bdabdaab451c5feb1d145c788f3be8c8",
+        "pass_id": "lex-source",
+        "input_artifact": "mncs:compiler:compiler-artifact:6703ca284cdd86ff9f4ee725ef2196b157f501c83fd9bed7efb34e845ca861f1",
+        "output_artifact": "mncs:compiler:compiler-artifact:6706d4ffad29a220ca91627a41011f02be65cdc3cb656d8ceafcf2bcc1b1432a",
+        "status": "PASS"
+      },
+      {
+        "edge_identity": "mncs:compiler:transformation-edge:194d6b93f9b07df0c259bc3894f2ab0a77c591fccb172bcca6cb363c858fbb3f",
+        "pass_identity": "mncs:compiler:compiler-pass:fbf23355ec1d8e84bed5b2d1371d3417e5d5ea0d6f35aa916c24b372f2d1f07c",
+        "pass_id": "parse-source-to-cst",
+        "input_artifact": "mncs:compiler:compiler-artifact:6706d4ffad29a220ca91627a41011f02be65cdc3cb656d8ceafcf2bcc1b1432a",
+        "output_artifact": "mncs:compiler:compiler-artifact:185e92827569a057b99c383927382f20351d3df19b3e858f8e70f6a27bedb5e6",
+        "status": "PASS"
+      },
+      {
+        "edge_identity": "mncs:compiler:transformation-edge:e6f709aa69e46a63ad704243221ac68be0e27f4e288a540b5dd39c86ad5753f3",
+        "pass_identity": "mncs:compiler:compiler-pass:25af70a2cc2eca9879106c46f6bdfa71a82818054b7a5e9f8945282dc6d1e5d1",
+        "pass_id": "derive-ast",
+        "input_artifact": "mncs:compiler:compiler-artifact:185e92827569a057b99c383927382f20351d3df19b3e858f8e70f6a27bedb5e6",
+        "output_artifact": "mncs:compiler:compiler-artifact:16aaf1bc17d3d67ea80e506caaa721a7b0d9f4e2932fad00dd384810a6d50d68",
+        "status": "PASS"
+      },
+      {
+        "edge_identity": "mncs:compiler:transformation-edge:c10fa04dc082b75b289c611aaee8d65a7110c7093340403d582c2c967935437e",
+        "pass_identity": "mncs:compiler:compiler-pass:3917fcd9e05a0fc7b6eba161eaddf8928e18dafeb76f97bd8a8886856274b52c",
+        "pass_id": "elaborate-ast-to-semantic",
+        "input_artifact": "mncs:compiler:compiler-artifact:16aaf1bc17d3d67ea80e506caaa721a7b0d9f4e2932fad00dd384810a6d50d68",
+        "output_artifact": "mncs:compiler:compiler-artifact:e9d846b240ff36a5eeb1eb9fa13e39631002077b4e8adfff98a06d1886730557",
+        "status": "PASS"
+      },
+      {
+        "edge_identity": "mncs:compiler:transformation-edge:0c3d46757cc64488acf072cfe92ad8dfb6ae7be0eba6268c4a113dfd158c48d6",
+        "pass_identity": "mncs:compiler:compiler-pass:54bc75c3145d3cf987799fa65190e7af6d49705cb4f9acc5a7e283183cd572fc",
+        "pass_id": "construct-semantic-graph",
+        "input_artifact": "mncs:compiler:compiler-artifact:e9d846b240ff36a5eeb1eb9fa13e39631002077b4e8adfff98a06d1886730557",
+        "output_artifact": "mncs:compiler:compiler-artifact:a0af8e9b25356e5b5d66ab3e80de2ef5df4e0e94ce8c7dcf672250459b8cd106",
+        "status": "PASS"
+      },
+      {
+        "edge_identity": "mncs:compiler:transformation-edge:5e88ee580441b71403f0a304311801b7c36cbb6697727da07fa030d4ed516118",
+        "pass_identity": "mncs:compiler:compiler-pass:6886c509bc91a279546bc2998d4eb144e46c3087096c47d456459941fed2306e",
+        "pass_id": "resolve-semantic-identities",
+        "input_artifact": "mncs:compiler:compiler-artifact:a0af8e9b25356e5b5d66ab3e80de2ef5df4e0e94ce8c7dcf672250459b8cd106",
+        "output_artifact": "mncs:compiler:compiler-artifact:17d71ec9a7d0fa98460ea6b6911a440ef7e10d47b1010b1f6f597068db437389",
+        "status": "PASS"
+      },
+      {
+        "edge_identity": "mncs:compiler:transformation-edge:04002af81afba8d51822675e80c8d41eefd119d46a8f115f54758d0dec8e09c9",
+        "pass_identity": "mncs:compiler:compiler-pass:d3725d529aa43227dc3e424ee6fb0f06ac9597c18331dc29f3afc3cf74cceed2",
+        "pass_id": "analyze-types-and-contracts",
+        "input_artifact": "mncs:compiler:compiler-artifact:17d71ec9a7d0fa98460ea6b6911a440ef7e10d47b1010b1f6f597068db437389",
+        "output_artifact": "mncs:compiler:compiler-artifact:b7f92152c313ba7c4f4eb11803dc5fec060a1b93ca072edb175f263397ea4f4b",
+        "status": "PASS"
+      },
+      {
+        "edge_identity": "mncs:compiler:transformation-edge:a59523f9283e8bded1e09fa38b9a41189aa3630d9678263b8bbd7c8810adf7f4",
+        "pass_identity": "mncs:compiler:compiler-pass:e0abd232e265021e689a1ee2c91bffc60bc1fb5b3a8390be81006d6d25cde380",
+        "pass_id": "lower-semantic-to-hir",
+        "input_artifact": "mncs:compiler:compiler-artifact:e9d846b240ff36a5eeb1eb9fa13e39631002077b4e8adfff98a06d1886730557",
+        "output_artifact": "mncs:compiler:compiler-artifact:5c77d7e68416d140aed948f7cf2b2053ac1e94081ad581360b0ce37328cdde05",
+        "status": "PASS"
+      },
+      {
+        "edge_identity": "mncs:compiler:transformation-edge:d2159c6d0600e0827c3393ab05f626dffd4979487301bd3d274b8907d5e7231e",
+        "pass_identity": "mncs:compiler:compiler-pass:91add27f135f4335f617e1fe728d62c4aac6f004c10400b14120bc9776119a5c",
+        "pass_id": "lower-hir-to-ssa",
+        "input_artifact": "mncs:compiler:compiler-artifact:5c77d7e68416d140aed948f7cf2b2053ac1e94081ad581360b0ce37328cdde05",
+        "output_artifact": "mncs:compiler:compiler-artifact:520a052c481b4a5795e53346408d0272bfebd710805c8395734926a512485c27",
+        "status": "PASS"
+      },
+      {
+        "edge_identity": "mncs:compiler:transformation-edge:fab142d319023f978ea6b059ee0338520b5264298c3ff1fb2db13e3c2ebd7f8c",
+        "pass_identity": "mncs:compiler:compiler-pass:c2bade6ad1ffdf553fdd8001da1b2ce204bf35876122208b87bf7861c6f493a3",
+        "pass_id": "select-canonical-ssa",
+        "input_artifact": "mncs:compiler:compiler-artifact:520a052c481b4a5795e53346408d0272bfebd710805c8395734926a512485c27",
+        "output_artifact": "mncs:compiler:compiler-artifact:79f4a8c7759866042f255f5f56ffd528599ad9a76282a40415c5e7983b02465e",
+        "status": "PASS"
+      },
+      {
+        "edge_identity": "mncs:compiler:transformation-edge:d8d9a1ead86e7e8485ee6c9b3a54d9379ac04536547f2da1e81ba71bf2e78d5f",
+        "pass_identity": "mncs:compiler:compiler-pass:c008afb9fb90413d912e4683bc0e196f70a37d2971b71771ce6b749759aa4d11",
+        "pass_id": "plan-target-lowering",
+        "input_artifact": "mncs:compiler:compiler-artifact:79f4a8c7759866042f255f5f56ffd528599ad9a76282a40415c5e7983b02465e",
+        "output_artifact": "mncs:compiler:compiler-artifact:c080c655c64e69e627a5b94878c442fbe4b533a9a31722ad36d4bf8785d9a6f9",
+        "status": "PASS"
+      },
+      {
+        "edge_identity": "mncs:compiler:transformation-edge:8e795b2a2328b3a88e4f6d4d62a735eb791e3e7bc17114b61b615a7e737664b0",
+        "pass_identity": "mncs:compiler:compiler-pass:2a6c7d900c7bb4c87a547f14ebfa5c669a7a55095c3244f322c2a8eb0c868833",
+        "pass_id": "realize-selected-ssa",
+        "input_artifact": "mncs:compiler:compiler-artifact:79f4a8c7759866042f255f5f56ffd528599ad9a76282a40415c5e7983b02465e",
+        "output_artifact": "mncs:compiler:compiler-artifact:e5a44a7918496d16784355ff76a451a1e06b51816e3919a87bf6dd79e13037b4",
+        "status": "PASS"
+      }
+    ],
+    "semantic_fingerprint": "2c01ba807f7b9447317bad44f87f6e9e63c06044259a441c0988cbaefb41d08b",
+    "hir_fingerprint": "7e65f71d643c4be75e70c0874304b977ab65316643aa998721dd900663d57d35",
+    "ssa_fingerprint": "774c8dc07732653538161e00f74e53354dfa2deeaee40182d83fc61f4a7e8e7d",
+    "compilation_result_identity": "mncs:compiler:compilation-result:a08a14752580a5f3b653c19c97ab1e9d7f218106bfba27ee5416d5aa57bbc11e",
+    "execution_result_references": [],
+    "diagnostics": [],
+    "unresolved_obligations": [],
+    "unresolved_assumptions": [
+      "portable WASM MVP is a research execution envelope, not a native ABI",
+      "the embedded interpreter defines research execution, not a host wasm CLI"
+    ],
+    "invariants": {
+      "expected_equal": [
+        "compiler_identity",
+        "pipeline_identity",
+        "semantic_fingerprint",
+        "hir_fingerprint",
+        "ssa_fingerprint"
+      ],
+      "expected_distinct": [
+        "compiler_host_identity",
+        "build_host_identity",
+        "compilation_request_identity",
+        "compilation_result_identity"
+      ]
+    },
+    "interpretation": "observation_only_not_assurance_or_conformance"
+  },
+  "backend": {
+    "identity": "mncs:compiler:backend:6bbc6f37c38ffa3353787ff9ea565d07db3755b42efa8a59871374123adbca15",
+    "name": "mncs-portable-wasm-mvp",
+    "version": "0.1"
+  },
+  "backend_capabilities": {
+    "schema_version": "0.1",
+    "identity": "mncs:compiler:backend-capability:5d3606b96e9a8ba8ae6b231c38883155e85e2ee0a41df87aeca36a383a4088d6",
+    "backend": {
+      "identity": "mncs:compiler:backend:6bbc6f37c38ffa3353787ff9ea565d07db3755b42efa8a59871374123adbca15",
+      "name": "mncs-portable-wasm-mvp",
+      "version": "0.1"
+    },
+    "realization_profile": "mncs:selected-ssa-to-portable-wasm-mvp:0.1",
+    "target_families": [
+      "mncs:target:portable-wasm-mvp-0.1"
+    ],
+    "accepted_ir_versions": [
+      "0.4"
+    ],
+    "required_target_facts": [
+      "abi",
+      "data-layout",
+      "integer",
+      "trap"
+    ],
+    "supported_machine_intents": [
+      "boolean_sequence_elements",
+      "bounded_sequences_internal",
+      "bounded_views_internal",
+      "byte_operations",
+      "checked_integer",
+      "explicit_failure",
+      "explicit_scalar_conversion",
+      "immutable_record_values",
+      "integer_shifts",
+      "nested_composite_sequence_elements",
+      "packed_mask_realization",
+      "payload_bearing_finite_variants",
+      "saturating_integer_bounded_width",
+      "scalarized_vector_realization",
+      "semantic_bounded_iteration",
+      "semantic_branchless_select",
+      "semantic_integer_vectors",
+      "semantic_masks",
+      "sequence_or_view_boundary_crossing",
+      "sequence_traversal",
+      "strict_boolean_operators",
+      "vector_or_mask_boundary_crossing",
+      "widening_integer_bounded_width",
+      "wrapping_integer"
+    ],
+    "unsupported_operations": [
+      "effects",
+      "memory",
+      "saturating_integer_above_bounded_width",
+      "unbounded_sequences",
+      "widening_integer_above_64_bits"
+    ],
+    "artifact_kinds": [
+      "wasm_module"
+    ],
+    "validator_capabilities": [
+      "bounded_execution_agreement"
+    ],
+    "runtime_requirements": [
+      "embedded_mncs_wasm_interpreter",
+      "language_stateful_trace_runner"
+    ],
+    "abi_layout_requirements": [
+      "composite_pointer_abi",
+      "scalar_parameter_result_abi"
+    ],
+    "failure_behavior": "checked overflow, declared failure, division by zero, and MIN/-1 trap through WASM unreachable",
+    "deterministic": true
+  },
+  "realization_plan": {
+    "identity": "mncs:compiler:target-lowering-plan:1237250d1d2c856b59b7d6074823c8b5d865769757a05e3427943fc65f819055",
+    "selected_ssa": {
+      "identity": "mncs:compiler:compiler-artifact:79f4a8c7759866042f255f5f56ffd528599ad9a76282a40415c5e7983b02465e",
+      "representation": "selected_ssa",
+      "schema_version": "0.4",
+      "fingerprint": "774c8dc07732653538161e00f74e53354dfa2deeaee40182d83fc61f4a7e8e7d"
+    },
+    "target": {
+      "identity": "mncs:compiler:target-contract:7db47a6485cddf8e3bbaa129f3cc126ee396c799b7ff1fb243a0b1bb4663f902",
+      "candidate": "mncs:target:portable-wasm-mvp-0.1",
+      "facts": {
+        "abi": "one exported wasm function per MNCS function; scalars pass directly, composites pass as pointers to arena cells",
+        "bounded-iteration": "language-owned bounded SSA backedges use the private dispatcher loop; iteration metadata remains selected-SSA-bound",
+        "data-layout": "scalar two's-complement; i8/i16/i32 in wasm i32; i64 in wasm i64; composites are immutable 8-byte-slot cells in linear memory addressed by i32 pointers",
+        "integer": "wrapping=wasm wrapping; checked=explicit overflow test then trap; saturating=explicit clamp; widening=exact extended-width arithmetic",
+        "trap": "failure terminators and checked overflow map to wasm unreachable"
+      },
+      "evidence": [
+        "mncs:target-evidence:portable-wasm-mvp-0.1:declared-research-contract"
+      ],
+      "assumptions": [
+        "portable WASM MVP is a research execution envelope, not a native ABI",
+        "the embedded interpreter defines research execution, not a host wasm CLI"
+      ]
+    },
+    "backend": {
+      "backend": {
+        "identity": "mncs:compiler:backend:6bbc6f37c38ffa3353787ff9ea565d07db3755b42efa8a59871374123adbca15",
+        "name": "mncs-portable-wasm-mvp",
+        "version": "0.1"
+      },
+      "options": {
+        "format": "application/wasm; mncs-portable-wasm-mvp-0.1"
+      },
+      "target_features": [
+        "linear-memory-arena",
+        "mvp",
+        "no-wasi"
+      ],
+      "linker_toolchain": null,
+      "assumptions": [
+        "composites (records and payload-bearing finite variants) are immutable cells in linear memory allocated from a bump arena",
+        "checked overflow traps as unreachable; checked division traps on zero and MIN/-1",
+        "saturating uses explicit bounded-width clamp logic; widening uses exact i64 intermediates"
+      ]
+    },
+    "target_layout_assumptions": [
+      "bounded iteration metadata remains in the selected SSA identity",
+      "no aggregate or pointer layout",
+      "scalar two's-complement integers"
+    ],
+    "abi_assumptions": [
+      "no memory, tables, or imported host functions",
+      "wasm function parameters and a single result"
+    ],
+    "integer_lowering": {
+      "checked": "explicit overflow test then unreachable",
+      "saturating": "explicit bounded-width clamp",
+      "unsupported": "saturating, widening, effects, runtime-check",
+      "widening": "exact extended-width arithmetic",
+      "wrapping": "wasm wrapping add/sub/mul/and/or/xor"
+    },
+    "trap_failure_mapping": {
+      "failure_terminator": "unreachable",
+      "overflow": "unreachable"
+    },
+    "linker_requirements": [],
+    "promises_consumed": [
+      "preserve public return and declared failure"
+    ],
+    "assumptions_introduced": [
+      "checked overflow traps as unreachable; checked division traps on zero and MIN/-1",
+      "composites (records and payload-bearing finite variants) are immutable cells in linear memory allocated from a bump arena",
+      "portable WASM MVP is a research execution envelope, not a native ABI",
+      "saturating uses explicit bounded-width clamp logic; widening uses exact i64 intermediates",
+      "the embedded interpreter defines research execution, not a host wasm CLI"
+    ],
+    "status": "PASS"
+  },
+  "artifact": {
+    "schema_version": "0.2",
+    "identity": "mncs:compiler:backend-artifact:f7638e93439ced63026652caf1946edc89ec11c5cfff35501618a08685f7f055",
+    "backend": {
+      "identity": "mncs:compiler:backend:6bbc6f37c38ffa3353787ff9ea565d07db3755b42efa8a59871374123adbca15",
+      "name": "mncs-portable-wasm-mvp",
+      "version": "0.1"
+    },
+    "input": {
+      "identity": "mncs:compiler:compiler-artifact:79f4a8c7759866042f255f5f56ffd528599ad9a76282a40415c5e7983b02465e",
+      "representation": "selected_ssa",
+      "schema_version": "0.4",
+      "fingerprint": "774c8dc07732653538161e00f74e53354dfa2deeaee40182d83fc61f4a7e8e7d"
+    },
+    "target": {
+      "identity": "mncs:compiler:target-contract:7db47a6485cddf8e3bbaa129f3cc126ee396c799b7ff1fb243a0b1bb4663f902",
+      "candidate": "mncs:target:portable-wasm-mvp-0.1",
+      "facts": {
+        "abi": "one exported wasm function per MNCS function; scalars pass directly, composites pass as pointers to arena cells",
+        "bounded-iteration": "language-owned bounded SSA backedges use the private dispatcher loop; iteration metadata remains selected-SSA-bound",
+        "data-layout": "scalar two's-complement; i8/i16/i32 in wasm i32; i64 in wasm i64; composites are immutable 8-byte-slot cells in linear memory addressed by i32 pointers",
+        "integer": "wrapping=wasm wrapping; checked=explicit overflow test then trap; saturating=explicit clamp; widening=exact extended-width arithmetic",
+        "trap": "failure terminators and checked overflow map to wasm unreachable"
+      },
+      "evidence": [
+        "mncs:target-evidence:portable-wasm-mvp-0.1:declared-research-contract"
+      ],
+      "assumptions": [
+        "portable WASM MVP is a research execution envelope, not a native ABI",
+        "the embedded interpreter defines research execution, not a host wasm CLI"
+      ]
+    },
+    "artifact_kind": "wasm_module",
+    "format": "application/wasm; mncs-portable-wasm-mvp-0.1",
+    "bytes_sha256": "a6c54954b3dc19ccf7db23affef274ffd8897d36cd789222ebbf78e56554d503",
+    "bytes_hex": "0061736d0100000001230660077f7f7f7f7f7f7f017f60017f017f60017f017e60017f017f60017f017e600000030706000102030405050401008004060b027f0141080b7f0141080b077307106576616c756174655f636f6d6d616e6400000e6576616c756174655f7772697465000109726561736f6e5f6f6600020a6d6e63735f616c6c6f630003106d6e63735f686f73745f6275666665720004166d6e63735f686f73745f6275666665725f72657365740005066d656d6f727902000aad0706e10411017e017f017e017f017e017f017e017f017e017f017e017f017e017f017f017f017f41002117034020174100460440200004404101211705410221170b0c010b201741014604404201210741101003210820084101360200200841086a200737020020080f0b20174102460440410321170c010b20174103460440200104404104211705410521170b0c010b20174104460440410621170c010b201741054604404202210941101003210a200a4101360200200a41086a2009370200200a0f0b20174106460440200204404107211705410821170b0c010b201741074604404203210b41101003210c200c4101360200200c41086a200b370200200c0f0b20174108460440410921170c010b2017410946044020030440410a211705410b21170b0c010b2017410a460440410c21170c010b2017410b4604404204210d41101003210e200e4101360200200e41086a200d370200200e0f0b2017410c46044020040440410d211705410e21170b0c010b2017410d460440410f21170c010b2017410e4604404205210f41101003211020104101360200201041086a200f37020020100f0b2017410f460440200504404110211705411121170b0c010b20174110460440411221170c010b201741114604404206211141101003211220124101360200201241086a201137020020120f0b20174112460440200604404113211705411421170b0c010b20174113460440411521170c010b201741144604404207211341101003211420144101360200201441086a201337020020140f0b201741154604404108100321152015410036020020150f0b20174116460440000b0b000b810105017e017f017f017f017f41002105034020054100460440200004404101210505410221050b0c010b200541014604404208210141101003210220024101360200200241086a200137020020020f0b20054102460440410321050c010b200541034604404108100321032003410036020020030f0b20054104460440000b0b000b8c0106017f017e017e017e017e017f4100210603402006410046044020002802004101462101200104404102210605410421060b0c010b2006410146044020020f0b20064102460440200041086a290200210320032102410121060c010b200641034604404200210420042102410121060c010b20064104460440410321060c010b20064105460440000b0b000b1701017f230021012300200041076a4178716a240020010b1801017f200010032101230024012001ad2000ad422086840b0600230124000b",
+    "exports": [
+      "evaluate_command",
+      "evaluate_write",
+      "reason_of"
+    ],
+    "function_value_contracts": {
+      "evaluate_command": {
+        "inputs": [
+          {
+            "scalar": {
+              "semantic_type": "bool"
+            }
+          },
+          {
+            "scalar": {
+              "semantic_type": "bool"
+            }
+          },
+          {
+            "scalar": {
+              "semantic_type": "bool"
+            }
+          },
+          {
+            "scalar": {
+              "semantic_type": "bool"
+            }
+          },
+          {
+            "scalar": {
+              "semantic_type": "bool"
+            }
+          },
+          {
+            "scalar": {
+              "semantic_type": "bool"
+            }
+          },
+          {
+            "scalar": {
+              "semantic_type": "bool"
+            }
+          }
+        ],
+        "outputs": [
+          {
+            "finite": {
+              "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+              "variants": {
+                "0": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Allow",
+                "1": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block"
+              },
+              "payloads": {
+                "0": [],
+                "1": [
+                  [
+                    "reason",
+                    "i64"
+                  ]
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "evaluate_write": {
+        "inputs": [
+          {
+            "scalar": {
+              "semantic_type": "bool"
+            }
+          }
+        ],
+        "outputs": [
+          {
+            "finite": {
+              "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+              "variants": {
+                "0": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Allow",
+                "1": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block"
+              },
+              "payloads": {
+                "0": [],
+                "1": [
+                  [
+                    "reason",
+                    "i64"
+                  ]
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "reason_of": {
+        "inputs": [
+          {
+            "finite": {
+              "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+              "variants": {
+                "0": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Allow",
+                "1": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block"
+              },
+              "payloads": {
+                "0": [],
+                "1": [
+                  [
+                    "reason",
+                    "i64"
+                  ]
+                ]
+              }
+            }
+          }
+        ],
+        "outputs": [
+          {
+            "scalar": {
+              "semantic_type": "i64"
+            }
+          }
+        ]
+      }
+    },
+    "composite_value_contracts": {
+      "PolicyVerdict": {
+        "finite": {
+          "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+          "variants": {
+            "0": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Allow",
+            "1": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block"
+          },
+          "payloads": {
+            "0": [],
+            "1": [
+              [
+                "reason",
+                "i64"
+              ]
+            ]
+          }
+        }
+      },
+      "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict": {
+        "finite": {
+          "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+          "variants": {
+            "0": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Allow",
+            "1": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block"
+          },
+          "payloads": {
+            "0": [],
+            "1": [
+              [
+                "reason",
+                "i64"
+              ]
+            ]
+          }
+        }
+      }
+    },
+    "assumptions": [
+      "checked overflow traps as unreachable; checked division traps on zero and MIN/-1",
+      "composites (records and payload-bearing finite variants) are immutable cells in linear memory allocated from a bump arena",
+      "portable WASM MVP is a research execution envelope, not a native ABI",
+      "saturating uses explicit bounded-width clamp logic; widening uses exact i64 intermediates",
+      "the embedded interpreter defines research execution, not a host wasm CLI"
+    ],
+    "obligations_generated": [],
+    "execution_applicability": [
+      "embedded mncs-portable-wasm-mvp interpreter",
+      "no WASI",
+      "no host CLI"
+    ],
+    "evidence_dependencies": [
+      "mncs:target-evidence:portable-wasm-mvp-0.1:declared-research-contract"
+    ],
+    "unsupported": [],
+    "status": "PASS"
+  },
+  "translation_validations": [
+    {
+      "schema_version": "0.1",
+      "contract_id": "mncs:language:translation-validation-result:0.1",
+      "identity": "mncs:compiler:translation-validation:22239ca2774ee33424284540c2d2327f2272783fa8b8af8e653278744fb3509e",
+      "validator": {
+        "identity": "mncs:validator:backend-lowering-bounded-agreement:0.1",
+        "name": "backend-lowering-bounded-agreement",
+        "version": "0.1",
+        "independence": "independent_implementation"
+      },
+      "input": {
+        "identity": "mncs:compiler:compiler-artifact:79f4a8c7759866042f255f5f56ffd528599ad9a76282a40415c5e7983b02465e",
+        "representation": "selected_ssa",
+        "schema_version": "0.4",
+        "fingerprint": "774c8dc07732653538161e00f74e53354dfa2deeaee40182d83fc61f4a7e8e7d"
+      },
+      "output": {
+        "identity": "mncs:compiler:compiler-artifact:e5a44a7918496d16784355ff76a451a1e06b51816e3919a87bf6dd79e13037b4",
+        "representation": "backend_artifact",
+        "schema_version": "0.2",
+        "fingerprint": "a6c54954b3dc19ccf7db23affef274ffd8897d36cd789222ebbf78e56554d503"
+      },
+      "claimed_relation": {
+        "kind": "observational-equivalence",
+        "observation_model": {
+          "identity": "mncs:compiler:observation-model:c92632b55e0eabdabeae878a6cd2db16ec113162f4c5276853d1c8342686c475",
+          "name": "mncs-public-behavior",
+          "version": "0.1",
+          "observable_kinds": [
+            "declared_failure",
+            "return_value"
+          ]
+        }
+      },
+      "transformation_kind": "backend-realization:mncs-portable-wasm-mvp",
+      "judgement": "PASS",
+      "assumptions": [
+        "empirical_bounded_agreement_not_universal_equivalence"
+      ],
+      "evidence_dependencies": [
+        "mncs:target-evidence:portable-wasm-mvp-0.1:declared-research-contract"
+      ],
+      "dependency_fingerprints": {},
+      "counterexample": null,
+      "limitations": [
+        "PASS is empirical bounded agreement over the declared corpus",
+        "this is not a proof of universal semantic equivalence"
+      ],
+      "residual_trust": "shares mncs-model integer evaluation and mncs-codegen research execution with the compiler; does not share transformation algorithms with candidate generators",
+      "freshness": "current"
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "blocked-executable",
+      "status": "returned",
+      "returned": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block",
+            "discriminant": 1,
+            "payload": [
+              [
+                "reason",
+                {
+                  "integer": {
+                    "value": 1,
+                    "type": {
+                      "bits": 64,
+                      "signed": true
+                    }
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      ],
+      "expected": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block",
+            "discriminant": 1,
+            "payload": [
+              [
+                "reason",
+                {
+                  "integer": {
+                    "value": 1,
+                    "type": {
+                      "bits": 64,
+                      "signed": true
+                    }
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      ],
+      "expectation_met": true,
+      "steps": 49,
+      "failure_reason": null
+    },
+    {
+      "case_id": "clean-pytest",
+      "status": "returned",
+      "returned": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Allow",
+            "discriminant": 0
+          }
+        }
+      ],
+      "expected": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Allow",
+            "discriminant": 0
+          }
+        }
+      ],
+      "expectation_met": true,
+      "steps": 930,
+      "failure_reason": null
+    },
+    {
+      "case_id": "git-rule",
+      "status": "returned",
+      "returned": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block",
+            "discriminant": 1,
+            "payload": [
+              [
+                "reason",
+                {
+                  "integer": {
+                    "value": 6,
+                    "type": {
+                      "bits": 64,
+                      "signed": true
+                    }
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      ],
+      "expected": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block",
+            "discriminant": 1,
+            "payload": [
+              [
+                "reason",
+                {
+                  "integer": {
+                    "value": 6,
+                    "type": {
+                      "bits": 64,
+                      "signed": true
+                    }
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      ],
+      "expectation_met": true,
+      "steps": 626,
+      "failure_reason": null
+    },
+    {
+      "case_id": "not-allowlisted",
+      "status": "returned",
+      "returned": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block",
+            "discriminant": 1,
+            "payload": [
+              [
+                "reason",
+                {
+                  "integer": {
+                    "value": 2,
+                    "type": {
+                      "bits": 64,
+                      "signed": true
+                    }
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      ],
+      "expected": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block",
+            "discriminant": 1,
+            "payload": [
+              [
+                "reason",
+                {
+                  "integer": {
+                    "value": 2,
+                    "type": {
+                      "bits": 64,
+                      "signed": true
+                    }
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      ],
+      "expectation_met": true,
+      "steps": 110,
+      "failure_reason": null
+    },
+    {
+      "case_id": "path-escape",
+      "status": "returned",
+      "returned": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block",
+            "discriminant": 1,
+            "payload": [
+              [
+                "reason",
+                {
+                  "integer": {
+                    "value": 7,
+                    "type": {
+                      "bits": 64,
+                      "signed": true
+                    }
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      ],
+      "expected": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block",
+            "discriminant": 1,
+            "payload": [
+              [
+                "reason",
+                {
+                  "integer": {
+                    "value": 7,
+                    "type": {
+                      "bits": 64,
+                      "signed": true
+                    }
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      ],
+      "expectation_met": true,
+      "steps": 829,
+      "failure_reason": null
+    },
+    {
+      "case_id": "python-rule",
+      "status": "returned",
+      "returned": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block",
+            "discriminant": 1,
+            "payload": [
+              [
+                "reason",
+                {
+                  "integer": {
+                    "value": 5,
+                    "type": {
+                      "bits": 64,
+                      "signed": true
+                    }
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      ],
+      "expected": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block",
+            "discriminant": 1,
+            "payload": [
+              [
+                "reason",
+                {
+                  "integer": {
+                    "value": 5,
+                    "type": {
+                      "bits": 64,
+                      "signed": true
+                    }
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      ],
+      "expectation_met": true,
+      "steps": 453,
+      "failure_reason": null
+    },
+    {
+      "case_id": "reason-allow",
+      "status": "returned",
+      "returned": [
+        {
+          "integer": {
+            "value": 0,
+            "type": {
+              "bits": 64,
+              "signed": true
+            }
+          }
+        }
+      ],
+      "expected": [
+        {
+          "integer": {
+            "value": 0,
+            "type": {
+              "bits": 64,
+              "signed": true
+            }
+          }
+        }
+      ],
+      "expectation_met": true,
+      "steps": 82,
+      "failure_reason": null
+    },
+    {
+      "case_id": "reason-block5",
+      "status": "returned",
+      "returned": [
+        {
+          "integer": {
+            "value": 5,
+            "type": {
+              "bits": 64,
+              "signed": true
+            }
+          }
+        }
+      ],
+      "expected": [
+        {
+          "integer": {
+            "value": 5,
+            "type": {
+              "bits": 64,
+              "signed": true
+            }
+          }
+        }
+      ],
+      "expectation_met": true,
+      "steps": 54,
+      "failure_reason": null
+    },
+    {
+      "case_id": "shell-operator",
+      "status": "returned",
+      "returned": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block",
+            "discriminant": 1,
+            "payload": [
+              [
+                "reason",
+                {
+                  "integer": {
+                    "value": 3,
+                    "type": {
+                      "bits": 64,
+                      "signed": true
+                    }
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      ],
+      "expected": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block",
+            "discriminant": 1,
+            "payload": [
+              [
+                "reason",
+                {
+                  "integer": {
+                    "value": 3,
+                    "type": {
+                      "bits": 64,
+                      "signed": true
+                    }
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      ],
+      "expectation_met": true,
+      "steps": 189,
+      "failure_reason": null
+    },
+    {
+      "case_id": "shell-rule",
+      "status": "returned",
+      "returned": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block",
+            "discriminant": 1,
+            "payload": [
+              [
+                "reason",
+                {
+                  "integer": {
+                    "value": 4,
+                    "type": {
+                      "bits": 64,
+                      "signed": true
+                    }
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      ],
+      "expected": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block",
+            "discriminant": 1,
+            "payload": [
+              [
+                "reason",
+                {
+                  "integer": {
+                    "value": 4,
+                    "type": {
+                      "bits": 64,
+                      "signed": true
+                    }
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      ],
+      "expectation_met": true,
+      "steps": 310,
+      "failure_reason": null
+    },
+    {
+      "case_id": "write-ok",
+      "status": "returned",
+      "returned": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Allow",
+            "discriminant": 0
+          }
+        }
+      ],
+      "expected": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Allow",
+            "discriminant": 0
+          }
+        }
+      ],
+      "expectation_met": true,
+      "steps": 68,
+      "failure_reason": null
+    },
+    {
+      "case_id": "write-protected",
+      "status": "returned",
+      "returned": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block",
+            "discriminant": 1,
+            "payload": [
+              [
+                "reason",
+                {
+                  "integer": {
+                    "value": 8,
+                    "type": {
+                      "bits": 64,
+                      "signed": true
+                    }
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      ],
+      "expected": [
+        {
+          "finite": {
+            "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+            "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block",
+            "discriminant": 1,
+            "payload": [
+              [
+                "reason",
+                {
+                  "integer": {
+                    "value": 8,
+                    "type": {
+                      "bits": 64,
+                      "signed": true
+                    }
+                  }
+                }
+              ]
+            ]
+          }
+        }
+      ],
+      "expectation_met": true,
+      "steps": 49,
+      "failure_reason": null
+    }
+  ],
+  "status": "PASS",
+  "unresolved_reasons": [],
+  "interpretation": "bounded_language_observation_not_universal_equivalence_or_conformance"
+}

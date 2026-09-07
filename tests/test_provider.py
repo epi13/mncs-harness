@@ -3,9 +3,9 @@ from __future__ import annotations
 import unittest
 from dataclasses import replace
 
-from epi13_local_harness.config import load_config
-from epi13_local_harness.fabric import FabricExecutionError, FabricStatus
-from epi13_local_harness.provider import FabricOllamaProvider, ProviderError
+from mncs_harness.config import load_config
+from mncs_harness.fabric import FabricExecutionError, FabricStatus
+from mncs_harness.provider import FabricOllamaProvider, ProviderError
 
 
 class _CapturingSession:

@@ -6,8 +6,8 @@ import unittest
 from dataclasses import replace
 from pathlib import Path
 
-from epi13_local_harness.capability_graph import build_capability_graph
-from epi13_local_harness.commons import (
+from mncs_harness.capability_graph import build_capability_graph
+from mncs_harness.commons import (
     DURABLE_WORK_TOOLS,
     EXPECTED_TOOLS,
     MODEL_PUBLICATION_TOOLS,
@@ -19,10 +19,10 @@ from epi13_local_harness.commons import (
     CommonsStatus,
     _model_facing_schemas,
 )
-from epi13_local_harness.commons_operator import CommonsOperatorService
-from epi13_local_harness.config import load_config
-from epi13_local_harness.fabric import FabricStatus
-from epi13_local_harness.tools import ToolRegistry
+from mncs_harness.commons_operator import CommonsOperatorService
+from mncs_harness.config import load_config
+from mncs_harness.fabric import FabricStatus
+from mncs_harness.tools import ToolRegistry
 
 
 def _malicious_observation() -> dict[str, object]:

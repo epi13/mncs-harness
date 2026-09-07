@@ -1,0 +1,172 @@
+"""Evidence-pinned host projection of the MNCS decision kernels.
+
+Authority for these truth tables is the MNCS source under ``mncs/``::
+
+    mncs/harness_routing.mncs  (mncs.harness.routing.v1)
+    mncs/harness_policy.mncs   (mncs.harness.policy.v1)
+    mncs/harness_verdict.mncs  (mncs.harness.verdict.v1)
+    mncs/harness_atlas.mncs    (mncs.harness.atlas.v1)
+
+Executable agreement is sealed under ``development-evidence/mncs-execution/``
+(57 corpus cases x portable-WASM + research-bytecode, all PASS) and
+re-checked by ``tests/test_mncs_logic.py`` against ``corpora/*.json``.
+
+This module mirrors those tables in Python so the host can decide without
+spawning the toolchain per request. It is a projection, never a second
+authority: change the ``.mncs`` source and corpus first, re-run the backend
+evidence, then update the mirror.
+"""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Literal
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+MNCS_DIR = REPO_ROOT / "mncs"
+CORPORA_DIR = REPO_ROOT / "corpora"
+
+Role = Literal["e2b", "e4b", "reviewer"]
+Status = Literal["PASS", "FAIL", "UNKNOWN"]
+Grant = Literal["GRANTED", "UNKNOWN", "REFUSED"]
+
+MNCS_ROLE = {"E2B": "e2b", "E4B": "e4b", "CODER": "coder", "REVIEWER": "reviewer"}
+HOST_ROLE = {value: key for key, value in MNCS_ROLE.items()}
+
+
+def classify_route(
+    has_code: bool,
+    asks_edit: bool,
+    asks_exec: bool,
+    is_high_risk: bool,
+    has_image: bool,
+    is_complex: bool,
+) -> Role:
+    """Mirror of ``mncs.harness.routing.v1::classify_route``."""
+    if is_high_risk or has_image or is_complex:
+        return "reviewer"
+    if has_code and (asks_edit or asks_exec):
+        return "e4b"
+    if asks_edit or asks_exec:
+        return "e4b"
+    return "e2b"
+
+
+def needs_coder(primary: str, code_specialist: bool, has_code: bool) -> bool:
+    """Mirror of ``mncs.harness.routing.v1::needs_coder``."""
+    return primary == "e4b" and code_specialist and has_code
+
+
+def route_task_profile(profile, code_specialist: bool) -> Role:
+    """Classify a router ``TaskProfile`` through the MNCS kernel.
+
+    The host owns tokenization and profiling (``router.profile_task``);
+    the primary-role decision itself follows the MNCS truth table.
+    """
+    return classify_route(
+        profile.has_code,
+        profile.asks_for_edit,
+        profile.asks_for_execution,
+        profile.is_high_risk,
+        profile.has_image,
+        profile.is_complex,
+    )
+
+
+# Reason codes mirror ``mncs.harness.policy.v1`` exactly.
+ALLOW = 0
+BLOCKED_EXECUTABLE = 1
+NOT_ALLOWLISTED = 2
+SHELL_OPERATOR = 3
+SHELL_RULE = 4
+PYTHON_RULE = 5
+GIT_RULE = 6
+PATH_RULE = 7
+PROTECTED_WRITE = 8
+
+
+def command_reason(
+    executable_blocked: bool,
+    allowlisted: bool,
+    has_shell_operator: bool,
+    shell_ok: bool,
+    python_ok: bool,
+    git_ok: bool,
+    path_ok: bool,
+) -> int:
+    """Mirror of ``mncs.harness.policy.v1::evaluate_command`` as a code."""
+    if executable_blocked:
+        return BLOCKED_EXECUTABLE
+    if not allowlisted:
+        return NOT_ALLOWLISTED
+    if has_shell_operator:
+        return SHELL_OPERATOR
+    if not shell_ok:
+        return SHELL_RULE
+    if not python_ok:
+        return PYTHON_RULE
+    if not git_ok:
+        return GIT_RULE
+    if not path_ok:
+        return PATH_RULE
+    return ALLOW
+
+
+def write_reason(targets_protected_internals: bool) -> int:
+    """Mirror of ``mncs.harness.policy.v1::evaluate_write`` as a code."""
+    return PROTECTED_WRITE if targets_protected_internals else ALLOW
+
+
+def dominate(left: Status, right: Status) -> Status:
+    """Mirror of ``mncs.harness.verdict.v1::dominate`` (also stdlib status)."""
+    if left == "FAIL" or right == "FAIL":
+        return "FAIL"
+    if left == "UNKNOWN" or right == "UNKNOWN":
+        return "UNKNOWN"
+    return "PASS"
+
+
+def combine(checks: list[Status]) -> Status:
+    """Fold a verifier envelope; denial wins, UNKNOWN never promotes."""
+    result: Status = "PASS"
+    for check in checks:
+        result = dominate(result, check)
+    return result
+
+
+def is_decided(status: Status) -> bool:
+    """Mirror of ``mncs.harness.verdict.v1::is_decided``."""
+    return status in ("PASS", "FAIL")
+
+
+def fold_pair(left: Grant, right: Grant) -> Grant:
+    """Mirror of ``mncs.harness.atlas.v1::fold_pair``; denial wins."""
+    if left == "REFUSED" or right == "REFUSED":
+        return "REFUSED"
+    if left == "UNKNOWN" or right == "UNKNOWN":
+        return "UNKNOWN"
+    return "GRANTED"
+
+
+def fold(decisions: list[Grant]) -> Grant:
+    """Order-independent conservative fold of duplicate capability decisions."""
+    result: Grant = "GRANTED"
+    for decision in decisions:
+        result = fold_pair(result, decision)
+    return result
+
+
+def dispatch_gate(folded: Grant, target_matches: bool) -> Grant:
+    """Mirror of ``mncs.harness.atlas.v1::dispatch_gate``."""
+    if target_matches:
+        return folded
+    if folded == "GRANTED":
+        return "REFUSED"
+    return folded
+
+
+def corpus_cases(name: str) -> list[dict]:
+    """Load an executable MNCS corpus (e.g. ``harness-routing``)."""
+    path = CORPORA_DIR / f"{name}-corpus.json"
+    return json.loads(path.read_text(encoding="utf-8"))["cases"]

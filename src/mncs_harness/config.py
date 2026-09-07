@@ -64,11 +64,11 @@ def default_state_dir() -> Path:
 
 
 def bundled_config_path() -> Path:
-    return Path(str(files("epi13_local_harness").joinpath("default_config.toml")))
+    return Path(str(files("mncs_harness").joinpath("default_config.toml")))
 
 
 def bundled_evals_path() -> Path:
-    return Path(str(files("epi13_local_harness").joinpath("default_evals.jsonl")))
+    return Path(str(files("mncs_harness").joinpath("default_evals.jsonl")))
 
 
 def initialize_config(destination: Path | None = None, force: bool = False) -> Path:

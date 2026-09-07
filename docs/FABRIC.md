@@ -6,7 +6,7 @@ model roles use the Fabric provider when possible; `fallback_to_local` controls
 whether a provider or placement failure may return to local Ollama.
 
 ```text
-                 epi13-local-harness
+                 mncs-harness
                          |
                   task/semantic router
                          |
@@ -81,10 +81,10 @@ Service mode primarily configures the persistent consumer endpoint:
 [fabric]
 enabled = true
 controller_mode = "service"
-controller_id = "epi13-local-harness"
+controller_id = "mncs-harness"
 service_socket = "~/.local/state/mncs-fabric/controller.sock"
 service_timeout_seconds = 5.0
-consumer_identity = "epi13-local-harness"
+consumer_identity = "mncs-harness"
 state_path = "~/.local/state/mncs-harness/fabric.jsonl"
 fallback_to_local = true
 refresh_on_startup = true
@@ -309,7 +309,7 @@ enabled = true
 controller_mode = "service"
 service_socket = "~/.local/state/mncs-fabric/controller.sock"
 service_timeout_seconds = 5.0
-consumer_identity = "epi13-local-harness"
+consumer_identity = "mncs-harness"
 ```
 
 `embedded` is an explicit compatibility mode that retains the historical

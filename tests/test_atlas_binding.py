@@ -25,7 +25,7 @@ from atlas_fixtures import (
     payload,
 )
 
-from epi13_local_harness.atlas_binding import (
+from mncs_harness.atlas_binding import (
     LEGACY_PROOF_ORIGIN,
     Acceptance,
     BindingError,
@@ -304,7 +304,7 @@ def test_golden_requirement_identity_matches_language():
 
 
 def test_golden_confirm_matches_language():
-    from epi13_local_harness.atlas_binding import LEGACY_PROOF_ORIGIN
+    from mncs_harness.atlas_binding import LEGACY_PROOF_ORIGIN
 
     bound = load(
         atlas_decisions=[issue("worker.dispatch", "granted", execution_target="worker-01")],

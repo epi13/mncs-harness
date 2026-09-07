@@ -10,7 +10,7 @@ import hashlib
 import json
 import time
 
-from epi13_local_harness.atlas_binding import ExecutionRequirement, build_requirement
+from mncs_harness.atlas_binding import ExecutionRequirement, build_requirement
 
 DECISION = "mncs.atlas-capability-decision/1"
 PARTICIPANT = "e2e-agent"

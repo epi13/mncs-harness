@@ -65,7 +65,7 @@ and creates `<config.toml>.pre-fabric` before the first edit.
 
 ```bash
 elh-fabric configure-remote \
-  --controller-id epi13-local-harness \
+  --controller-id mncs-harness \
   --worker-id windows-gpu \
   --host 192.0.2.10 \
   --port 7443 \

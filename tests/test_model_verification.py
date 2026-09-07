@@ -1,6 +1,6 @@
 import unittest
 
-from epi13_local_harness.model_verification import (
+from mncs_harness.model_verification import (
     discover_candidates,
     planned_probes,
     verify_candidate,

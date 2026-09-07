@@ -4,6 +4,6 @@
 set -eu
 root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 if [ -x "$root/.venv/bin/python" ]; then
-  exec "$root/.venv/bin/python" -m epi13_local_harness.cli "$@"
+  exec "$root/.venv/bin/python" -m mncs_harness.cli "$@"
 fi
-exec python3 -m epi13_local_harness.cli "$@"
+exec python3 -m mncs_harness.cli "$@"

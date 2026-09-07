@@ -1,0 +1,49 @@
+mncs 0.6;
+
+// mncs.harness.atlas.v1 — Atlas verdict-fold kernel.
+//
+// Authority: MNCS Atlas decides admission and capability status. The harness
+// transports Atlas-issued decisions and enforces them mechanically. This
+// module owns only the verdict-fold order-independence property: duplicate
+// decisions for one capability fold conservatively with denial winning, and
+// UNKNOWN is never promoted. Signature verification, digest binding, session
+// echo, freshness, and target confirmation stay host-side (Ed25519, SHA-256,
+// wall-clock time, and Fabric receipts are all outside the language).
+//
+// Verdict lattice: REFUSED dominates UNKNOWN dominates GRANTED.
+module mncs.harness.atlas.v1;
+
+enum Grant { GRANTED, UNKNOWN, REFUSED }
+
+fn fold_pair(left: Grant, right: Grant) -> (result: Grant) {
+    return match left {
+        GRANTED => right,
+        REFUSED => Grant.REFUSED,
+        UNKNOWN => match right {
+            GRANTED => Grant.UNKNOWN,
+            REFUSED => Grant.REFUSED,
+            UNKNOWN => Grant.UNKNOWN,
+        },
+    };
+}
+
+fn fold4(first: Grant, second: Grant, third: Grant, fourth: Grant) -> (result: Grant) {
+    let left: Grant = fold_pair(first, second);
+    let right: Grant = fold_pair(third, fourth);
+    return fold_pair(left, right);
+}
+
+// Dispatch gate: a GRANTED requirement authorizes dispatch only when the
+// caller-observed execution target still matches the Atlas-authorized
+// target. Any mismatch demotes GRANTED to REFUSED; other folds pass
+// through unchanged (UNKNOWN is never promoted by a target observation).
+fn dispatch_gate(folded: Grant, target_matches: bool) -> (result: Grant) {
+    if target_matches {
+        return folded;
+    }
+    return match folded {
+        GRANTED => Grant.REFUSED,
+        REFUSED => Grant.REFUSED,
+        UNKNOWN => Grant.UNKNOWN,
+    };
+}

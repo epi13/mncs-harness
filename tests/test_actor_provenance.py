@@ -24,7 +24,7 @@ def test_bootstrap_role_preserves_exact_harness_producer() -> None:
 
 
 def test_actor_record_maps_to_rights_participant() -> None:
-    from epi13_local_harness.actor_provenance import (
+    from mncs_harness.actor_provenance import (
         build_actor_provenance,
         to_rights_participant,
     )
@@ -51,7 +51,7 @@ def test_actor_record_maps_to_rights_participant() -> None:
 def test_mapping_rejects_incomplete_records() -> None:
     import pytest
 
-    from epi13_local_harness.actor_provenance import to_rights_participant
+    from mncs_harness.actor_provenance import to_rights_participant
 
     with pytest.raises(ValueError):
         to_rights_participant({"role": "builder"})

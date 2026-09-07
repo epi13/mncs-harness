@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from epi13_local_harness.e2e_gauntlet import MANIFEST_SCHEMA, _cuda_leg, main
+from mncs_harness.e2e_gauntlet import MANIFEST_SCHEMA, _cuda_leg, main
 
 
 def _canonical(payload):

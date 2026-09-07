@@ -4,8 +4,8 @@ import subprocess
 import unittest
 from unittest.mock import patch
 
-from epi13_local_harness import fabric_profile_breakaway, windows_worker_launcher
-from epi13_local_harness.fabric_commission_breakaway import (
+from mncs_harness import fabric_profile_breakaway, windows_worker_launcher
+from mncs_harness.fabric_commission_breakaway import (
     _launcher_source,
     _launcher_start_script,
 )

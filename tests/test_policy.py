@@ -4,8 +4,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from epi13_local_harness.config import load_config
-from epi13_local_harness.policy import CommandPolicy, WorkspaceGuard
+from mncs_harness.config import load_config
+from mncs_harness.policy import CommandPolicy, WorkspaceGuard
 
 
 class PolicyTests(unittest.TestCase):

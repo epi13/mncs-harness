@@ -6,11 +6,11 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
 
-from epi13_local_harness.agent import LocalAgent
-from epi13_local_harness.config import load_config
-from epi13_local_harness.fabric import FabricStatus
-from epi13_local_harness.fabric_inventory_session import InventoryAwareFabricSession
-from epi13_local_harness.models import (
+from mncs_harness.agent import LocalAgent
+from mncs_harness.config import load_config
+from mncs_harness.fabric import FabricStatus
+from mncs_harness.fabric_inventory_session import InventoryAwareFabricSession
+from mncs_harness.models import (
     ModelAttempt,
     ModelResidencyConfig,
     ResidentWorkerConfig,
@@ -18,7 +18,7 @@ from epi13_local_harness.models import (
     SessionTargets,
     VerificationResult,
 )
-from epi13_local_harness.residency import ResidencyManager
+from mncs_harness.residency import ResidencyManager
 
 
 def _model(name: str, size: int, *, loaded: bool = False) -> dict[str, object]:

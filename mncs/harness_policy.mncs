@@ -1,0 +1,77 @@
+mncs 0.6;
+
+// mncs.harness.policy.v1 — workspace command-policy decision kernel.
+//
+// This is the MNCS-authoritative projection of `CommandPolicy.evaluate`
+// ordering. The host owns everything MNCS cannot express: shell lexing,
+// executable allowlists (strings), path resolution, and Git subcommand
+// tables. The host encodes those observations into seven booleans and calls
+// `evaluate_command`; the returned reason code is stable and mirrored in
+// `mncs_logic.py`.
+//
+// Reason codes:
+//   0 = allow (workspace-scoped, approval still required host-side)
+//   1 = executable blocked by policy
+//   2 = executable not allowlisted
+//   3 = shell operator or redirection present
+//   4 = shell invocation rule violated (command string, or missing -n)
+//   5 = python invocation rule violated (-c, or non-allowlisted -m)
+//   6 = git subcommand rule violated (not allowlisted, or dangerous pair)
+//   7 = absolute path escapes workspace, or home-relative path used
+module mncs.harness.policy.v1;
+
+enum PolicyVerdict { Allow, Block { reason: i64 } }
+
+fn evaluate_command(
+    executable_blocked: bool,
+    allowlisted: bool,
+    has_shell_operator: bool,
+    shell_ok: bool,
+    python_ok: bool,
+    git_ok: bool,
+    path_ok: bool
+) -> (result: PolicyVerdict) {
+    if executable_blocked {
+        return PolicyVerdict.Block { reason: 1 };
+    }
+    if allowlisted {
+    } else {
+        return PolicyVerdict.Block { reason: 2 };
+    }
+    if has_shell_operator {
+        return PolicyVerdict.Block { reason: 3 };
+    }
+    if shell_ok {
+    } else {
+        return PolicyVerdict.Block { reason: 4 };
+    }
+    if python_ok {
+    } else {
+        return PolicyVerdict.Block { reason: 5 };
+    }
+    if git_ok {
+    } else {
+        return PolicyVerdict.Block { reason: 6 };
+    }
+    if path_ok {
+    } else {
+        return PolicyVerdict.Block { reason: 7 };
+    }
+    return PolicyVerdict.Allow;
+}
+
+// File-write kernel. The host resolves the path and reports whether it
+// targets Git internals or environment secrets.
+fn evaluate_write(targets_protected_internals: bool) -> (result: PolicyVerdict) {
+    if targets_protected_internals {
+        return PolicyVerdict.Block { reason: 8 };
+    }
+    return PolicyVerdict.Allow;
+}
+
+fn reason_of(verdict: PolicyVerdict) -> (result_code: i64) {
+    return match verdict {
+        PolicyVerdict.Block { reason } => reason,
+        Allow { } => 0,
+    };
+}

@@ -1,22 +1,23 @@
-"""Canonical import alias for MNCS Harness.
+"""MNCS Harness canonical implementation package.
 
-The implementation package remains ``epi13_local_harness`` in this release so
-existing deployments, editable installs, and tests keep working. New code
-should import ``mncs_harness``.
+The public project identity is MNCS Harness / ``mncs-harness`` and this
+module path (``mncs_harness``) is its single canonical implementation.
+The former ``epi13_local_harness`` package was retired during the
+MNCS-language conversion campaign; see ``docs/IDENTITY.md``.
 """
 
-from epi13_local_harness import (
-    ACTOR_PROVENANCE_SCHEMA,
-    PROJECT_ID,
-    PROJECT_NAME,
-    __version__,
-    build_actor_provenance,
-)
+from .actor_provenance import ACTOR_PROVENANCE_SCHEMA, build_actor_provenance
+
+__version__ = "0.6.9"
+PROJECT_NAME = "MNCS Harness"
+PROJECT_ID = "mncs-harness"
+LEGACY_PROJECT_ID = "epi13-local-harness"
 
 __all__ = [
     "ACTOR_PROVENANCE_SCHEMA",
+    "LEGACY_PROJECT_ID",
     "PROJECT_ID",
     "PROJECT_NAME",
-    "__version__",
     "build_actor_provenance",
+    "__version__",
 ]

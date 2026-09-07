@@ -6,14 +6,14 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from epi13_local_harness.config import (
+from mncs_harness.config import (
     APP_NAME,
     DEFAULT_CONTROLLER_ID,
     LEGACY_APP_NAME,
     default_config_path,
     preferred_config_path,
 )
-from epi13_local_harness.portable_cli import WRAPPERS
+from mncs_harness.portable_cli import WRAPPERS
 
 
 class IdentityTests(unittest.TestCase):
@@ -27,9 +27,9 @@ class IdentityTests(unittest.TestCase):
         self.assertEqual(mncs_harness.PROJECT_NAME, "MNCS Harness")
 
     def test_preferred_cli_wrappers_include_canonical_and_legacy_names(self) -> None:
-        self.assertEqual(WRAPPERS["mncs-harness"], "epi13_local_harness.cli")
-        self.assertEqual(WRAPPERS["elh"], "epi13_local_harness.cli")
-        self.assertEqual(WRAPPERS["epi13-harness"], "epi13_local_harness.cli")
+        self.assertEqual(WRAPPERS["mncs-harness"], "mncs_harness.cli")
+        self.assertEqual(WRAPPERS["elh"], "mncs_harness.cli")
+        self.assertEqual(WRAPPERS["epi13-harness"], "mncs_harness.cli")
 
     def test_environment_overrides_prefer_canonical_then_legacy(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -56,7 +56,7 @@ class IdentityTests(unittest.TestCase):
                 if key not in {"MNCS_HARNESS_CONFIG", "EPI13_HARNESS_CONFIG"}
             }
             with patch.dict(os.environ, env, clear=True), patch(
-                "epi13_local_harness.config.Path.home", return_value=home
+                "mncs_harness.config.Path.home", return_value=home
             ):
                 self.assertEqual(default_config_path(), legacy)
                 self.assertEqual(preferred_config_path(), canonical)

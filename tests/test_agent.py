@@ -14,9 +14,9 @@ from pathlib import Path
 from atlas_fixtures import TRUSTED_TEST_ISSUERS
 from atlas_fixtures import payload as atlas_payload
 
-from epi13_local_harness.agent import LocalAgent
-from epi13_local_harness.config import load_config
-from epi13_local_harness.models import MetricsConfig
+from mncs_harness.agent import LocalAgent
+from mncs_harness.config import load_config
+from mncs_harness.models import MetricsConfig
 
 
 class FakeOllamaClient:

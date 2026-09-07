@@ -15,10 +15,10 @@ from pathlib import Path
 
 from atlas_fixtures import issue, load
 
-from epi13_local_harness.config import load_config
-from epi13_local_harness.fabric import FabricConfig, FabricSession
-from epi13_local_harness.fabric_target_tools import FabricTargetToolExecutor
-from epi13_local_harness.tools import ToolRegistry
+from mncs_harness.config import load_config
+from mncs_harness.fabric import FabricConfig, FabricSession
+from mncs_harness.fabric_target_tools import FabricTargetToolExecutor
+from mncs_harness.tools import ToolRegistry
 
 
 def registry():

@@ -23,12 +23,12 @@ from pathlib import Path
 from atlas_fixtures import issue
 from atlas_fixtures import payload as atlas_payload
 
-from epi13_local_harness.atlas_binding import ExecutionRequirement
-from epi13_local_harness.config import load_config
-from epi13_local_harness.fabric import FabricExecutionError, FabricSession
-from epi13_local_harness.fabric_target_tools import FabricTargetToolExecutor
-from epi13_local_harness.models import FabricConfig, FabricWorkerConfig, SessionTargets
-from epi13_local_harness.tools import ToolRegistry
+from mncs_harness.atlas_binding import ExecutionRequirement
+from mncs_harness.config import load_config
+from mncs_harness.fabric import FabricExecutionError, FabricSession
+from mncs_harness.fabric_target_tools import FabricTargetToolExecutor
+from mncs_harness.models import FabricConfig, FabricWorkerConfig, SessionTargets
+from mncs_harness.tools import ToolRegistry
 
 OPENSSL = shutil.which("openssl")
 
@@ -155,7 +155,7 @@ class PersistentFabricTests(unittest.TestCase):
 
         cert_root = self.root / "certificates"
         cert_root.mkdir()
-        from epi13_local_harness.fabric_test_support import ephemeral_certificates
+        from mncs_harness.fabric_test_support import ephemeral_certificates
 
         cert = ephemeral_certificates(cert_root, OPENSSL)
         controller_trust_path = self.root / "controller-trust.jsonl"

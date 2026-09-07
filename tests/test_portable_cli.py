@@ -5,14 +5,14 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from epi13_local_harness.portable_cli import WRAPPERS, install_portable_cli, wrapper_text
+from mncs_harness.portable_cli import WRAPPERS, install_portable_cli, wrapper_text
 
 
 class PortableCliTests(unittest.TestCase):
     def test_posix_wrapper_uses_sibling_python(self) -> None:
-        text = wrapper_text("epi13_local_harness.cli")
+        text = wrapper_text("mncs_harness.cli")
         self.assertTrue(text.startswith("#!/bin/sh"))
-        self.assertIn('exec "$dir/python" -m epi13_local_harness.cli', text)
+        self.assertIn('exec "$dir/python" -m mncs_harness.cli', text)
         self.assertNotIn("/home/", text)
         self.assertNotIn("Documents/Projects", text)
 
@@ -46,7 +46,7 @@ class RepoLauncherTests(unittest.TestCase):
         text = launcher.read_text(encoding="utf-8")
         self.assertTrue(text.startswith("#!/bin/sh"))
         self.assertIn('.venv/bin/python', text)
-        self.assertIn("epi13_local_harness.cli", text)
+        self.assertIn("mncs_harness.cli", text)
         self.assertNotIn("/home/epi13/", text)
 
     def test_checked_in_scripts_mncs_harness_is_the_canonical_launcher(self) -> None:
@@ -54,4 +54,4 @@ class RepoLauncherTests(unittest.TestCase):
         canonical = (root / "scripts" / "mncs-harness").read_text(encoding="utf-8")
         compatibility = (root / "scripts" / "elh").read_text(encoding="utf-8")
         self.assertEqual(canonical, compatibility)
-        self.assertIn("epi13_local_harness.cli", canonical)
+        self.assertIn("mncs_harness.cli", canonical)

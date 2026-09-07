@@ -27,7 +27,7 @@ export class Epi13Participant {
     if (command === '/route') {
       const routeTask = prompt.replace(/^\/route\s*/, '').trim();
       if (!routeTask) {
-        stream.markdown('Usage: @epi13 /route <request>');
+        stream.markdown('Usage: @mncs /route <request>');
         return;
       }
       const result = await this.backend.sendRequest('route/preview', { task: routeTask });
@@ -35,8 +35,8 @@ export class Epi13Participant {
       return;
     }
 
-    if (prompt.startsWith('@epi13')) {
-      const payload = prompt.replace(/^@epi13\s*/, '').trim();
+    if (prompt.startsWith('@mncs')) {
+      const payload = prompt.replace(/^@mncs\s*/, '').trim();
       const result = await this.backend.sendChat([{ role: 'user', content: payload }], { lane: 'auto' });
       stream.markdown(String(result));
       return;

@@ -1,0 +1,68 @@
+mncs 0.6;
+
+// mncs.harness.routing.v1 — deterministic harness route classification.
+//
+// This is the MNCS-authoritative projection of the primary-role selection in
+// the harness router: risk/multimodality/complexity escalates to the reviewer
+// role, code plus edit/execution intent selects the tool-using worker, plain
+// edit/execution intent selects the tool-using worker, and everything else
+// selects the inexpensive read-only role.
+//
+// The host owns everything MNCS cannot express: task-text tokenization,
+// regex/file-pattern scans, word-count limits, configured-model availability,
+// operator pins, and the escalation chain. The host encodes those
+// observations into six booleans and calls `classify_route`. Escalation
+// ordering stays host-side until bounded-sequence routing plans are
+// expressible.
+//
+// CODER never wins primary selection; it appears only in the E4B escalation
+// chain, hence `needs_coder` below.
+module mncs.harness.routing.v1;
+
+enum Role { E2B, E4B, CODER, REVIEWER }
+
+fn classify_route(
+    has_code: bool,
+    asks_edit: bool,
+    asks_exec: bool,
+    is_high_risk: bool,
+    has_image: bool,
+    is_complex: bool
+) -> (result: Role) {
+    if is_high_risk {
+        return Role.REVIEWER;
+    }
+    if has_image {
+        return Role.REVIEWER;
+    }
+    if is_complex {
+        return Role.REVIEWER;
+    }
+    if has_code {
+        if asks_edit {
+            return Role.E4B;
+        }
+        if asks_exec {
+            return Role.E4B;
+        }
+    }
+    if asks_edit {
+        return Role.E4B;
+    }
+    if asks_exec {
+        return Role.E4B;
+    }
+    return Role.E2B;
+}
+
+// Whether the E4B primary should chain through the coding specialist.
+// `code_specialist` carries the already-resolved host availability check
+// (`routing.code_specialist_enabled` and `"coder"` in configured models).
+fn needs_coder(primary: Role, code_specialist: bool, has_code: bool) -> (result: bool) {
+    return match primary {
+        E4B => code_specialist && has_code,
+        E2B => false,
+        CODER => false,
+        REVIEWER => false,
+    };
+}

@@ -30,7 +30,7 @@ export async function detectModelsFromConfig(): Promise<BackendModelInfo[]> {
     {
       id: 'auto',
       name: 'MNCS Harness — Auto',
-      family: 'epi13-local',
+      family: 'mncs',
       version: '0.1.0',
       workerRole: 'auto',
       maxInputTokens: 8192,
@@ -42,7 +42,7 @@ export async function detectModelsFromConfig(): Promise<BackendModelInfo[]> {
     {
       id: 'lane:chat',
       name: 'MNCS Harness — Chat',
-      family: 'epi13-local',
+      family: 'mncs',
       version: '0.1.0',
       workerRole: 'e2b',
       lane: 'chat',
@@ -55,7 +55,7 @@ export async function detectModelsFromConfig(): Promise<BackendModelInfo[]> {
     {
       id: 'lane:ocr',
       name: 'MNCS Harness — OCR',
-      family: 'epi13-local',
+      family: 'mncs',
       version: '0.1.0',
       workerRole: 'reviewer',
       lane: 'ocr',
@@ -68,7 +68,7 @@ export async function detectModelsFromConfig(): Promise<BackendModelInfo[]> {
     {
       id: 'lane:tool_worker',
       name: 'MNCS Harness — Tool Worker',
-      family: 'epi13-local',
+      family: 'mncs',
       version: '0.1.0',
       workerRole: 'e4b',
       lane: 'tool_worker',
@@ -81,7 +81,7 @@ export async function detectModelsFromConfig(): Promise<BackendModelInfo[]> {
     {
       id: 'lane:coding',
       name: 'MNCS Harness — Coding',
-      family: 'epi13-local',
+      family: 'mncs',
       version: '0.1.0',
       workerRole: 'coder',
       lane: 'coding',
@@ -94,7 +94,7 @@ export async function detectModelsFromConfig(): Promise<BackendModelInfo[]> {
     {
       id: 'lane:vision',
       name: 'MNCS Harness — Vision',
-      family: 'epi13-local',
+      family: 'mncs',
       version: '0.1.0',
       workerRole: 'reviewer',
       lane: 'vision',
@@ -107,7 +107,7 @@ export async function detectModelsFromConfig(): Promise<BackendModelInfo[]> {
     {
       id: 'lane:review',
       name: 'MNCS Harness — Review',
-      family: 'epi13-local',
+      family: 'mncs',
       version: '0.1.0',
       workerRole: 'reviewer',
       lane: 'review',

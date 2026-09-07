@@ -3,7 +3,7 @@ from __future__ import annotations
 import unittest
 from types import SimpleNamespace
 
-from epi13_local_harness.commons_operator import CommonsOperatorService
+from mncs_harness.commons_operator import CommonsOperatorService
 
 
 class _Session:

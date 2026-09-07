@@ -992,7 +992,7 @@ def inspect_live_config(config: Any, *, profile: str = "base-inference") -> dict
             "available": True,
             "status": READY,
             "version": __version__,
-            "runtime_identity": runtime_build_identity("epi13_local_harness", version=__version__),
+            "runtime_identity": runtime_build_identity("mncs_harness", version=__version__),
         },
         fabric={
             "available": fabric_status.state in {"available", "configured"},
@@ -1061,7 +1061,7 @@ def inspect_live_config(config: Any, *, profile: str = "base-inference") -> dict
             "current_ravel_lane_valid": False if ravel_limitation else None,
         },
         runtime_identities={
-            "harness": runtime_build_identity("epi13_local_harness", version=__version__),
+            "harness": runtime_build_identity("mncs_harness", version=__version__),
             "fabric_controller": fabric_identity,
             "commons": runtime_build_identity("mncs_commons"),
             "control": runtime_build_identity("mncs_control_mcp"),
