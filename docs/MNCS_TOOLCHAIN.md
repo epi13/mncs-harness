@@ -7,13 +7,15 @@ Four distinct identities (never conflate them):
 
 1. **Source toolchain revision** (compiler+executor source):
    `epi13/mncs-language`
-   `8d79250d54d4e4241c0bb0ae6f5c632345848a6d`
-   (full immutable SHA — validated 2026-09-06; all corpus cases PASS on
-   both backends with this revision's compiler and executor).
-2. **Executor release:** `toolchain/mncs-executor-8d79250`
+   `8a9652777ea7e7d11fc78aca4030bd38bc62362d`
+   (full immutable SHA — language-pressure campaign merge: text_scan,
+   fixed, json_emit, task stdlib seeds plus host/clock/crypto
+   capabilities; all corpus cases PASS on both backends with this
+   revision's compiler and executor).
+2. **Executor release:** `toolchain/mncs-executor-8a96527`
    (`mncs-executor-linux-x86_64`)
 3. **Executor digest:**
-   `sha256:f7d60825cb58acaff46bed78639d3cffed7da52e9944e2c9ff16dd67795d0210`
+   `sha256:6dc6b2b20e600ee4cd90a99ae08c59a76a258254036bcddfc94e5138cda69bae`
    (release bytes; reproducible — a local `cargo build --release -p mncs-cli`
    at the pinned revision produces this exact digest)
 4. **Kernel artifact identities:** `src/mncs_harness/_mncs_artifacts/MANIFEST.json`

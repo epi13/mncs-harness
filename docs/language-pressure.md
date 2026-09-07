@@ -152,6 +152,11 @@ express this" from **(B)** "the harness assumed a Python-specific model".
   is one host-realized read-only capability (e.g. bounded file read into
   `[byte; up_to 64]` views, composing with the existing JSON scanner),
   so a real harness read path can cross the boundary under test.
+- **Outcome (2026-09-06, language 8a96527):** substrate delivered —
+  `host_read`/`clock_read`/verify-only-crypto host operations with
+  declared authority, explicit grants, layered-agreement validation, and
+  WASM refusal. No verifier/TUI product path converted yet; verdict
+  stays **(A)** pending integration.
 
 ## HARNESS-PRESSURE-005 — no clock, duration, or entropy source
 
@@ -173,6 +178,12 @@ express this" from **(B)** "the harness assumed a Python-specific model".
   returning an opaque instant with total `elapsed`/`expired` comparisons
   would let the residency kernel move into MNCS while keeping wall-clock
   trust at the host boundary.
+- **Outcome (2026-09-06, language 8a96527):** CLOSED for the window
+  decisions — `mncs/harness_freshness.mncs`
+  (`observation_fresh`/`attestation_window_ok`, PASS both backends)
+  now decides residency freshness and Atlas attestation windows from
+  host-supplied integer instants; `clock_read()` executes under test for
+  in-executor observation. Remaining: entropy source, metrics SQLite.
 
 ## HARNESS-PRESSURE-006 — no cryptographic primitives
 
@@ -196,6 +207,12 @@ express this" from **(B)** "the harness assumed a Python-specific model".
   language-visible effects (verify-only, no keygen in-language) so the
   accept/confirm path can be end-to-end MNCS with auditable crypto
   boundaries.
+- **Outcome (2026-09-06, language 8a96527):** primitives delivered —
+  verify-only `sha256_digest`/`ed25519_verify` over bounded views with
+  oracle-pinned vectors (dalek agrees with Python `cryptography`
+  byte-exactly). Atlas issuance messages exceed the 64-byte view bound,
+  so `atlas_binding` stays Python; verdict stays **(A)** pending a
+  chunked/streaming digest primitive.
 
 ## HARNESS-PRESSURE-007 — no concurrency, async, or cancellation
 

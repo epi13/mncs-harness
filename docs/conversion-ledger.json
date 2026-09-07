@@ -163,16 +163,16 @@
    "status": "HOST-EFFECT-BOUNDARY"
   },
   {
-   "detail": "Ed25519 issuance verification and SHA-256 canonical digests need crypto.",
+   "detail": "Ed25519 issuance verification and SHA-256 canonical digests need crypto over arbitrary-length messages; verify-only primitives exist (HARNESS-PRESSURE-006) but the 64-byte view bound blocks them here. Narrowest next primitive: chunked/streaming digest.",
    "item": "signature/digest-verify",
    "module": "atlas_binding",
    "status": "BLOCKED:HARNESS-PRESSURE-006"
   },
   {
-   "detail": "Freshness windows and session echo need a clock.",
+   "detail": "Attestation window verdict executes mncs.harness.freshness.v1::attestation_window_ok via mncs_exec inside check_attestation; host owns shape checks, issuer trust, and signatures.",
    "item": "freshness/session",
    "module": "atlas_binding",
-   "status": "BLOCKED:HARNESS-PRESSURE-005"
+   "status": "MNCS-EXECUTED"
   },
   {
    "detail": "Mode/field string content (length, control chars) needs strings.",
@@ -205,10 +205,10 @@
    "status": "HOST-EFFECT-BOUNDARY"
   },
   {
-   "detail": "Age arithmetic and timeouts need a clock.",
+   "detail": "Window verdict executes mncs.harness.freshness.v1::observation_fresh via mncs_exec; host owns ISO parsing, clock reads, and integer-ms marshaling.",
    "item": "observation-freshness",
    "module": "residency",
-   "status": "BLOCKED:HARNESS-PRESSURE-005"
+   "status": "MNCS-EXECUTED"
   },
   {
    "detail": "Probe subprocesses and Ollama HTTP are process/network effects.",
@@ -265,7 +265,7 @@
    "status": "BLOCKED:HARNESS-PRESSURE-009"
   },
   {
-   "detail": "Timestamps, durations, and SQLite persistence need clock + storage.",
+   "detail": "Timestamps now available via clock_read/mncs.harness.freshness.v1; SQLite persistence still needs storage effects.",
    "item": "metrics/events",
    "module": "metrics",
    "status": "BLOCKED:HARNESS-PRESSURE-005"

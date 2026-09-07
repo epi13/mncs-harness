@@ -215,12 +215,14 @@ def check_attestation(
     if not isinstance(bound, str) or (bound and bound != subject):
         return False
     issued_at = value.get("issued_at")
-    if (
-        not isinstance(issued_at, int)
-        or isinstance(issued_at, bool)
-        or issued_at > now_secs
-        or now_secs - issued_at > max_age_secs
-    ):
+    if not isinstance(issued_at, int) or isinstance(issued_at, bool):
+        return False
+    # Freshness window EXECUTES the MNCS kernel
+    # (mncs/harness_freshness.mncs attestation_window_ok via mncs_exec).
+    # Shape checks stay host-side; the window verdict is machine-native.
+    from . import mncs_exec
+
+    if not mncs_exec.attestation_window_ok(issued_at, now_secs, max_age_secs):
         return False
     try:
         verify_issuance(value, trusted_issuers)

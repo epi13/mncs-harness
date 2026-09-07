@@ -57,6 +57,10 @@ class ArtifactIntegrityTests(unittest.TestCase):
                 "capability_source",
                 "resource_gate",
             },
+            "harness_freshness": {
+                "observation_fresh",
+                "attestation_window_ok",
+            },
         }
         for kernel, functions in required.items():
             artifact = mncs_runtime.load_kernel(kernel)
@@ -197,6 +201,32 @@ class RealExecutionTests(unittest.TestCase):
                 mncs_exec.resource_gate(facts, size, budget, has_avail, avail),
                 mncs_oracle.resource_gate(facts, size, budget, has_avail, avail),
             )
+
+    def test_freshness_executes(self) -> None:
+        vectors = [
+            (1000, 1500, 1000),
+            (1000, 2000, 1000),
+            (1000, 2001, 1000),
+            (3000, 2000, 100),
+            (500, 500, 0),
+            (0, 0, 0),
+            (100, 150, 100),
+            (0, 100, 100),
+            (0, 101, 100),
+            (200, 150, 100),
+        ]
+        for stored, now, budget in vectors:
+            with self.subTest(stored=stored, now=now, budget=budget):
+                self.assertEqual(
+                    mncs_exec.observation_fresh(stored, now, budget),
+                    mncs_oracle.observation_fresh(stored, now, budget),
+                    (stored, now, budget),
+                )
+                self.assertEqual(
+                    mncs_exec.attestation_window_ok(stored, now, budget),
+                    mncs_oracle.attestation_window_ok(stored, now, budget),
+                    (stored, now, budget),
+                )
 
     def test_readiness_executes(self) -> None:
         states = ["READY", "DEGRADED", "BLOCKED", "UNKNOWN"]

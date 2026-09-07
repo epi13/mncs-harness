@@ -29,6 +29,7 @@ _PINS = "harness_pins"
 _FABRIC = "harness_fabric"
 _READINESS = "harness_readiness"
 _ELIGIBILITY = "harness_eligibility"
+_FRESHNESS = "harness_freshness"
 
 _ROUTING_MODULE = "mncs.harness.routing.v1"
 _POLICY_MODULE = "mncs.harness.policy.v1"
@@ -38,6 +39,7 @@ _PINS_MODULE = "mncs.harness.pins.v1"
 _FABRIC_MODULE = "mncs.harness.fabric.v1"
 _READINESS_MODULE = "mncs.harness.readiness.v1"
 _ELIGIBILITY_MODULE = "mncs.harness.eligibility.v1"
+_FRESHNESS_MODULE = "mncs.harness.freshness.v1"
 
 
 def _finite(module: str, enum: str, variant: str) -> tuple[str, str, str]:
@@ -513,3 +515,40 @@ def resource_gate(
         [facts_complete, size, budget, has_available, available],
     )
     return _as_variant(result, "resource_gate", _RESOURCE_VERDICTS)
+
+
+def observation_fresh(stored_ms: int, now_ms: int, max_age_ms: int) -> bool:
+    """Execute ``mncs.harness.freshness.v1::observation_fresh``.
+
+    Integer-millisecond facts in, freshness verdict out. The host owns
+    clock reads and timestamp parsing; the window decision is
+    machine-native. Future-dated stores read fresh (skew floor).
+    """
+    result = _call(
+        _FRESHNESS,
+        "observation_fresh",
+        [stored_ms, now_ms, max_age_ms],
+    )
+    if not isinstance(result, bool):
+        raise mncs_runtime.MncsRuntimeError(
+            f"observation_fresh returned non-bool {result!r}"
+        )
+    return result
+
+
+def attestation_window_ok(issued_at: int, now: int, max_age: int) -> bool:
+    """Execute ``mncs.harness.freshness.v1::attestation_window_ok``.
+
+    Strict window for issuance attestations: future-dated never supplies.
+    Units are caller-consistent with the caller (seconds for Atlas).
+    """
+    result = _call(
+        _FRESHNESS,
+        "attestation_window_ok",
+        [issued_at, now, max_age],
+    )
+    if not isinstance(result, bool):
+        raise mncs_runtime.MncsRuntimeError(
+            f"attestation_window_ok returned non-bool {result!r}"
+        )
+    return result

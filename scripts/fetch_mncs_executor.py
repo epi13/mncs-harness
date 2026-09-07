@@ -22,9 +22,9 @@ import urllib.request
 from pathlib import Path
 
 REPO = "epi13/mncs-harness"
-TAG = "toolchain/mncs-executor-8d79250"
+TAG = "toolchain/mncs-executor-8a96527"
 ASSET = "mncs-executor-linux-x86_64"
-DIGEST = "f7d60825cb58acaff46bed78639d3cffed7da52e9944e2c9ff16dd67795d0210"
+DIGEST = "6dc6b2b20e600ee4cd90a99ae08c59a76a258254036bcddfc94e5138cda69bae"
 
 
 def main() -> None:

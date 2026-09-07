@@ -125,6 +125,11 @@ def _run_mirror(module: str, function: str, args: list):
             return mncs_oracle.fold_readiness(states)
         if function == "is_ready":
             return mncs_oracle.readiness_ready(states[0])
+    if module == "mncs.harness.freshness.v1":
+        if function == "observation_fresh":
+            return mncs_oracle.observation_fresh(args[0], args[1], args[2])
+        if function == "attestation_window_ok":
+            return mncs_oracle.attestation_window_ok(args[0], args[1], args[2])
     raise AssertionError(f"no mirror for {module}::{function}")
 
 
@@ -221,6 +226,9 @@ class CorpusAgreementTests(unittest.TestCase):
 
     def test_eligibility_corpus(self) -> None:
         self._check_corpus("harness-eligibility", "mncs.harness.eligibility.v1")
+
+    def test_freshness_corpus(self) -> None:
+        self._check_corpus("harness-freshness", "mncs.harness.freshness.v1")
 
 
 class LivePathAgreementTests(unittest.TestCase):

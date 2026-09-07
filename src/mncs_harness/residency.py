@@ -59,15 +59,27 @@ class ResidencyManager:
         self,
         worker: dict[str, Any],
     ) -> tuple[bool | None, float | None]:
+        # Threshold classification EXECUTES the MNCS kernel
+        # (mncs/harness_freshness.mncs observation_fresh via mncs_exec).
+        # The host owns time I/O (ISO parsing, clock reads, malformed
+        # handling) and marshals integer-millisecond facts; the
+        # freshness verdict is machine-native.
+        from . import mncs_exec
+
         captured_at = (worker.get("capability_observation") or {}).get("captured_at")
         if not isinstance(captured_at, str):
             return None, None
         try:
             captured = datetime.fromisoformat(captured_at.replace("Z", "+00:00"))
-            age = max(0.0, (datetime.now(UTC) - captured.astimezone(UTC)).total_seconds())
+            now = datetime.now(UTC)
+            age = max(0.0, (now - captured.astimezone(UTC)).total_seconds())
         except ValueError:
             return False, None
-        return age <= self.policy.observation_max_age_seconds, age
+        stored_ms = int(captured.timestamp() * 1000)
+        now_ms = int(now.timestamp() * 1000)
+        max_age_ms = int(self.policy.observation_max_age_seconds * 1000)
+        fresh = mncs_exec.observation_fresh(stored_ms, now_ms, max_age_ms)
+        return fresh, age
 
     def _resource_decision(
         self,

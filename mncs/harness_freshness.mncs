@@ -1,0 +1,35 @@
+mncs 0.6;
+
+// mncs.harness.freshness.v1 — observation and attestation freshness windows.
+//
+// The host owns time I/O (clock reads, ISO-8601 parsing, malformed-input
+// handling) and passes integer instants; what moves here are the pure
+// window decisions, which used to be re-decided in Python. Units are
+// caller-consistent (milliseconds for residency observations, seconds
+// for attestation windows): the kernel compares, never converts.
+module mncs.harness.freshness.v1;
+
+// Residency observation freshness: a stored observation is fresh when
+// its age fits the budget. Future-dated stores read as zero age (clock
+// skew never reports a fresh observation as stale), mirroring the
+// retired Python `max(0.0, ...)` floor exactly.
+fn observation_fresh(stored: i64, now: i64, max_age: i64) -> (result: bool) {
+    if now >= stored {
+        // Guarded: `stored <= now`, so the wrapping subtraction below is
+        // exact (no wrap possible) and carries no overflow obligation.
+        return now -% stored <= max_age;
+    }
+    return true;
+}
+
+// Attestation window: strict — future-dated issuance never supplies,
+// and the age must fit the budget. Mirrors the window clause of
+// `check_attestation` exactly.
+fn attestation_window_ok(issued_at: i64, now: i64, max_age: i64) -> (result: bool) {
+    if issued_at > now {
+        return false;
+    }
+    // Guarded: `issued_at <= now`, so the wrapping subtraction below is
+    // exact (no wrap possible) and carries no overflow obligation.
+    return now -% issued_at <= max_age;
+}

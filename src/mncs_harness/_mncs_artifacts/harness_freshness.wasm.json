@@ -1,0 +1,113 @@
+{
+ "schema_version": "0.2",
+ "identity": "mncs:compiler:backend-artifact:6d0e48e7d325452e5d49feb9c0cb8c218808bbfdc29c0b78576f920c56eb6a7f",
+ "backend": {
+  "identity": "mncs:compiler:backend:6bbc6f37c38ffa3353787ff9ea565d07db3755b42efa8a59871374123adbca15",
+  "name": "mncs-portable-wasm-mvp",
+  "version": "0.1"
+ },
+ "input": {
+  "identity": "mncs:compiler:compiler-artifact:c2738799767f63e24c4c62004c2c8dc0b3038a3b4f94aedb72d91c538922a1f2",
+  "representation": "selected_ssa",
+  "schema_version": "0.4",
+  "fingerprint": "cacc934c89825a9c14849a4d7bc519957a27cb4cb89d1f546e59094fd8d114a2"
+ },
+ "target": {
+  "identity": "mncs:compiler:target-contract:7db47a6485cddf8e3bbaa129f3cc126ee396c799b7ff1fb243a0b1bb4663f902",
+  "candidate": "mncs:target:portable-wasm-mvp-0.1",
+  "facts": {
+   "abi": "one exported wasm function per MNCS function; scalars pass directly, composites pass as pointers to arena cells",
+   "bounded-iteration": "language-owned bounded SSA backedges use the private dispatcher loop; iteration metadata remains selected-SSA-bound",
+   "data-layout": "scalar two's-complement; i8/i16/i32 in wasm i32; i64 in wasm i64; composites are immutable 8-byte-slot cells in linear memory addressed by i32 pointers",
+   "integer": "wrapping=wasm wrapping; checked=explicit overflow test then trap; saturating=explicit clamp; widening=exact extended-width arithmetic",
+   "trap": "failure terminators and checked overflow map to wasm unreachable"
+  },
+  "evidence": [
+   "mncs:target-evidence:portable-wasm-mvp-0.1:declared-research-contract"
+  ],
+  "assumptions": [
+   "portable WASM MVP is a research execution envelope, not a native ABI",
+   "the embedded interpreter defines research execution, not a host wasm CLI"
+  ]
+ },
+ "artifact_kind": "wasm_module",
+ "format": "application/wasm; mncs-portable-wasm-mvp-0.1",
+ "bytes_sha256": "3aef30056f16cb2b316308fc5eb2bbef3b4af6d8276b3b599ea548b6ad90b38c",
+ "bytes_hex": "0061736d01000000010f0260037e7e7e017f60037e7e7e017f0303020001072d02156174746573746174696f6e5f77696e646f775f6f6b0000116f62736572766174696f6e5f667265736800010aeb01027406017f017f017e017f017f017f4100210803402008410046044020002001552103200304404101210805410221080b0c010b200841014604404100210420040f0b20084102460440410321080c010b20084103460440200120007d21052005200257210620060f0b20084104460440000b0b000b7406017f017e017f017f017f017f4100210803402008410046044020012000592103200304404101210805410221080b0c010b20084101460440200120007d21042004200257210520050f0b20084102460440410321080c010b200841034604404101210620060f0b20084104460440000b0b000b",
+ "exports": [
+  "attestation_window_ok",
+  "observation_fresh"
+ ],
+ "function_value_contracts": {
+  "attestation_window_ok": {
+   "inputs": [
+    {
+     "scalar": {
+      "semantic_type": "i64"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "i64"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "i64"
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ]
+  },
+  "observation_fresh": {
+   "inputs": [
+    {
+     "scalar": {
+      "semantic_type": "i64"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "i64"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "i64"
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ]
+  }
+ },
+ "assumptions": [
+  "checked overflow traps as unreachable; checked division traps on zero and MIN/-1",
+  "composites (records and payload-bearing finite variants) are immutable cells in linear memory allocated from a bump arena",
+  "portable WASM MVP is a research execution envelope, not a native ABI",
+  "saturating uses explicit bounded-width clamp logic; widening uses exact i64 intermediates",
+  "the embedded interpreter defines research execution, not a host wasm CLI"
+ ],
+ "obligations_generated": [],
+ "execution_applicability": [
+  "embedded mncs-portable-wasm-mvp interpreter",
+  "no WASI",
+  "no host CLI"
+ ],
+ "evidence_dependencies": [
+  "mncs:target-evidence:portable-wasm-mvp-0.1:declared-research-contract"
+ ],
+ "unsupported": [],
+ "status": "PASS"
+}

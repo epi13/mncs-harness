@@ -19,6 +19,7 @@ Authority for these truth tables is the MNCS source under ``mncs/``::
     mncs/harness_fabric.mncs   (mncs.harness.fabric.v1)
     mncs/harness_readiness.mncs (mncs.harness.readiness.v1)
     mncs/harness_eligibility.mncs (mncs.harness.eligibility.v1)
+    mncs/harness_freshness.mncs (mncs.harness.freshness.v1)
 
 It is a projection, never a second authority: change the ``.mncs`` source
 and corpus first, re-run the backend evidence, then update the oracle.
@@ -341,3 +342,17 @@ def resource_gate(
     if has_available and size > available:
         return "OVER_AVAILABLE"
     return "OK"
+
+
+def observation_fresh(stored_ms: int, now_ms: int, max_age_ms: int) -> bool:
+    """Mirror of ``mncs.harness.freshness.v1::observation_fresh``."""
+    if now_ms >= stored_ms:
+        return now_ms - stored_ms <= max_age_ms
+    return True
+
+
+def attestation_window_ok(issued_at: int, now: int, max_age: int) -> bool:
+    """Mirror of ``mncs.harness.freshness.v1::attestation_window_ok``."""
+    if issued_at > now:
+        return False
+    return now - issued_at <= max_age

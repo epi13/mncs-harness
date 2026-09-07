@@ -39,7 +39,7 @@
     "reason_of"
    ],
    "source": "mncs/harness_policy.mncs",
-   "source_sha256": "sha256:ac304d2ef3ad40324a24b73397758ccf711f5afddbfcf8348d347472ccd4778c",
+   "source_sha256": "sha256:d73a6ed8b607d09bbeb107ecefc81c4ae2a8c8e932bdd7d205de03b9166f3cd3",
    "corpus": "corpora/harness-policy-corpus.json"
   },
   "harness_policy.bytecode.json": {
@@ -54,7 +54,7 @@
     "reason_of"
    ],
    "source": "mncs/harness_policy.mncs",
-   "source_sha256": "sha256:ac304d2ef3ad40324a24b73397758ccf711f5afddbfcf8348d347472ccd4778c",
+   "source_sha256": "sha256:d73a6ed8b607d09bbeb107ecefc81c4ae2a8c8e932bdd7d205de03b9166f3cd3",
    "corpus": "corpora/harness-policy-corpus.json"
   },
   "harness_verdict.wasm.json": {
@@ -245,7 +245,7 @@
     "tools_unknown"
    ],
    "source": "mncs/harness_eligibility.mncs",
-   "source_sha256": "sha256:d057a1c25a990d94260fcd8c972872f52fcac3a08bb644c78eec9066b1b3f7b2",
+   "source_sha256": "sha256:4f4d748aee1377642177dc2c47ebe98391d429b7074a504f0e8cb48c2b4c80d4",
    "corpus": "corpora/harness-eligibility-corpus.json"
   },
   "harness_eligibility.bytecode.json": {
@@ -267,8 +267,34 @@
     "tools_unknown"
    ],
    "source": "mncs/harness_eligibility.mncs",
-   "source_sha256": "sha256:d057a1c25a990d94260fcd8c972872f52fcac3a08bb644c78eec9066b1b3f7b2",
+   "source_sha256": "sha256:4f4d748aee1377642177dc2c47ebe98391d429b7074a504f0e8cb48c2b4c80d4",
    "corpus": "corpora/harness-eligibility-corpus.json"
+  },
+  "harness_freshness.wasm.json": {
+   "module": "mncs.harness.freshness.v1",
+   "backend": "mncs-portable-wasm-mvp",
+   "identity": "mncs:compiler:backend-artifact:6d0e48e7d325452e5d49feb9c0cb8c218808bbfdc29c0b78576f920c56eb6a7f",
+   "bytes_sha256": "3aef30056f16cb2b316308fc5eb2bbef3b4af6d8276b3b599ea548b6ad90b38c",
+   "exports": [
+    "attestation_window_ok",
+    "observation_fresh"
+   ],
+   "source": "mncs/harness_freshness.mncs",
+   "source_sha256": "sha256:bad1b29caf6d253ec1c732f8950d7429d97bd5ef968a008b7c09b497f94ce3bc",
+   "corpus": "corpora/harness-freshness-corpus.json"
+  },
+  "harness_freshness.bytecode.json": {
+   "module": "mncs.harness.freshness.v1",
+   "backend": "mncs-research-bytecode",
+   "identity": "mncs:compiler:backend-artifact:7ed70504ce4189fc88983f2300efed683dfc4fd2cb4c8720947d11af6fa03e4b",
+   "bytes_sha256": "f2f595325c2da67b7388426d179752611b73af6c5e43976336a2b6729ae51cc7",
+   "exports": [
+    "attestation_window_ok",
+    "observation_fresh"
+   ],
+   "source": "mncs/harness_freshness.mncs",
+   "source_sha256": "sha256:bad1b29caf6d253ec1c732f8950d7429d97bd5ef968a008b7c09b497f94ce3bc",
+   "corpus": "corpora/harness-freshness-corpus.json"
   }
  }
 }
