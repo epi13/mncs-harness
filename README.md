@@ -176,24 +176,32 @@ pytest
 
 ## MNCS implementation
 
-The harness decision kernels are implemented in mncs-language under `mncs/`
-(`harness_routing`, `harness_policy`, `harness_verdict`, `harness_atlas`)
-with executable corpora under `corpora/` and sealed backend evidence under
-`development-evidence/mncs-execution/`. `src/mncs_harness/mncs_logic.py` is
-the evidence-pinned host projection of those kernels — not a second
-authority — and `tests/test_mncs_logic.py` proves host/MNCS agreement.
+Harness decisions are implemented in mncs-language under `mncs/` (routing,
+policy, verdict, Atlas, pins, fabric-compat, readiness, eligibility) and
+**executed** on the normal product path: production code calls
+`mncs_exec`, which runs shipped frozen artifacts
+(`src/mncs_harness/_mncs_artifacts/`, 16 across both backends) through the
+pinned MNCS executor — no per-request compilation, fail-closed on any
+defect. `src/mncs_harness/mncs_logic.py` is a transitional mirror only
+(opt-in fallback, never canonical).
 
-Known language gaps encountered during conversion are recorded with
-evidence in [docs/language-pressure.md](docs/language-pressure.md), with
-executable reproducers under `development-evidence/language-pressure/`.
+- Executable corpora: `corpora/` (140 cases, all PASS on portable-WASM +
+  research-bytecode).
+- Conversion inventory: [docs/conversion-ledger.md](docs/conversion-ledger.md)
+  (+ `conversion-ledger.json`, CI-validated).
+- Language pressure: [docs/language-pressure.md](docs/language-pressure.md),
+  reproducers under `development-evidence/language-pressure/`.
+- Toolchain pin and executor distribution: [docs/MNCS_TOOLCHAIN.md](docs/MNCS_TOOLCHAIN.md).
+- End-to-end proof: `development-evidence/e2e-mncs-conversion/`,
+  `development-evidence/e2e-hostile/`.
 
-To re-verify the MNCS kernels against the language toolchain (from an
-`mncs-language` checkout):
+To rebuild and verify the shipped artifacts (from a checkout next to
+`mncs-language`, or with `MNCS_EXECUTOR` set):
 
 ```bash
-cargo run -p mncs-cli -- experiment run mncs/harness_routing.mncs \
-  --backend mncs-portable-wasm-mvp \
-  --corpus corpora/harness-routing-corpus.json --output-dir /tmp/harness-check
+python scripts/build_mncs_artifacts.py --verify
+python scripts/check_conversion_ledger.py
+python scripts/hostile_mncs_e2e.py
 ```
 
 ## License

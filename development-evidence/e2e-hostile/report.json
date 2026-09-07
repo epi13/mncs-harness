@@ -1,0 +1,177 @@
+{
+ "scenarios": [
+  {
+   "scenario": "policy:sudo install",
+   "observed": [
+    false,
+    "blocked"
+   ],
+   "want": [
+    false,
+    "blocked"
+   ],
+   "pass": true,
+   "note": ""
+  },
+  {
+   "scenario": "policy:bash -c",
+   "observed": [
+    false,
+    "blocked"
+   ],
+   "want": [
+    false,
+    "blocked"
+   ],
+   "pass": true,
+   "note": ""
+  },
+  {
+   "scenario": "policy:python -c",
+   "observed": [
+    false,
+    "blocked"
+   ],
+   "want": [
+    false,
+    "blocked"
+   ],
+   "pass": true,
+   "note": ""
+  },
+  {
+   "scenario": "policy:git push",
+   "observed": [
+    false,
+    "blocked"
+   ],
+   "want": [
+    false,
+    "blocked"
+   ],
+   "pass": true,
+   "note": ""
+  },
+  {
+   "scenario": "policy:git status",
+   "observed": [
+    true,
+    "medium"
+   ],
+   "want": [
+    true,
+    "medium"
+   ],
+   "pass": true,
+   "note": ""
+  },
+  {
+   "scenario": "evidence:conflicting-pass-then-fail",
+   "observed": false,
+   "want": false,
+   "pass": true,
+   "note": "latest FAIL wins"
+  },
+  {
+   "scenario": "evidence:conflicting-fail-then-pass",
+   "observed": true,
+   "want": true,
+   "pass": true,
+   "note": "latest PASS wins"
+  },
+  {
+   "scenario": "evidence:garbage-outcome-fail-closed",
+   "observed": false,
+   "want": false,
+   "pass": true,
+   "note": "unknown outcome never admits under fail-closed"
+  },
+  {
+   "scenario": "readiness:unknown-held",
+   "observed": "UNKNOWN",
+   "want": "UNKNOWN",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "scenario": "readiness:denial-first",
+   "observed": "BLOCKED",
+   "want": "BLOCKED",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "scenario": "readiness:degraded",
+   "observed": "DEGRADED",
+   "want": "DEGRADED",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "scenario": "atlas:denial-wins",
+   "observed": "REFUSED",
+   "want": "REFUSED",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "scenario": "atlas:unknown-never-grants",
+   "observed": "UNKNOWN",
+   "want": "UNKNOWN",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "scenario": "atlas:outstanding-union",
+   "observed": [
+    "evidence.attest"
+   ],
+   "want": [
+    "evidence.attest"
+   ],
+   "pass": true,
+   "note": ""
+  },
+  {
+   "scenario": "pins:failed-closed",
+   "observed": "PIN_FAILED_CLOSED",
+   "want": "PIN_FAILED_CLOSED",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "scenario": "pins:ungranted-tool",
+   "observed": "REFUSED",
+   "want": "REFUSED",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "scenario": "resources:empty-facts",
+   "observed": [
+    false,
+    "bounded model-size and current host-memory facts are required"
+   ],
+   "want": [
+    false,
+    "bounded model-size and current host-memory facts are required"
+   ],
+   "pass": true,
+   "note": ""
+  },
+  {
+   "scenario": "artifacts:tamper-refused",
+   "observed": "MncsRuntimeError",
+   "want": "MncsRuntimeError",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "scenario": "no-transitional-warnings-on-canonical-path",
+   "observed": false,
+   "want": false,
+   "pass": true,
+   "note": ""
+  }
+ ]
+}
