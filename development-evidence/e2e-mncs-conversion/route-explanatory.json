@@ -1,0 +1,42 @@
+{
+  "primary_role": "e2b",
+  "escalation_roles": [
+    "e4b",
+    "reviewer"
+  ],
+  "lane": null,
+  "semantic": null,
+  "reasons": [
+    "primarily explanatory request",
+    "E2B selected for inexpensive read-only work",
+    "semantic router fallback: semantic router is compatibility-only; backend=transformers is ignored during normal execution"
+  ],
+  "routing_override": {
+    "mode": "AUTO",
+    "role": null,
+    "worker": null,
+    "model": null,
+    "allow_fallback": false
+  },
+  "profile": {
+    "word_count": 6,
+    "has_code": false,
+    "asks_for_edit": false,
+    "asks_for_execution": false,
+    "asks_for_explanation": true,
+    "is_high_risk": false,
+    "is_complex": false,
+    "has_image": false,
+    "file_reference_count": 0
+  },
+  "resolved_route": {
+    "provider": "fabric",
+    "worker": null,
+    "model": "gemma4:e2b",
+    "available": false,
+    "loaded": false,
+    "resident": false,
+    "fallback": false,
+    "reason": "worker model capability inventory is unknown"
+  }
+}

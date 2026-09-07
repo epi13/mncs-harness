@@ -1,0 +1,43 @@
+{
+  "primary_role": "e4b",
+  "escalation_roles": [
+    "coder",
+    "reviewer"
+  ],
+  "lane": null,
+  "semantic": null,
+  "reasons": [
+    "code or repository context detected",
+    "workspace modification requested",
+    "E4B selected as primary tool-using worker",
+    "semantic router fallback: semantic router is compatibility-only; backend=transformers is ignored during normal execution"
+  ],
+  "routing_override": {
+    "mode": "AUTO",
+    "role": null,
+    "worker": null,
+    "model": null,
+    "allow_fallback": false
+  },
+  "profile": {
+    "word_count": 7,
+    "has_code": true,
+    "asks_for_edit": true,
+    "asks_for_execution": false,
+    "asks_for_explanation": false,
+    "is_high_risk": false,
+    "is_complex": false,
+    "has_image": false,
+    "file_reference_count": 0
+  },
+  "resolved_route": {
+    "provider": "fabric",
+    "worker": null,
+    "model": "gemma4:e4b",
+    "available": false,
+    "loaded": false,
+    "resident": false,
+    "fallback": false,
+    "reason": "worker model capability inventory is unknown"
+  }
+}

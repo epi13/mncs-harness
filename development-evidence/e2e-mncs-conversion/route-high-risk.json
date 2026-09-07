@@ -1,0 +1,39 @@
+{
+  "primary_role": "reviewer",
+  "escalation_roles": [],
+  "lane": null,
+  "semantic": null,
+  "reasons": [
+    "high-risk intent",
+    "reviewer selected for risk, multimodality, or complexity",
+    "semantic router fallback: semantic router is compatibility-only; backend=transformers is ignored during normal execution"
+  ],
+  "routing_override": {
+    "mode": "AUTO",
+    "role": null,
+    "worker": null,
+    "model": null,
+    "allow_fallback": false
+  },
+  "profile": {
+    "word_count": 8,
+    "has_code": false,
+    "asks_for_edit": false,
+    "asks_for_execution": false,
+    "asks_for_explanation": false,
+    "is_high_risk": true,
+    "is_complex": true,
+    "has_image": false,
+    "file_reference_count": 0
+  },
+  "resolved_route": {
+    "provider": "fabric",
+    "worker": null,
+    "model": "hf.co/bartowski/gemma-4-12b-it-GGUF:Q5_K_M",
+    "available": false,
+    "loaded": false,
+    "resident": false,
+    "fallback": false,
+    "reason": "worker model capability inventory is unknown"
+  }
+}
