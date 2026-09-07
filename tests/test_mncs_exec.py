@@ -44,7 +44,7 @@ class ArtifactIntegrityTests(unittest.TestCase):
             "harness_routing": {"classify_route", "needs_coder"},
             "harness_policy": {"evaluate_command", "evaluate_write"},
             "harness_verdict": {"dominate", "combine4", "combine8", "is_decided"},
-            "harness_atlas": {"fold_pair", "fold4", "dispatch_gate"},
+            "harness_atlas": {"fold_pair", "fold4", "dispatch_gate", "tool_admission"},
             "harness_pins": {"pin_fields_valid", "admit_placement"},
             "harness_fabric": {"classify_fabric", "dispatch_allowed"},
             "harness_readiness": {"dominate_readiness", "fold4", "fold8", "is_ready"},
@@ -98,6 +98,9 @@ class RealExecutionTests(unittest.TestCase):
             mncs_exec.fold(["GRANTED", "UNKNOWN", "REFUSED"]), "REFUSED"
         )
         self.assertEqual(mncs_exec.fold([]), "GRANTED")
+        self.assertEqual(mncs_exec.tool_admission(True, True), "GRANTED")
+        self.assertEqual(mncs_exec.tool_admission(False, True), "REFUSED")
+        self.assertEqual(mncs_exec.tool_admission(True, False), "REFUSED")
         self.assertEqual(mncs_exec.dispatch_gate("GRANTED", True), "GRANTED")
         self.assertEqual(mncs_exec.dispatch_gate("GRANTED", False), "REFUSED")
         self.assertEqual(mncs_exec.dispatch_gate("UNKNOWN", False), "UNKNOWN")

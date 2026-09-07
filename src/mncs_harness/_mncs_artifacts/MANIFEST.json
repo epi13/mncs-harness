@@ -88,29 +88,31 @@
   "harness_atlas.wasm.json": {
    "module": "mncs.harness.atlas.v1",
    "backend": "mncs-portable-wasm-mvp",
-   "identity": "mncs:compiler:backend-artifact:0ffb51afd093a9996b7a4106fc6e3bb9cc079eaad4eb0d2b8024a7499dd38dd6",
-   "bytes_sha256": "cf28ca825b13aa0782fb115e9649ef046786cd3daabf2a486a59929892344387",
+   "identity": "mncs:compiler:backend-artifact:651e4b328bdf3b59554c02c7000c8e61d977b92d6140e7784a230a58264305e6",
+   "bytes_sha256": "d29ec2d309b501a3b110cded5254a813fce61572207453ba32c9c24b37235fbd",
    "exports": [
     "dispatch_gate",
     "fold4",
-    "fold_pair"
+    "fold_pair",
+    "tool_admission"
    ],
    "source": "mncs/harness_atlas.mncs",
-   "source_sha256": "sha256:1c2547c85cc065efdb4931f3b9e17ce7585b03df61855d5b82e476002e7c7a65",
+   "source_sha256": "sha256:4c2fa48c944d7876a0c2da929da767851f1381799241e41afc2f930d4636a678",
    "corpus": "corpora/harness-atlas-corpus.json"
   },
   "harness_atlas.bytecode.json": {
    "module": "mncs.harness.atlas.v1",
    "backend": "mncs-research-bytecode",
-   "identity": "mncs:compiler:backend-artifact:4f11f2ed1bb858415b4ff1435bb159978fcae4d4ba8a2c629fdc402406f98db9",
-   "bytes_sha256": "3ba36982fe7570a1b271a700480c093e3ca477857ddc0347c2dfd8d5417f38bc",
+   "identity": "mncs:compiler:backend-artifact:367d92a37a60d890169c3f3a44963b3eaf377cf411203f6c252c4792d3f0f01d",
+   "bytes_sha256": "beb90c5c41156a22b5e26a10b1a2faef8153fcc894ba9364bdbdee58846b9634",
    "exports": [
     "dispatch_gate",
     "fold4",
-    "fold_pair"
+    "fold_pair",
+    "tool_admission"
    ],
    "source": "mncs/harness_atlas.mncs",
-   "source_sha256": "sha256:1c2547c85cc065efdb4931f3b9e17ce7585b03df61855d5b82e476002e7c7a65",
+   "source_sha256": "sha256:4c2fa48c944d7876a0c2da929da767851f1381799241e41afc2f930d4636a678",
    "corpus": "corpora/harness-atlas-corpus.json"
   },
   "harness_pins.wasm.json": {

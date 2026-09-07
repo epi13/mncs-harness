@@ -88,6 +88,7 @@ def _transitional(kernel: str, function: str, *args: Any) -> Any:
         (_ATLAS, "fold4"): lambda group: mncs_logic.fold(list(group)),
         (_ATLAS, "fold_pair"): mncs_logic.fold_pair,
         (_ATLAS, "dispatch_gate"): mncs_logic.dispatch_gate,
+        (_ATLAS, "tool_admission"): mncs_logic.tool_admission,
         (_PINS, "pin_fields_valid"): mncs_logic.pin_fields_valid,
         (_PINS, "admit_placement"): mncs_logic.admit_placement,
         (_FABRIC, "classify_fabric"): mncs_logic.classify_fabric,
@@ -315,6 +316,12 @@ def fold(decisions: list[str]) -> HostGrant:
     for extra in halves[1:]:
         result = fold_pair(result, extra)
     return result  # type: ignore[return-value]
+
+
+def tool_admission(granted: bool, covered: bool) -> HostGrant:
+    """Execute ``mncs.harness.atlas.v1::tool_admission``."""
+    result = _call(_ATLAS, "tool_admission", [granted, covered], (granted, covered))
+    return _as_variant(result, "tool_admission", ("GRANTED", "UNKNOWN", "REFUSED"))  # type: ignore[return-value]
 
 
 def dispatch_gate(folded: str, target_matches: bool) -> HostGrant:

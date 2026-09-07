@@ -76,6 +76,8 @@ def _run_mirror(module: str, function: str, args: list):
         if function == "is_decided":
             return mncs_logic.is_decided(statuses[0])
     if module == "mncs.harness.atlas.v1":
+        if function == "tool_admission":
+            return mncs_logic.tool_admission(args[0], args[1])
         if function == "dispatch_gate":
             return mncs_logic.dispatch_gate(args[0][0], args[1])
         grants = [item[0] for item in args if isinstance(item, tuple)]

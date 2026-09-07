@@ -573,6 +573,134 @@
      }
     }
    ]
+  },
+  {
+   "id": "tool-covered",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.atlas.v1",
+     "function": "tool_admission"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+      "discriminant": 0
+     }
+    }
+   ]
+  },
+  {
+   "id": "tool-ungranted",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.atlas.v1",
+     "function": "tool_admission"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+      "discriminant": 2
+     }
+    }
+   ]
+  },
+  {
+   "id": "tool-uncovered",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.atlas.v1",
+     "function": "tool_admission"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+      "discriminant": 2
+     }
+    }
+   ]
+  },
+  {
+   "id": "tool-neither",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.atlas.v1",
+     "function": "tool_admission"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     }
+    ],
+    "step_budget": 1024
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED",
+      "discriminant": 2
+     }
+    }
+   ]
   }
  ]
 }

@@ -37,6 +37,21 @@ fn fold4(first: Grant, second: Grant, third: Grant, fourth: Grant) -> (result: G
 // caller-observed execution target still matches the Atlas-authorized
 // target. Any mismatch demotes GRANTED to REFUSED; other folds pass
 // through unchanged (UNKNOWN is never promoted by a target observation).
+// Tool admission: a consequential tool is covered only when the bound
+// Atlas acceptance granted AND every needed capability is covered by the
+// authorized leg. Either failure refuses; the host owns the reason text.
+fn tool_admission(granted: bool, covered: bool) -> (result: Grant) {
+    if granted {
+    } else {
+        return Grant.REFUSED;
+    }
+    if covered {
+    } else {
+        return Grant.REFUSED;
+    }
+    return Grant.GRANTED;
+}
+
 fn dispatch_gate(folded: Grant, target_matches: bool) -> (result: Grant) {
     if target_matches {
         return folded;

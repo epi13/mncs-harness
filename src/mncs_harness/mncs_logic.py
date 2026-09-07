@@ -172,6 +172,13 @@ def fold(decisions: list[Grant]) -> Grant:
     return result
 
 
+def tool_admission(granted: bool, covered: bool) -> Grant:
+    """Mirror of ``mncs.harness.atlas.v1::tool_admission``."""
+    if not granted or not covered:
+        return "REFUSED"
+    return "GRANTED"
+
+
 def dispatch_gate(folded: Grant, target_matches: bool) -> Grant:
     """Mirror of ``mncs.harness.atlas.v1::dispatch_gate``."""
     if target_matches:
