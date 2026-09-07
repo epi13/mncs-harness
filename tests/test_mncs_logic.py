@@ -13,10 +13,19 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from mncs_harness import mncs_logic
+from mncs_harness import mncs_exec, mncs_logic
 from mncs_harness.atlas_binding import AtlasDecision, _fold_capability
 from mncs_harness.config import load_config
-from mncs_harness.models import TaskProfile
+from mncs_harness.experiment_readiness import _overall
+from mncs_harness.fabric_compat import (
+    EXPERIMENT_CERTIFIED_FABRIC_COMMIT,
+    EXPERIMENT_REQUIRED_CAPABILITIES,
+    evaluate_experiment_fabric,
+)
+from mncs_harness.model_capabilities import RoleRequirements, SelectionPolicy
+from mncs_harness.model_evidence import CapabilityEvidence
+from mncs_harness.model_selection import _eligible
+from mncs_harness.models import RoutingOverride, TaskProfile
 from mncs_harness.policy import CommandPolicy, WorkspaceGuard
 from mncs_harness.router import _deterministic_route
 
@@ -67,6 +76,8 @@ def _run_mirror(module: str, function: str, args: list):
         if function == "is_decided":
             return mncs_logic.is_decided(statuses[0])
     if module == "mncs.harness.atlas.v1":
+        if function == "tool_admission":
+            return mncs_logic.tool_admission(args[0], args[1])
         if function == "dispatch_gate":
             return mncs_logic.dispatch_gate(args[0][0], args[1])
         grants = [item[0] for item in args if isinstance(item, tuple)]
@@ -74,6 +85,33 @@ def _run_mirror(module: str, function: str, args: list):
             return mncs_logic.fold_pair(grants[0], grants[1])
         if function == "fold4":
             return mncs_logic.fold(grants)
+    if module == "mncs.harness.pins.v1":
+        if function == "pin_fields_valid":
+            return mncs_logic.pin_fields_valid(args[0], args[1], args[2], args[3])
+        if function == "admit_placement":
+            return mncs_logic.admit_placement(args[0], args[1], args[2])
+    if module == "mncs.harness.fabric.v1":
+        if function == "classify_fabric":
+            return mncs_logic.classify_fabric(*args)
+        if function == "dispatch_allowed":
+            return mncs_logic.fabric_dispatch_allowed(args[0])
+    if module == "mncs.harness.eligibility.v1":
+        if function == "capability_eligible":
+            return mncs_logic.capability_eligible(
+                args[0], args[1], args[2], args[3], args[4], args[5]
+            )
+        if function == "resource_gate":
+            return mncs_logic.resource_gate(
+                args[0], args[1], args[2], args[3], args[4]
+            )
+    if module == "mncs.harness.readiness.v1":
+        states = [item for item in args if isinstance(item, str)]
+        if function == "dominate_readiness":
+            return mncs_logic.dominate_readiness(states[0], states[1])
+        if function in ("fold4", "fold8"):
+            return mncs_logic.fold_readiness(states)
+        if function == "is_ready":
+            return mncs_logic.readiness_ready(states[0])
     raise AssertionError(f"no mirror for {module}::{function}")
 
 
@@ -99,6 +137,8 @@ def _mirror_name(result) -> str:
         return {"e2b": "E2B", "e4b": "E4B", "reviewer": "REVIEWER"}[result]
     if result in ("PASS", "FAIL", "UNKNOWN", "GRANTED", "REFUSED"):
         return result
+    if isinstance(result, str):
+        return result
     if isinstance(result, tuple):
         variant, payload = result
         if payload:
@@ -116,6 +156,14 @@ class CorpusAgreementTests(unittest.TestCase):
             # needs_coder takes an enum first arg; normalize to variant name.
             if target["function"] == "needs_coder":
                 args = [args[0][0] if isinstance(args[0], tuple) else args[0], *args[1:]]
+            # New kernels take enum args throughout; mirrors want variant names.
+            if target["module"] in (
+                "mncs.harness.pins.v1",
+                "mncs.harness.fabric.v1",
+                "mncs.harness.readiness.v1",
+                "mncs.harness.eligibility.v1",
+            ):
+                args = [item[0] if isinstance(item, tuple) else item for item in args]
             got = _run_mirror(target["module"], target["function"], args)
             if target["module"] == "mncs.harness.policy.v1" and target[
                 "function"
@@ -148,6 +196,18 @@ class CorpusAgreementTests(unittest.TestCase):
 
     def test_atlas_corpus(self) -> None:
         self._check_corpus("harness-atlas", "mncs.harness.atlas.v1")
+
+    def test_pins_corpus(self) -> None:
+        self._check_corpus("harness-pins", "mncs.harness.pins.v1")
+
+    def test_fabric_corpus(self) -> None:
+        self._check_corpus("harness-fabric", "mncs.harness.fabric.v1")
+
+    def test_readiness_corpus(self) -> None:
+        self._check_corpus("harness-readiness", "mncs.harness.readiness.v1")
+
+    def test_eligibility_corpus(self) -> None:
+        self._check_corpus("harness-eligibility", "mncs.harness.eligibility.v1")
 
 
 class LivePathAgreementTests(unittest.TestCase):
@@ -228,6 +288,101 @@ class LivePathAgreementTests(unittest.TestCase):
         self.assertEqual(only_unknown.outstanding, ("evidence.attest",))
         only_granted = _fold_capability("worker.dispatch", [granted, granted])
         self.assertEqual(only_granted.verdict, "GRANTED")
+
+    def test_pin_validation_matches_kernel_over_mode_cube(self) -> None:
+        for mode in ("AUTO", "ROLE", "MODEL", "WORKER", "WORKER_MODEL", "WORKER_MODEL_ROLE"):
+            for flags in itertools.product([False, True], repeat=3):
+                has_role, has_worker, has_model = flags
+                kernel_ok = mncs_exec.pin_fields_valid(mode, *flags)
+                kwargs = {}
+                if has_role:
+                    kwargs["role"] = "r"
+                if has_worker:
+                    kwargs["worker"] = "w"
+                if has_model:
+                    kwargs["model"] = "m"
+                if kernel_ok:
+                    override = RoutingOverride(mode, allow_fallback=False, **kwargs)
+                    self.assertEqual(override.mode, mode)
+                else:
+                    with self.assertRaises(ValueError, msg=(mode, flags)):
+                        RoutingOverride(mode, allow_fallback=False, **kwargs)
+
+    def test_fabric_classification_matches_kernel(self) -> None:
+        all_caps = {name: True for name in EXPERIMENT_REQUIRED_CAPABILITIES}
+        vectors = [
+            ({"version": "0.2.0a31", "capabilities": {}}, "INCOMPATIBLE", False),
+            ({"version": "not-a-version", "capabilities": dict(all_caps)}, "UNKNOWN", False),
+            ({"version": "0.1.0", "capabilities": dict(all_caps)}, "TOO_OLD", False),
+            (
+                {
+                    "version": "0.2.0a31",
+                    "capabilities": dict(all_caps),
+                    "commit": EXPERIMENT_CERTIFIED_FABRIC_COMMIT,
+                },
+                "EXPERIMENT_CERTIFIED_EXACT",
+                True,
+            ),
+            ({"version": "0.2.0a30", "capabilities": dict(all_caps)}, "COMPATIBLE_VERSION_ONLY", True),
+            ({"version": "0.2.0a31", "capabilities": dict(all_caps)}, "COMPATIBLE_NEWER", True),
+        ]
+        for kwargs, classification, allowed in vectors:
+            result = evaluate_experiment_fabric(str(kwargs.pop("version")), kwargs.pop("capabilities"), **kwargs)
+            self.assertEqual(result["classification"], classification, kwargs)
+            self.assertEqual(result["action"] == "dispatch_allowed", allowed, kwargs)
+
+    def test_readiness_overall_matches_kernel(self) -> None:
+        states = ["READY", "DEGRADED", "BLOCKED", "UNKNOWN"]
+        for triple in itertools.product(states, repeat=3):
+            layers = [
+                {"name": name, "status": state, "detail": "", "evidence": None}
+                for name, state in zip(("control", "harness", "fabric"), triple)
+            ]
+            status, _ = _overall(layers, ("control", "harness", "fabric"))
+            self.assertEqual(status, mncs_exec.fold_readiness(list(triple)), triple)
+
+    def test_eligibility_matches_kernel_over_cube(self) -> None:
+        policies = ["fail-closed", "explore", "provider-claim-compat"]
+        for observed_outcome, claimed, unknown, req_obs, allow_unclaimed in itertools.product(
+            ["FAIL", "PASS", None], [False, True], policies, [False, True], [False, True]
+        ):
+            item = {"provider": "p", "name": "m", "capabilities": ["tools"] if claimed else []}
+            evidence = (
+                [
+                    CapabilityEvidence(
+                        subject_worker="w",
+                        subject_model="m",
+                        capability="tool_call",
+                        outcome=observed_outcome,
+                        tier=1,
+                        freshness="fresh",
+                        recorded_at="t",
+                        validator_identity="v",
+                    )
+                ]
+                if observed_outcome is not None
+                else []
+            )
+            requirements = RoleRequirements(
+                "cube", needs_completion=False, needs_tools=True, unknown_policy=unknown
+            )
+            policy = SelectionPolicy(
+                require_observed_for_mutation=req_obs,
+                allow_size_policy_without_claims=allow_unclaimed,
+            )
+            ok, _ = _eligible(item, requirements, evidence, policy)
+            obs_code = observed_outcome if observed_outcome in ("FAIL", "PASS") else "NONE"
+            want = mncs_exec.capability_eligible(
+                "TOOLS",
+                obs_code,
+                claimed,
+                {"fail-closed": "FAIL_CLOSED", "explore": "EXPLORE"}.get(
+                    unknown, "PROVIDER_CLAIM_COMPAT"
+                ),
+                req_obs,
+                allow_unclaimed,
+            )
+            self.assertEqual(ok, want, (observed_outcome, claimed, unknown, req_obs))
 
     def test_verdict_lattice_properties(self) -> None:
         for left, right in itertools.product(["PASS", "FAIL", "UNKNOWN"], repeat=2):

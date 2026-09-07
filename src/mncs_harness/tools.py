@@ -121,6 +121,19 @@ class ToolRegistry:
                 "but no Atlas-bound requirement is attached",
             )
         acceptance = self._atlas_acceptance
+        leg = next(
+            (item for item in self._atlas_requirement.legs if item.name == acceptance.leg),
+            None,
+        )
+        uncovered = [need for need in needs if leg is None or need not in leg.needs]
+        # Admission EXECUTES the MNCS kernel (mncs/harness_atlas.mncs
+        # tool_admission via mncs_exec): granted acceptance AND full
+        # coverage, else refuse. Reason text stays host-side.
+        from . import mncs_exec
+
+        admission = mncs_exec.tool_admission(acceptance.verdict == "GRANTED", not uncovered)
+        if admission == "GRANTED":
+            return None
         if acceptance.verdict != "GRANTED":
             return PolicyDecision(
                 False,
@@ -128,19 +141,12 @@ class ToolRegistry:
                 f"ATLAS_REFUSED: {tool_name} blocked by bound leg "
                 f"{acceptance.leg}: {acceptance.reason}",
             )
-        leg = next(
-            (item for item in self._atlas_requirement.legs if item.name == acceptance.leg),
-            None,
+        return PolicyDecision(
+            False,
+            "blocked",
+            f"ATLAS_REFUSED: bound leg {acceptance.leg} does not cover "
+            f"{tool_name} capability needs {uncovered}",
         )
-        uncovered = [need for need in needs if leg is None or need not in leg.needs]
-        if uncovered:
-            return PolicyDecision(
-                False,
-                "blocked",
-                f"ATLAS_REFUSED: bound leg {acceptance.leg} does not cover "
-                f"{tool_name} capability needs {uncovered}",
-            )
-        return None
 
     @property
     def workspace(self) -> Path:

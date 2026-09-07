@@ -1,0 +1,304 @@
+{
+ "schema_version": "0.2",
+ "identity": "mncs:compiler:backend-artifact:693227fb5c7a7df8fccc0d09962aa3d78780fe8ed2b91cf72840ddb1f9678863",
+ "backend": {
+  "identity": "mncs:compiler:backend:6bbc6f37c38ffa3353787ff9ea565d07db3755b42efa8a59871374123adbca15",
+  "name": "mncs-portable-wasm-mvp",
+  "version": "0.1"
+ },
+ "input": {
+  "identity": "mncs:compiler:compiler-artifact:305d5156b70441f0c43eba9abc47989e0e769e2da72fc114a1607018ed3f082f",
+  "representation": "selected_ssa",
+  "schema_version": "0.4",
+  "fingerprint": "de0c90a7cc31bb8c0b289a392c821ee41e25035478f4025bac306c3273924d76"
+ },
+ "target": {
+  "identity": "mncs:compiler:target-contract:7db47a6485cddf8e3bbaa129f3cc126ee396c799b7ff1fb243a0b1bb4663f902",
+  "candidate": "mncs:target:portable-wasm-mvp-0.1",
+  "facts": {
+   "abi": "one exported wasm function per MNCS function; scalars pass directly, composites pass as pointers to arena cells",
+   "bounded-iteration": "language-owned bounded SSA backedges use the private dispatcher loop; iteration metadata remains selected-SSA-bound",
+   "data-layout": "scalar two's-complement; i8/i16/i32 in wasm i32; i64 in wasm i64; composites are immutable 8-byte-slot cells in linear memory addressed by i32 pointers",
+   "integer": "wrapping=wasm wrapping; checked=explicit overflow test then trap; saturating=explicit clamp; widening=exact extended-width arithmetic",
+   "trap": "failure terminators and checked overflow map to wasm unreachable"
+  },
+  "evidence": [
+   "mncs:target-evidence:portable-wasm-mvp-0.1:declared-research-contract"
+  ],
+  "assumptions": [
+   "portable WASM MVP is a research execution envelope, not a native ABI",
+   "the embedded interpreter defines research execution, not a host wasm CLI"
+  ]
+ },
+ "artifact_kind": "wasm_module",
+ "format": "application/wasm; mncs-portable-wasm-mvp-0.1",
+ "bytes_sha256": "63d37a617eb3230e2b572ffc0863514fde10008ce4bc92242d84e1875df3f94b",
+ "bytes_hex": "0061736d0100000001200460047f7f7f7f017f60087f7f7f7f7f7f7f7f017f60027f7f017f60017f017f03050400010203072f0408636f6d62696e6534000008636f6d62696e6538000108646f6d696e61746500020a69735f6465636964656400030a9505044005017f017f017f017f017f4100210803402008410046044020002001100221042002200310022105200420051002210620060f0b20084101460440000b0b000b4805017f017f017f017f017f4100210c0340200c4100460440200020012002200310002108200420052006200710002109200820091002210a200a0f0b200c4101460440000b0b000bca020c017f017f017f017f017f017f017f017f017f017f017f017f4100210d0340200d410046044020004100462102200204404102210d054105210d0b0c010b200d410146044020030f0b200d4102460440200121034101210d0c010b200d410346044041012104200421034101210d0c010b200d410446044020014100462105200504404108210d05410b210d0b0c010b200d410546044020004101462106200604404103210d054106210d0b0c010b200d41064604404104210d0c010b200d4107460440200721034101210d0c010b200d410846044041022108200821074107210d0c010b200d410946044041012109200921074107210d0c010b200d410a4604404102210a200a21074107210d0c010b200d410b4604402001410146210b200b04404109210d05410c210d0b0c010b200d410c460440410a210d0c010b200d410d460440000b0b000bbc0108017f017f017f017f017f017f017f017f4100210803402008410046044020004100462101200104404102210805410521080b0c010b2008410146044020020f0b200841024604404101210320032102410121080c010b200841034604404101210420042102410121080c010b200841044604404100210520052102410121080c010b2008410546044020004101462106200604404103210805410621080b0c010b20084106460440410421080c010b20084107460440000b0b000b",
+ "exports": [
+  "combine4",
+  "combine8",
+  "dominate",
+  "is_decided"
+ ],
+ "function_value_contracts": {
+  "combine4": {
+   "inputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      }
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      }
+     }
+    }
+   ]
+  },
+  "combine8": {
+   "inputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      }
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      }
+     }
+    }
+   ]
+  },
+  "dominate": {
+   "inputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      }
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      }
+     }
+    }
+   ]
+  },
+  "is_decided": {
+   "inputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      }
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ]
+  }
+ },
+ "composite_value_contracts": {
+  "Status": {
+   "finite": {
+    "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+    "variants": {
+     "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+     "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+     "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+    },
+    "payloads": {
+     "0": [],
+     "1": [],
+     "2": []
+    }
+   }
+  },
+  "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status": {
+   "finite": {
+    "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+    "variants": {
+     "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+     "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+     "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+    },
+    "payloads": {
+     "0": [],
+     "1": [],
+     "2": []
+    }
+   }
+  }
+ },
+ "assumptions": [
+  "checked overflow traps as unreachable; checked division traps on zero and MIN/-1",
+  "composites (records and payload-bearing finite variants) are immutable cells in linear memory allocated from a bump arena",
+  "portable WASM MVP is a research execution envelope, not a native ABI",
+  "saturating uses explicit bounded-width clamp logic; widening uses exact i64 intermediates",
+  "the embedded interpreter defines research execution, not a host wasm CLI"
+ ],
+ "obligations_generated": [],
+ "execution_applicability": [
+  "embedded mncs-portable-wasm-mvp interpreter",
+  "no WASI",
+  "no host CLI"
+ ],
+ "evidence_dependencies": [
+  "mncs:target-evidence:portable-wasm-mvp-0.1:declared-research-contract"
+ ],
+ "unsupported": [],
+ "status": "PASS"
+}

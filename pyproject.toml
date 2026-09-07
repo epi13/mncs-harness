@@ -55,6 +55,7 @@ include = [
   "src/mncs_harness/**/*.py",
   "src/mncs_harness/default_config.toml",
   "src/mncs_harness/default_evals.jsonl",
+  "src/mncs_harness/_mncs_artifacts/*.json",
 ]
 
 [tool.ruff]

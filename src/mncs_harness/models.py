@@ -22,18 +22,25 @@ class RoutingOverride:
     allow_fallback: bool = False
 
     def __post_init__(self) -> None:
-        expected = {
-            "AUTO": (False, False, False),
-            "ROLE": (True, False, False),
-            "MODEL": (False, False, True),
-            "WORKER": (False, True, False),
-            "WORKER_MODEL": (False, True, True),
-            "WORKER_MODEL_ROLE": (True, True, True),
-        }
-        if self.mode not in expected:
+        if self.mode not in (
+            "AUTO",
+            "ROLE",
+            "MODEL",
+            "WORKER",
+            "WORKER_MODEL",
+            "WORKER_MODEL_ROLE",
+        ):
             raise ValueError("routing override mode is invalid")
-        actual = (self.role is not None, self.worker is not None, self.model is not None)
-        if actual != expected[self.mode]:
+        # Mode/field shape EXECUTES the MNCS kernel (mncs/harness_pins.mncs
+        # via mncs_exec); string content checks below stay host-side.
+        from . import mncs_exec
+
+        if not mncs_exec.pin_fields_valid(
+            self.mode,
+            self.role is not None,
+            self.worker is not None,
+            self.model is not None,
+        ):
             raise ValueError(f"routing override fields do not match {self.mode} mode")
         for field_name in ("role", "worker", "model"):
             value = getattr(self, field_name)

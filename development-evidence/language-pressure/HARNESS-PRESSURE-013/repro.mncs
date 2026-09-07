@@ -1,0 +1,10 @@
+mncs 0.6;
+
+module probe.boolmatch;
+
+fn gate(flag: bool) -> (result: i64) {
+    return match flag {
+        true => 1,
+        false => 0,
+    };
+}

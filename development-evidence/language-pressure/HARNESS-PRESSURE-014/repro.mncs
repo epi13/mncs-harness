@@ -1,0 +1,12 @@
+mncs 0.6;
+
+module probe.reserved;
+
+enum Capability { COMPLETION, TOOLS }
+
+fn eligible(capability: Capability) -> (result: bool) {
+    return match capability {
+        COMPLETION => true,
+        TOOLS => false,
+    };
+}

@@ -6,19 +6,26 @@ pressured mncs-language, what was proven, what was worked around, and what
 the follow-up language campaign should investigate. Nothing here was fixed
 by changing the language: workarounds live host-side and are measured.
 
-Authoritative MNCS surface built by this campaign:
+Authoritative MNCS surface built across both conversion campaigns:
 
 - `mncs/harness_routing.mncs` — primary-role classification + coder chain
 - `mncs/harness_policy.mncs` — command / file-write policy kernel
 - `mncs/harness_verdict.mncs` — status-lattice evidence combination
-- `mncs/harness_atlas.mncs` — Atlas verdict fold + dispatch gate
-- `corpora/harness-*.json` — 57 executable cases
-- `development-evidence/mncs-execution/` — 114 backend-case executions
-  (portable-WASM + research-bytecode), all `PASS`
-- `src/mncs_harness/mncs_logic.py` — evidence-pinned host projection
-- `tests/test_mncs_logic.py` — corpus + live-path agreement
+- `mncs/harness_atlas.mncs` — Atlas verdict fold, dispatch gate, tool admission
+- `mncs/harness_pins.mncs` — pin shape validation + fail-closed placement
+- `mncs/harness_fabric.mncs` — Fabric version/capability precedence + gate
+- `mncs/harness_readiness.mncs` — generic `fold_readiness<N>` + envelopes
+- `mncs/harness_eligibility.mncs` — capability gates + resource thresholds
+- `corpora/harness-*.json` — 140 executable cases, all `PASS` on
+  portable-WASM + research-bytecode (280 backend-case executions)
+- `src/mncs_harness/_mncs_artifacts/` — 16 shipped frozen artifacts +
+  identity manifest; production paths execute these through
+  `mncs_exec`/`mncs_runtime` (no per-request compilation)
+- `src/mncs_harness/mncs_logic.py` — TRANSITIONAL mirror only
+- `tests/test_mncs_exec.py` + `tests/test_mncs_logic.py` — real-execution
+  agreement, fail-closed behavior, and corpus checks
 
-Reproducers for the four compiler-proven entries live under
+Reproducers for the compiler-proven entries live under
 `development-evidence/language-pressure/HARNESS-PRESSURE-*/`.
 
 Conventions: severity is `BLOCKER` / `MAJOR` / `MODERATE` / `ERGONOMIC` /
@@ -97,14 +104,22 @@ express this" from **(B)** "the harness assumed a Python-specific model".
   sequence folds, trading clarity for profile comfort.
 - **Reproduction:** `development-evidence/language-pressure/
   HARNESS-PRESSURE-003/`.
+- **UPDATE (second campaign):** the Profile 0.10 generic form was
+  attempted for real in `mncs/harness_readiness.mncs` (`fold_readiness<N>`
+  over `[Readiness; N]`, concrete `fold4`/`fold8` wrappers) and it WORKS:
+  all 22 readiness cases PASS on both backends, including generic
+  specialization through the wrappers. The remaining `combine8`/`fold4`
+  trees in the older kernels are now migration debt, not language blocks.
+  Runtime `up_to` bounds remain unsupported, but nothing in the harness
+  still needs that spelling.
 - **Workaround:** fixed-arity fold trees (`combine4`/`combine8`,
   `fold_pair`/`fold4`); the host chunks open-ended lists into fixed
   envelopes. **Cost:** O(n) listing behavior becomes host-side chunking
   code plus one MNCS call per chunk; envelope widths are magic numbers.
-- **Proposed direction:** Profile 0.7 sequence traversal already covers
-  the honest need — a follow-up should rewrite the harness kernels in
-  sequence/generic form (Profile 0.10) and record whether anything real
-  still requires runtime `up_to` bounds.
+- **Proposed direction:** unify the older kernels on the proven generic
+  pattern; keep concrete envelopes as the host-callable surface (generic
+  entrypoints are reached through monomorphic wrappers, matching the
+  stdlib's own consumer pattern).
 
 ## HARNESS-PRESSURE-004 — no realizable I/O effects
 
@@ -258,16 +273,18 @@ express this" from **(B)** "the harness assumed a Python-specific model".
 - **Desired MNCS expression:** generic sequence folds (`summarize<N>`,
   Profile 0.10) over caller-sized data.
 - **Current behavior:** `N` is bounded by `MAX_SEQUENCE_BOUND` (64); the
-  campaign used fixed `combine8`/`fold4` trees rather than sequence folds
-  to stay in Profile 0.6 comfort. Verdict: **(B)**-leaning — the language
-  has the honest spelling (Profile 0.10 generics), the campaign did not
-  use it.
-- **Workaround:** host-side chunking into fixed envelopes.
-  **Cost:** envelope widths as magic numbers; chunking code unverified.
-- **Proposed direction:** rewrite the four kernels in Profile 0.10
-  sequence/generic form as a narrow follow-up; if anything real resists
-  (ABI limits on sequence-of-record, mask/vector element refusals), file
-  it as a backend pressure with the attempt as evidence.
+  first campaign used fixed `combine8`/`fold4` trees rather than sequence
+  folds to stay in Profile 0.6 comfort. Verdict at the time: **(B)**-leaning.
+- **UPDATE (second campaign): RESOLVED as a language block.** The readiness
+  kernel (`mncs/harness_readiness.mncs`) implements the authoritative fold
+  as generic `fold_readiness<N>` over `[Readiness; N]` with monomorphic
+  `fold4`/`fold8` wrappers, and all 22 cases PASS on both backends. No ABI
+  limit appeared for sequences of finite values; generic specialization
+  through wrappers works on portable-WASM and research-bytecode alike.
+  The 64-element ceiling never bound real harness envelopes (widest is 12
+  layers). Remaining fixed trees are migration debt (conversion ledger),
+  not pressure.
+- **Workaround (retired):** host-side chunking into fixed envelopes.
 
 ## HARNESS-PRESSURE-011 — exact-cost obligations stay UNKNOWN
 
@@ -277,11 +294,18 @@ express this" from **(B)** "the harness assumed a Python-specific model".
   `model_storage_bytes`, worker placement weights, timeout budgets.
 - **Desired MNCS expression:** experiment results carrying usable cost
   evidence for bounded kernels.
-- **Current behavior:** all four harness corpora return `PASS` with empty
+- **Current behavior:** all eight harness corpora return `PASS` with empty
   `unresolved_reasons`, yet exact instruction cost remains `UNKNOWN` by
   contract wherever arithmetic exists. The harness cannot distinguish
   "cheap kernel" from "expensive kernel" from language evidence.
-  Verdict: **(A)** known contract position, observed (not discovered) here.
+  Verdict: **(A)** known contract position.
+- **UPDATE (second campaign):** observed first-hand, not just cited. The
+  generic readiness fold carries three `iteration-exact-resource-cost`
+  obligations (one per `iterate` specialization site), each retained with
+  its conservative fallback as `CMP301` while `source-study` reports
+  `completed_with_unresolved_obligations` — the exact documented contract,
+  behaving as specified. This entry is now confirmed by direct evidence
+  rather than observation of others' fixtures.
 - **Workaround:** budgets stay operator-configured constants.
   **Cost:** none today; blocks future cost-aware placement moving into MNCS.
 - **Proposed direction:** no action until HARNESS-PRESSURE-004/005 move;
@@ -310,6 +334,68 @@ express this" from **(B)** "the harness assumed a Python-specific model".
   arm-spelling rule, plus parse-recovery that suppresses cascading
   statement errors after a failed iteration header.
 
+## HARNESS-PRESSURE-013 — boolean literals are not match patterns
+
+- **Area:** language/surface
+- **Severity:** ERGONOMIC
+- **Harness requirement:** the eligibility kernel branches unknown-policy
+  logic on plain booleans (`claimed`, `require_observed`,
+  `allow_unclaimed`); `match flag { true => …, false => … }` is the
+  natural spelling next to the enum matches surrounding it.
+- **Desired MNCS expression:** `match` arms over `true`/`false` patterns.
+- **Current behavior:** the parser rejects boolean patterns with `MNP084`
+  (*"expected '}' after match arms"*) plus a 3-error cascade. Enums match;
+  bools must use `if`/`else`. Verdict: **(A)** small surface gap.
+- **Reproduction:** `development-evidence/language-pressure/
+  HARNESS-PRESSURE-013/` (`repro.mncs`, sealed diagnostics).
+- **Workaround:** `if`/`else` chains and single-purpose helper functions
+  (`tools_unknown`, `tools_compat` in `mncs/harness_eligibility.mncs`).
+  **Cost:** helper-function sprawl for what would be two match arms;
+  behavior identical.
+- **Proposed direction:** accept `true`/`false` as match patterns with the
+  same exhaustiveness rule as two-variant enums.
+
+## HARNESS-PRESSURE-014 — `capability` is unusable as a parameter name
+
+- **Area:** language/surface, tooling/diagnostics
+- **Severity:** ERGONOMIC
+- **Harness requirement:** the eligibility entrypoint naturally names its
+  subject `capability: Capability`.
+- **Desired MNCS expression:** `fn capability_eligible(capability:
+  Capability, …)`.
+- **Current behavior:** the parameter grammar rejects the name (`MNP024`
+  *"expected ')' after input parameters"*), and error recovery misfires
+  into `MNP042` *"expected capability name"* — as if the author owed the
+  compiler a capability declaration — followed by 9 further cascade
+  errors. The `MNP042` suggestion is actively misleading. Verdict:
+  **(A)** surface gap with a diagnostics tail.
+- **Reproduction:** `development-evidence/language-pressure/
+  HARNESS-PRESSURE-014/` (`repro.mncs`, sealed diagnostics).
+- **Workaround:** renamed the parameter to `gate`. **Cost:** one confusing
+  hour; trivial ongoing cost, but every newcomer writing authority-shaped
+  code will hit the same wall.
+- **Proposed direction:** allow `capability` as a value-level identifier
+  (it never appears in a position ambiguous with a declaration), or at
+  minimum replace the `MNP042` recovery with a reserved-name diagnostic.
+
+## HARNESS-PRESSURE-015 — research-bytecode executor latency vs WASM
+
+- **Area:** runtime/performance
+- **Severity:** MODERATE
+- **Harness requirement:** per-decision subprocess execution must stay
+  cheap: policy checks run per tool call, placement gates per dispatch.
+- **Observed behavior:** identical single-case `experiment execute` calls
+  against the same kernel measure ~5ms median on portable-WASM vs
+  ~117ms median on research-bytecode (5 samples each, warm page cache,
+  debug executor build). Both return identical values; only latency
+  differs by ~20×.
+- **Workaround:** the runtime adapter defaults to the WASM artifacts
+  (`MNCS_HARNESS_BACKEND=bytecode` selects otherwise); CI proves both
+  backends for evidence parity. **Cost:** none today — recorded so a
+  future "bytecode is the portable default" decision checks this first.
+- **Proposed direction:** profile the bytecode `execute` path (suspect
+  per-invocation translation validation); no language change proposed.
+
 ---
 
 ## What converted cleanly (no pressure)
@@ -324,10 +410,16 @@ application weight without friction:
   whole class of `(bool, str)` and `(bool, int)` Python tuples with
   checked shapes.
 - `source-study` + `experiment run` + sealed result JSON gave the campaign
-  a better evidence story than the Python suite had: 114 backend-case
+  a better evidence story than the Python suite had: 280 backend-case
   executions with identities, step counts, and expectation checks.
-- First-try `completed` status on all four modules; failure diagnostics
-  (`MNE105`, `MNE173`, `MNP094`) are specific and quotable.
+- Profile 0.10 generics (`fold_readiness<N>` over `[Readiness; N]`)
+  specialized and executed on both backends on the first attempt that
+  used the monomorphic-wrapper pattern — the facility is real, and the
+  earlier fixed-width kernels are now migration debt, not pressure.
+- First-try `completed` status on seven of eight modules (the eighth
+  needed only a parameter rename and bool-match rewrite); failure
+  diagnostics (`MNE105`, `MNE173`, `MNP094`, `MNP084`, `MNP024`) are
+  specific and quotable, even when cascades are noisy.
 - The `mncs:0.2:` identity prefix on corpus `finite` values works across
   profiles 0.6–0.10 without friction (though the versioning story could
   use one clarifying paragraph — see HARNESS-PRESSURE-012 scope).

@@ -4,7 +4,7 @@ import re
 from dataclasses import replace
 from pathlib import Path
 
-from . import mncs_logic
+from . import mncs_exec
 from .models import HarnessConfig, RoutePlan, RoutingOverride, SemanticRouteResult, TaskProfile
 
 CODE_TERMS = {
@@ -116,10 +116,11 @@ def _deterministic_route(profile: TaskProfile, config: HarnessConfig) -> RoutePl
             return preferred
         return next(iter(config.models))
 
-    # Primary classification is the MNCS kernel (mncs/harness_routing.mncs,
-    # mirrored in mncs_logic); the host only maps the kernel role through
-    # configured-model availability and owns the escalation chain.
-    kernel = mncs_logic.classify_route(
+    # Primary classification EXECUTES the MNCS kernel
+    # (mncs/harness_routing.mncs via mncs_exec); the host only maps the
+    # kernel role through configured-model availability and owns the
+    # escalation chain.
+    kernel = mncs_exec.primary_role(
         profile.has_code,
         profile.asks_for_edit,
         profile.asks_for_execution,
@@ -139,7 +140,7 @@ def _deterministic_route(profile: TaskProfile, config: HarnessConfig) -> RoutePl
     elif kernel == "e4b":
         primary = available("e4b")
         chain: list[str] = []
-        if mncs_logic.needs_coder("e4b", specialist, profile.has_code):
+        if mncs_exec.needs_coder("e4b", specialist, profile.has_code):
             chain.append("coder")
         if "reviewer" in config.models:
             chain.append("reviewer")

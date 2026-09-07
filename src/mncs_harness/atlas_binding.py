@@ -59,7 +59,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Mapping
 
-from . import mncs_logic
+from . import mncs_exec
 
 SCHEMA = "mncs.execution-requirement/0.3"
 DECISION_SCHEMA = "mncs.atlas-capability-decision/1"
@@ -656,10 +656,10 @@ class ExecutionRequirement:
                 f"target unbound end-to-end: actual {actual_target} has no declared leg target",
                 acceptance.binding,
             )
-        # Final target gate is the MNCS kernel (mncs/harness_atlas.mncs
+        # Final target gate EXECUTES the MNCS kernel (mncs/harness_atlas.mncs
         # dispatch_gate): a granted fold authorizes dispatch only while the
         # observed target still matches the Atlas-authorized one.
-        gate: str = mncs_logic.dispatch_gate("GRANTED", actual_target == leg.target)
+        gate: str = mncs_exec.dispatch_gate("GRANTED", actual_target == leg.target)
         if gate != "GRANTED":
             return Acceptance(
                 "REFUSED",
@@ -676,7 +676,7 @@ class ExecutionRequirement:
         )
 
 
-def _decision_grant(decision: AtlasDecision) -> mncs_logic.Grant:
+def _decision_grant(decision: AtlasDecision) -> str:
     """Project one carried decision onto the MNCS Atlas verdict lattice."""
     if decision.status == "denied":
         return "REFUSED"
@@ -686,10 +686,10 @@ def _decision_grant(decision: AtlasDecision) -> mncs_logic.Grant:
 
 
 def _fold_capability(capability: str, matches: list[AtlasDecision]) -> Acceptance:
-    # The fold verdict is the MNCS kernel (mncs/harness_atlas.mncs, mirrored
-    # in mncs_logic.fold): duplicate decisions fold conservatively and
+    # The fold verdict EXECUTES the MNCS kernel (mncs/harness_atlas.mncs
+    # via mncs_exec.fold): duplicate decisions fold conservatively and
     # order-independently with denial winning; UNKNOWN is never promoted.
-    verdict: str = mncs_logic.fold([_decision_grant(decision) for decision in matches])
+    verdict: str = mncs_exec.fold([_decision_grant(decision) for decision in matches])
     outstanding: list[str] = []
     reasons: list[str] = []
     binding = ""

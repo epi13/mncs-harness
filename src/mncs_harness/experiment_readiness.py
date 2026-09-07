@@ -153,14 +153,12 @@ def _layer(name: str, status: str, detail: Any, evidence: str | None = None) -> 
 def _overall(layers: list[dict[str, Any]], required: tuple[str, ...]) -> tuple[str, list[dict[str, Any]]]:
     by_name = {item["name"]: item["status"] for item in layers}
     required_states = [by_name.get(name, UNKNOWN) for name in required]
-    if any(state == BLOCKED for state in required_states):
-        status = BLOCKED
-    elif any(state == UNKNOWN for state in required_states):
-        status = UNKNOWN
-    elif any(state == DEGRADED for state in required_states):
-        status = DEGRADED
-    else:
-        status = READY
+    # Overall verdict EXECUTES the MNCS kernel (mncs/harness_readiness.mncs
+    # via mncs_exec.fold_readiness): BLOCKED > UNKNOWN > DEGRADED > READY.
+    # Warning collection below stays host-side (free-form detail strings).
+    from . import mncs_exec
+
+    status = mncs_exec.fold_readiness(list(required_states))
     warnings = [
         {
             "layer": item["name"],

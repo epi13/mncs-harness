@@ -1,0 +1,62 @@
+mncs 0.6;
+
+// mncs.harness.fabric.v1 — Fabric runtime classification for experiment use.
+//
+// The host owns strings: PEP-440 parsing, capability-name tables, and
+// commit/digest equality. What moves here is the classification precedence:
+// missing capabilities beat unparseable versions, which beat stale
+// versions, which yield to exact immutable identity, then certified-version
+// strings, then anything newer that advertises the required surface.
+//
+// Version metadata can never override a missing required capability, and a
+// bare version string without immutable identity is never certified.
+module mncs.harness.fabric.v1;
+
+enum FabricClass {
+    INCOMPATIBLE,
+    UNKNOWN,
+    TOO_OLD,
+    EXPERIMENT_CERTIFIED_EXACT,
+    COMPATIBLE_VERSION_ONLY,
+    COMPATIBLE_NEWER
+}
+
+fn classify_fabric(
+    missing_any: bool,
+    parseable: bool,
+    too_old: bool,
+    exact: bool,
+    version_is_certified: bool
+) -> (result: FabricClass) {
+    if missing_any {
+        return FabricClass.INCOMPATIBLE;
+    }
+    if parseable {
+    } else {
+        return FabricClass.UNKNOWN;
+    }
+    if too_old {
+        return FabricClass.TOO_OLD;
+    }
+    if exact {
+        return FabricClass.EXPERIMENT_CERTIFIED_EXACT;
+    }
+    if version_is_certified {
+        return FabricClass.COMPATIBLE_VERSION_ONLY;
+    }
+    return FabricClass.COMPATIBLE_NEWER;
+}
+
+// Only certified-exact, version-only, and newer runtimes may dispatch.
+// Anything else blocks, including UNKNOWN: an unparseable version string
+// is never usable for experiment placement.
+fn dispatch_allowed(class: FabricClass) -> (result: bool) {
+    return match class {
+        INCOMPATIBLE => false,
+        UNKNOWN => false,
+        TOO_OLD => false,
+        EXPERIMENT_CERTIFIED_EXACT => true,
+        COMPATIBLE_VERSION_ONLY => true,
+        COMPATIBLE_NEWER => true,
+    };
+}

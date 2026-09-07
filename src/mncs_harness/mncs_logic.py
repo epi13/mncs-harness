@@ -1,4 +1,19 @@
-"""Evidence-pinned host projection of the MNCS decision kernels.
+"""TRANSITIONAL mirror of the MNCS decision kernels. NOT FOR PRODUCTION USE.
+
+This module duplicates the truth tables of ``mncs/harness_*.mncs`` in Python.
+It exists ONLY for two explicitly transitional purposes:
+
+1. Operator opt-in fallback when no MNCS executor is available
+   (``MNCS_HARNESS_TRANSITIONAL_PYTHON_DECISIONS=1``), reached solely
+   through ``mncs_exec._transitional``. Loud warning, never canonical,
+   never conformance-bearing.
+2. Test-side oracle in ``tests/test_mncs_logic.py`` (independent agreement
+   checks, not production).
+
+Production decision paths MUST call ``mncs_exec`` (real MNCS execution).
+CI fails any production import of this module outside ``mncs_exec``.
+
+Evidence-pinned host projection of the MNCS decision kernels.
 
 Authority for these truth tables is the MNCS source under ``mncs/``::
 
@@ -157,6 +172,13 @@ def fold(decisions: list[Grant]) -> Grant:
     return result
 
 
+def tool_admission(granted: bool, covered: bool) -> Grant:
+    """Mirror of ``mncs.harness.atlas.v1::tool_admission``."""
+    if not granted or not covered:
+        return "REFUSED"
+    return "GRANTED"
+
+
 def dispatch_gate(folded: Grant, target_matches: bool) -> Grant:
     """Mirror of ``mncs.harness.atlas.v1::dispatch_gate``."""
     if target_matches:
@@ -170,3 +192,123 @@ def corpus_cases(name: str) -> list[dict]:
     """Load an executable MNCS corpus (e.g. ``harness-routing``)."""
     path = CORPORA_DIR / f"{name}-corpus.json"
     return json.loads(path.read_text(encoding="utf-8"))["cases"]
+
+
+_PIN_SHAPE = {
+    "AUTO": (False, False, False),
+    "ROLE": (True, False, False),
+    "MODEL": (False, False, True),
+    "WORKER": (False, True, False),
+    "WORKER_MODEL": (False, True, True),
+    "WORKER_MODEL_ROLE": (True, True, True),
+}
+
+
+def pin_fields_valid(mode: str, has_role: bool, has_worker: bool, has_model: bool) -> bool:
+    """Mirror of ``mncs.harness.pins.v1::pin_fields_valid`` (shape table only)."""
+    return _PIN_SHAPE.get(mode) == (has_role, has_worker, has_model)
+
+
+def admit_placement(auto_or_role: bool, selection_present: bool, allow_fallback: bool) -> str:
+    """Mirror of ``mncs.harness.pins.v1::admit_placement``."""
+    if auto_or_role:
+        return "AUTO_ALLOWED"
+    if selection_present:
+        return "PIN_HONORED"
+    if allow_fallback:
+        return "FALLBACK_ALLOWED"
+    return "PIN_FAILED_CLOSED"
+
+
+def classify_fabric(
+    missing_any: bool,
+    parseable: bool,
+    too_old: bool,
+    exact: bool,
+    version_is_certified: bool,
+) -> str:
+    """Mirror of ``mncs.harness.fabric.v1::classify_fabric``."""
+    if missing_any:
+        return "INCOMPATIBLE"
+    if not parseable:
+        return "UNKNOWN"
+    if too_old:
+        return "TOO_OLD"
+    if exact:
+        return "EXPERIMENT_CERTIFIED_EXACT"
+    if version_is_certified:
+        return "COMPATIBLE_VERSION_ONLY"
+    return "COMPATIBLE_NEWER"
+
+
+def fabric_dispatch_allowed(classification: str) -> bool:
+    """Mirror of ``mncs.harness.fabric.v1::dispatch_allowed``."""
+    return classification in (
+        "EXPERIMENT_CERTIFIED_EXACT",
+        "COMPATIBLE_VERSION_ONLY",
+        "COMPATIBLE_NEWER",
+    )
+
+
+def dominate_readiness(left: str, right: str) -> str:
+    """Mirror of ``mncs.harness.readiness.v1::dominate_readiness``."""
+    order = {"BLOCKED": 3, "UNKNOWN": 2, "DEGRADED": 1, "READY": 0}
+    if left not in order or right not in order:
+        raise ValueError(f"bad readiness value {left!r}/{right!r}")
+    return left if order[left] >= order[right] else right
+
+
+def fold_readiness(layers: list[str]) -> str:
+    """Mirror of the generic ``fold_readiness`` over a layer envelope."""
+    result = "READY"
+    for layer in layers:
+        result = dominate_readiness(result, layer)
+    return result
+
+
+def readiness_ready(state: str) -> bool:
+    """Mirror of ``mncs.harness.readiness.v1::is_ready``."""
+    return state == "READY"
+
+
+def capability_eligible(
+    capability: str,
+    observed: str,
+    claimed: bool,
+    unknown_policy: str,
+    require_observed: bool,
+    allow_unclaimed: bool,
+) -> bool:
+    """Mirror of ``mncs.harness.eligibility.v1::capability_eligible``."""
+    if observed == "FAIL":
+        return False
+    if capability == "CODE_EDIT":
+        return True
+    if observed == "PASS":
+        return True
+    if claimed:
+        return not require_observed if capability == "TOOLS" else True
+    if capability == "COMPLETION":
+        return not (unknown_policy == "FAIL_CLOSED" and require_observed)
+    if unknown_policy == "EXPLORE":
+        return True
+    if unknown_policy == "PROVIDER_CLAIM_COMPAT":
+        return allow_unclaimed
+    return False
+
+
+def resource_gate(
+    facts_complete: bool,
+    size: int,
+    budget: int,
+    has_available: bool,
+    available: int,
+) -> str:
+    """Mirror of ``mncs.harness.eligibility.v1::resource_gate``."""
+    if not facts_complete:
+        return "MISSING_FACTS"
+    if size > budget:
+        return "OVER_BUDGET"
+    if has_available and size > available:
+        return "OVER_AVAILABLE"
+    return "OK"

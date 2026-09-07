@@ -1,0 +1,258 @@
+{
+ "schema": "mncs.harness-artifact-manifest.v1",
+ "artifacts": {
+  "harness_routing.wasm.json": {
+   "module": "mncs.harness.routing.v1",
+   "backend": "mncs-portable-wasm-mvp",
+   "identity": "mncs:compiler:backend-artifact:335dcc38e400d71ed6d7e31b032864e387e4c8b04f18115da87106fd5af016b1",
+   "bytes_sha256": "f3ac64b2ab68c5226bcd8523f7bde3f380f30a714e26c2ce11567bd79a43ad3b",
+   "exports": [
+    "classify_route",
+    "needs_coder"
+   ],
+   "source": "mncs/harness_routing.mncs",
+   "source_sha256": "sha256:1be174c81a8833935b5935d784288e31ce184cacfdc97bc1ee4e9fa21104b9f3",
+   "corpus": "corpora/harness-routing-corpus.json"
+  },
+  "harness_routing.bytecode.json": {
+   "module": "mncs.harness.routing.v1",
+   "backend": "mncs-research-bytecode",
+   "identity": "mncs:compiler:backend-artifact:2688e46b2b810ef8539ca4b4c8a3cd53b87bb4365230e75d24eefe6cc9fa6302",
+   "bytes_sha256": "a8732811aa917ffae9f905b503e3fd2cc1bdfa616f553cec7b1eeca629aa1c45",
+   "exports": [
+    "classify_route",
+    "needs_coder"
+   ],
+   "source": "mncs/harness_routing.mncs",
+   "source_sha256": "sha256:1be174c81a8833935b5935d784288e31ce184cacfdc97bc1ee4e9fa21104b9f3",
+   "corpus": "corpora/harness-routing-corpus.json"
+  },
+  "harness_policy.wasm.json": {
+   "module": "mncs.harness.policy.v1",
+   "backend": "mncs-portable-wasm-mvp",
+   "identity": "mncs:compiler:backend-artifact:f7638e93439ced63026652caf1946edc89ec11c5cfff35501618a08685f7f055",
+   "bytes_sha256": "a6c54954b3dc19ccf7db23affef274ffd8897d36cd789222ebbf78e56554d503",
+   "exports": [
+    "evaluate_command",
+    "evaluate_write",
+    "reason_of"
+   ],
+   "source": "mncs/harness_policy.mncs",
+   "source_sha256": "sha256:c16e0928558d0458b52d7e35342e78faf9fd645092061a126c113de19028eb1c",
+   "corpus": "corpora/harness-policy-corpus.json"
+  },
+  "harness_policy.bytecode.json": {
+   "module": "mncs.harness.policy.v1",
+   "backend": "mncs-research-bytecode",
+   "identity": "mncs:compiler:backend-artifact:c1c31bcfc99e6285b9f52972c17a9db7549b229d69de5d6ff9e304abcc2cebef",
+   "bytes_sha256": "1c5d24bb8c1d93b8097255d21d9992767e65978889377989dd9bbaf58b3c3cc7",
+   "exports": [
+    "evaluate_command",
+    "evaluate_write",
+    "reason_of"
+   ],
+   "source": "mncs/harness_policy.mncs",
+   "source_sha256": "sha256:c16e0928558d0458b52d7e35342e78faf9fd645092061a126c113de19028eb1c",
+   "corpus": "corpora/harness-policy-corpus.json"
+  },
+  "harness_verdict.wasm.json": {
+   "module": "mncs.harness.verdict.v1",
+   "backend": "mncs-portable-wasm-mvp",
+   "identity": "mncs:compiler:backend-artifact:693227fb5c7a7df8fccc0d09962aa3d78780fe8ed2b91cf72840ddb1f9678863",
+   "bytes_sha256": "63d37a617eb3230e2b572ffc0863514fde10008ce4bc92242d84e1875df3f94b",
+   "exports": [
+    "combine4",
+    "combine8",
+    "dominate",
+    "is_decided"
+   ],
+   "source": "mncs/harness_verdict.mncs",
+   "source_sha256": "sha256:3a5c8d7667b4c4e699d5d2f891ffacaa7d9a8f8f34707e93b90c02e926ceed28",
+   "corpus": "corpora/harness-verdict-corpus.json"
+  },
+  "harness_verdict.bytecode.json": {
+   "module": "mncs.harness.verdict.v1",
+   "backend": "mncs-research-bytecode",
+   "identity": "mncs:compiler:backend-artifact:285597e1a6bf7df294fecc2b14c4d9afb18dca10a5ae7d0d1ddb9ac28565bc18",
+   "bytes_sha256": "6037f3d2f3754d09c8e49b563c0eb8f7b159bffeef7a314336b2920495c79bbc",
+   "exports": [
+    "combine4",
+    "combine8",
+    "dominate",
+    "is_decided"
+   ],
+   "source": "mncs/harness_verdict.mncs",
+   "source_sha256": "sha256:3a5c8d7667b4c4e699d5d2f891ffacaa7d9a8f8f34707e93b90c02e926ceed28",
+   "corpus": "corpora/harness-verdict-corpus.json"
+  },
+  "harness_atlas.wasm.json": {
+   "module": "mncs.harness.atlas.v1",
+   "backend": "mncs-portable-wasm-mvp",
+   "identity": "mncs:compiler:backend-artifact:651e4b328bdf3b59554c02c7000c8e61d977b92d6140e7784a230a58264305e6",
+   "bytes_sha256": "d29ec2d309b501a3b110cded5254a813fce61572207453ba32c9c24b37235fbd",
+   "exports": [
+    "dispatch_gate",
+    "fold4",
+    "fold_pair",
+    "tool_admission"
+   ],
+   "source": "mncs/harness_atlas.mncs",
+   "source_sha256": "sha256:4c2fa48c944d7876a0c2da929da767851f1381799241e41afc2f930d4636a678",
+   "corpus": "corpora/harness-atlas-corpus.json"
+  },
+  "harness_atlas.bytecode.json": {
+   "module": "mncs.harness.atlas.v1",
+   "backend": "mncs-research-bytecode",
+   "identity": "mncs:compiler:backend-artifact:367d92a37a60d890169c3f3a44963b3eaf377cf411203f6c252c4792d3f0f01d",
+   "bytes_sha256": "beb90c5c41156a22b5e26a10b1a2faef8153fcc894ba9364bdbdee58846b9634",
+   "exports": [
+    "dispatch_gate",
+    "fold4",
+    "fold_pair",
+    "tool_admission"
+   ],
+   "source": "mncs/harness_atlas.mncs",
+   "source_sha256": "sha256:4c2fa48c944d7876a0c2da929da767851f1381799241e41afc2f930d4636a678",
+   "corpus": "corpora/harness-atlas-corpus.json"
+  },
+  "harness_pins.wasm.json": {
+   "module": "mncs.harness.pins.v1",
+   "backend": "mncs-portable-wasm-mvp",
+   "identity": "mncs:compiler:backend-artifact:4ffa526b7392f015d752874b2145325cb86200bd0bf692dc0c42c321cd45dc36",
+   "bytes_sha256": "282451603467bcbd90f179ce86d1a564e529a5ba25427614c3831ed6e376e620",
+   "exports": [
+    "admit_placement",
+    "all_pins",
+    "no_flags",
+    "only_model",
+    "only_role",
+    "only_worker",
+    "pin_fields_valid",
+    "worker_and_model"
+   ],
+   "source": "mncs/harness_pins.mncs",
+   "source_sha256": "sha256:782bc6aed21562e64301eb0d8bdf0f86ec8b7bf7632b12e4f609efde4addc3fe",
+   "corpus": "corpora/harness-pins-corpus.json"
+  },
+  "harness_pins.bytecode.json": {
+   "module": "mncs.harness.pins.v1",
+   "backend": "mncs-research-bytecode",
+   "identity": "mncs:compiler:backend-artifact:31c38183a92d5674d31237db0b927900f1ca013800461b30ef10a0a66c7d6f11",
+   "bytes_sha256": "da53aa61732125c9dc5c23892e84925ae450aeab4d5f5162e93eac8d4b61d7f9",
+   "exports": [
+    "admit_placement",
+    "all_pins",
+    "no_flags",
+    "only_model",
+    "only_role",
+    "only_worker",
+    "pin_fields_valid",
+    "worker_and_model"
+   ],
+   "source": "mncs/harness_pins.mncs",
+   "source_sha256": "sha256:782bc6aed21562e64301eb0d8bdf0f86ec8b7bf7632b12e4f609efde4addc3fe",
+   "corpus": "corpora/harness-pins-corpus.json"
+  },
+  "harness_fabric.wasm.json": {
+   "module": "mncs.harness.fabric.v1",
+   "backend": "mncs-portable-wasm-mvp",
+   "identity": "mncs:compiler:backend-artifact:65a6858a833ae79b4f3b155d290833fd2e23fe56cca829029e00701ecaf2969e",
+   "bytes_sha256": "38fed55bef47f682ee03ddb09f336570aee670fe46c4f32ac918f520607e1003",
+   "exports": [
+    "classify_fabric",
+    "dispatch_allowed"
+   ],
+   "source": "mncs/harness_fabric.mncs",
+   "source_sha256": "sha256:341e19d7d6d9585848fb1510f020e3394113b20290dc134382ad164cb7e36bc1",
+   "corpus": "corpora/harness-fabric-corpus.json"
+  },
+  "harness_fabric.bytecode.json": {
+   "module": "mncs.harness.fabric.v1",
+   "backend": "mncs-research-bytecode",
+   "identity": "mncs:compiler:backend-artifact:9a5adaac27a4c456d114a9feb053fa70337a4436692769537f401bfb24798a26",
+   "bytes_sha256": "30732587ea70c499e69306f2aa4035ecf2ff467e4a7b42cea9a14f705138d216",
+   "exports": [
+    "classify_fabric",
+    "dispatch_allowed"
+   ],
+   "source": "mncs/harness_fabric.mncs",
+   "source_sha256": "sha256:341e19d7d6d9585848fb1510f020e3394113b20290dc134382ad164cb7e36bc1",
+   "corpus": "corpora/harness-fabric-corpus.json"
+  },
+  "harness_readiness.wasm.json": {
+   "module": "mncs.harness.readiness.v1",
+   "backend": "mncs-portable-wasm-mvp",
+   "identity": "mncs:compiler:backend-artifact:41ecb72e641d783c3605102a2be6a3dadbef474a8290b2005522c5b2da563642",
+   "bytes_sha256": "4e0768a503fd1320664f06f67421c17295d5eff5832a3dd0104a57e68c8f83d3",
+   "exports": [
+    "dominate_readiness",
+    "fold4",
+    "fold8",
+    "fold_readiness__spec_5e828a01",
+    "fold_readiness__spec_f10cf230",
+    "is_ready"
+   ],
+   "source": "mncs/harness_readiness.mncs",
+   "source_sha256": "sha256:fea7a82b3f293dee912d87bddc8a1dc63162fac6acc68a843daaf7f1c4a42a8d",
+   "corpus": "corpora/harness-readiness-corpus.json"
+  },
+  "harness_readiness.bytecode.json": {
+   "module": "mncs.harness.readiness.v1",
+   "backend": "mncs-research-bytecode",
+   "identity": "mncs:compiler:backend-artifact:c0c5be5394c944a29f422d24f0240e7cb4f719c856211ea5584cfaf18ab45843",
+   "bytes_sha256": "9311060e3c6ea49ec01b0069952e95e64a512c91a77bd35f4e8902f840fb0515",
+   "exports": [
+    "dominate_readiness",
+    "fold4",
+    "fold8",
+    "fold_readiness",
+    "fold_readiness__spec_5e828a01",
+    "fold_readiness__spec_f10cf230",
+    "is_ready"
+   ],
+   "source": "mncs/harness_readiness.mncs",
+   "source_sha256": "sha256:fea7a82b3f293dee912d87bddc8a1dc63162fac6acc68a843daaf7f1c4a42a8d",
+   "corpus": "corpora/harness-readiness-corpus.json"
+  },
+  "harness_eligibility.wasm.json": {
+   "module": "mncs.harness.eligibility.v1",
+   "backend": "mncs-portable-wasm-mvp",
+   "identity": "mncs:compiler:backend-artifact:23f44cdadfa91dd4d7cf9333c5dcd2c349670345512973086601d778e33f3471",
+   "bytes_sha256": "8010a7521a948d4c5b4733f5ed6f6b0634f4b77814f787bdd5ef7934fc180eae",
+   "exports": [
+    "capability_eligible",
+    "code_edit_gate",
+    "completion_fail_closed",
+    "completion_gate",
+    "completion_unknown",
+    "resource_gate",
+    "tools_compat",
+    "tools_gate",
+    "tools_unknown"
+   ],
+   "source": "mncs/harness_eligibility.mncs",
+   "source_sha256": "sha256:03c77d83c528632bde154c6cb66751610c902adb754c2d4ddbb7e87729def5dd",
+   "corpus": "corpora/harness-eligibility-corpus.json"
+  },
+  "harness_eligibility.bytecode.json": {
+   "module": "mncs.harness.eligibility.v1",
+   "backend": "mncs-research-bytecode",
+   "identity": "mncs:compiler:backend-artifact:8d388d19978fd178fe7218f58b200d4c72a43001876122bd057d7dceb55072f7",
+   "bytes_sha256": "a873ffef799fcb9931d1517074f619e6d8f8d95e1b16ca8f3726173b0a813c2b",
+   "exports": [
+    "capability_eligible",
+    "code_edit_gate",
+    "completion_fail_closed",
+    "completion_gate",
+    "completion_unknown",
+    "resource_gate",
+    "tools_compat",
+    "tools_gate",
+    "tools_unknown"
+   ],
+   "source": "mncs/harness_eligibility.mncs",
+   "source_sha256": "sha256:03c77d83c528632bde154c6cb66751610c902adb754c2d4ddbb7e87729def5dd",
+   "corpus": "corpora/harness-eligibility-corpus.json"
+  }
+ }
+}

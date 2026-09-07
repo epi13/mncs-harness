@@ -1,0 +1,372 @@
+{
+ "schema_version": "0.2",
+ "identity": "mncs:compiler:backend-artifact:4ffa526b7392f015d752874b2145325cb86200bd0bf692dc0c42c321cd45dc36",
+ "backend": {
+  "identity": "mncs:compiler:backend:6bbc6f37c38ffa3353787ff9ea565d07db3755b42efa8a59871374123adbca15",
+  "name": "mncs-portable-wasm-mvp",
+  "version": "0.1"
+ },
+ "input": {
+  "identity": "mncs:compiler:compiler-artifact:a575fc12e3f80b7f7e7889e0ccaa68e5ce347da2568fae16008fad1a4cd8f4aa",
+  "representation": "selected_ssa",
+  "schema_version": "0.4",
+  "fingerprint": "2d0fb7ccb3ea2fee86a4b2ae1020e2bfefbde6e5bb0c5d0b9b3337ddc322ef22"
+ },
+ "target": {
+  "identity": "mncs:compiler:target-contract:7db47a6485cddf8e3bbaa129f3cc126ee396c799b7ff1fb243a0b1bb4663f902",
+  "candidate": "mncs:target:portable-wasm-mvp-0.1",
+  "facts": {
+   "abi": "one exported wasm function per MNCS function; scalars pass directly, composites pass as pointers to arena cells",
+   "bounded-iteration": "language-owned bounded SSA backedges use the private dispatcher loop; iteration metadata remains selected-SSA-bound",
+   "data-layout": "scalar two's-complement; i8/i16/i32 in wasm i32; i64 in wasm i64; composites are immutable 8-byte-slot cells in linear memory addressed by i32 pointers",
+   "integer": "wrapping=wasm wrapping; checked=explicit overflow test then trap; saturating=explicit clamp; widening=exact extended-width arithmetic",
+   "trap": "failure terminators and checked overflow map to wasm unreachable"
+  },
+  "evidence": [
+   "mncs:target-evidence:portable-wasm-mvp-0.1:declared-research-contract"
+  ],
+  "assumptions": [
+   "portable WASM MVP is a research execution envelope, not a native ABI",
+   "the embedded interpreter defines research execution, not a host wasm CLI"
+  ]
+ },
+ "artifact_kind": "wasm_module",
+ "format": "application/wasm; mncs-portable-wasm-mvp-0.1",
+ "bytes_sha256": "282451603467bcbd90f179ce86d1a564e529a5ba25427614c3831ed6e376e620",
+ "bytes_hex": "0061736d01000000013a0860037f7f7f017f60037f7f7f017f60037f7f7f017f60037f7f7f017f60037f7f7f017f60037f7f7f017f60047f7f7f7f017f60037f7f7f017f03090800010203040506070776080f61646d69745f706c6163656d656e74000008616c6c5f70696e730001086e6f5f666c61677300020a6f6e6c795f6d6f64656c0003096f6e6c795f726f6c6500040b6f6e6c795f776f726b657200051070696e5f6669656c64735f76616c6964000610776f726b65725f616e645f6d6f64656c00070ab70e08cd0106017f017f017f017f017f017f41002108034020084100460440200004404101210805410221080b0c010b200841014604404100210320030f0b20084102460440410321080c010b20084103460440200104404104210805410521080b0c010b200841044604404101210420040f0b20084105460440410621080c010b20084106460440200204404107210805410821080b0c010b200841074604404103210520050f0b20084108460440410921080c010b200841094604404102210620060f0b2008410a460440000b0b000bcd0106017f017f017f017f017f017f41002108034020084100460440200004404101210805410221080b0c010b20084101460440410321080c010b200841024604404100210320030f0b20084103460440200104404104210805410521080b0c010b20084104460440410621080c010b200841054604404100210420040f0b20084106460440200204404107210805410821080b0c010b20084107460440410921080c010b200841084604404100210520050f0b200841094604404101210620060f0b2008410a460440000b0b000bcd0106017f017f017f017f017f017f41002108034020084100460440200004404101210805410221080b0c010b200841014604404100210320030f0b20084102460440410321080c010b20084103460440200104404104210805410521080b0c010b200841044604404100210420040f0b20084105460440410621080c010b20084106460440200204404107210805410821080b0c010b200841074604404100210520050f0b20084108460440410921080c010b200841094604404101210620060f0b2008410a460440000b0b000bcd0106017f017f017f017f017f017f41002108034020084100460440200004404101210805410221080b0c010b200841014604404100210320030f0b20084102460440410321080c010b20084103460440200104404104210805410521080b0c010b200841044604404100210420040f0b20084105460440410621080c010b20084106460440200204404107210805410821080b0c010b20084107460440410921080c010b200841084604404100210520050f0b200841094604404101210620060f0b2008410a460440000b0b000bcd0106017f017f017f017f017f017f41002108034020084100460440200004404101210805410221080b0c010b20084101460440410321080c010b200841024604404100210320030f0b20084103460440200104404104210805410521080b0c010b200841044604404100210420040f0b20084105460440410621080c010b20084106460440200204404107210805410821080b0c010b200841074604404100210520050f0b20084108460440410921080c010b200841094604404101210620060f0b2008410a460440000b0b000bcd0106017f017f017f017f017f017f41002108034020084100460440200004404101210805410221080b0c010b200841014604404100210320030f0b20084102460440410321080c010b20084103460440200104404104210805410521080b0c010b20084104460440410621080c010b200841054604404100210420040f0b20084106460440200204404107210805410821080b0c010b200841074604404100210520050f0b20084108460440410921080c010b200841094604404101210620060f0b2008410a460440000b0b000b8b030e017f017f017f017f017f017f017f017f017f017f017f017f017f017f4100211103402011410046044020004100462104200404404102211105410821110b0c010b2011410146044020050f0b201141024604402001200220031002210620062105410121110c010b201141034604402001200220031004210720072105410121110c010b201141044604402001200220031003210820082105410121110c010b201141054604402001200220031005210920092105410121110c010b201141064604402001200220031007210a200a2105410121110c010b201141074604402001200220031001210b200b2105410121110c010b201141084604402000410146210c200c04404103211105410921110b0c010b201141094604402000410246210d200d04404104211105410a21110b0c010b2011410a4604402000410346210e200e04404105211105410b21110b0c010b2011410b4604402000410446210f200f04404106211105410c21110b0c010b2011410c460440410721110c010b2011410d460440000b0b000bcd0106017f017f017f017f017f017f41002108034020084100460440200004404101210805410221080b0c010b200841014604404100210320030f0b20084102460440410321080c010b20084103460440200104404104210805410521080b0c010b20084104460440410621080c010b200841054604404100210420040f0b20084106460440200204404107210805410821080b0c010b20084107460440410921080c010b200841084604404100210520050f0b200841094604404101210620060f0b2008410a460440000b0b000b",
+ "exports": [
+  "admit_placement",
+  "all_pins",
+  "no_flags",
+  "only_model",
+  "only_role",
+  "only_worker",
+  "pin_fields_valid",
+  "worker_and_model"
+ ],
+ "function_value_contracts": {
+  "admit_placement": {
+   "inputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.pins.v1::PlaceDecision",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PlaceDecision::AUTO_ALLOWED",
+       "1": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PlaceDecision::PIN_HONORED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PlaceDecision::PIN_FAILED_CLOSED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PlaceDecision::FALLBACK_ALLOWED"
+      }
+     }
+    }
+   ]
+  },
+  "all_pins": {
+   "inputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ]
+  },
+  "no_flags": {
+   "inputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ]
+  },
+  "only_model": {
+   "inputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ]
+  },
+  "only_role": {
+   "inputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ]
+  },
+  "only_worker": {
+   "inputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ]
+  },
+  "pin_fields_valid": {
+   "inputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.pins.v1::PinMode",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PinMode::AUTO",
+       "1": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PinMode::ROLE",
+       "2": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PinMode::MODEL",
+       "3": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PinMode::WORKER",
+       "4": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PinMode::WORKER_MODEL",
+       "5": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PinMode::WORKER_MODEL_ROLE"
+      }
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ]
+  },
+  "worker_and_model": {
+   "inputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ]
+  }
+ },
+ "composite_value_contracts": {
+  "PinMode": {
+   "finite": {
+    "type_identity": "mncs:0.2:finite-type:mncs.harness.pins.v1::PinMode",
+    "variants": {
+     "0": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PinMode::AUTO",
+     "1": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PinMode::ROLE",
+     "2": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PinMode::MODEL",
+     "3": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PinMode::WORKER",
+     "4": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PinMode::WORKER_MODEL",
+     "5": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PinMode::WORKER_MODEL_ROLE"
+    },
+    "payloads": {
+     "0": [],
+     "1": [],
+     "2": [],
+     "3": [],
+     "4": [],
+     "5": []
+    }
+   }
+  },
+  "PlaceDecision": {
+   "finite": {
+    "type_identity": "mncs:0.2:finite-type:mncs.harness.pins.v1::PlaceDecision",
+    "variants": {
+     "0": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PlaceDecision::AUTO_ALLOWED",
+     "1": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PlaceDecision::PIN_HONORED",
+     "2": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PlaceDecision::PIN_FAILED_CLOSED",
+     "3": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PlaceDecision::FALLBACK_ALLOWED"
+    },
+    "payloads": {
+     "0": [],
+     "1": [],
+     "2": [],
+     "3": []
+    }
+   }
+  },
+  "mncs:0.2:finite-type:mncs.harness.pins.v1::PinMode": {
+   "finite": {
+    "type_identity": "mncs:0.2:finite-type:mncs.harness.pins.v1::PinMode",
+    "variants": {
+     "0": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PinMode::AUTO",
+     "1": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PinMode::ROLE",
+     "2": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PinMode::MODEL",
+     "3": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PinMode::WORKER",
+     "4": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PinMode::WORKER_MODEL",
+     "5": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PinMode::WORKER_MODEL_ROLE"
+    },
+    "payloads": {
+     "0": [],
+     "1": [],
+     "2": [],
+     "3": [],
+     "4": [],
+     "5": []
+    }
+   }
+  },
+  "mncs:0.2:finite-type:mncs.harness.pins.v1::PlaceDecision": {
+   "finite": {
+    "type_identity": "mncs:0.2:finite-type:mncs.harness.pins.v1::PlaceDecision",
+    "variants": {
+     "0": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PlaceDecision::AUTO_ALLOWED",
+     "1": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PlaceDecision::PIN_HONORED",
+     "2": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PlaceDecision::PIN_FAILED_CLOSED",
+     "3": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PlaceDecision::FALLBACK_ALLOWED"
+    },
+    "payloads": {
+     "0": [],
+     "1": [],
+     "2": [],
+     "3": []
+    }
+   }
+  }
+ },
+ "assumptions": [
+  "checked overflow traps as unreachable; checked division traps on zero and MIN/-1",
+  "composites (records and payload-bearing finite variants) are immutable cells in linear memory allocated from a bump arena",
+  "portable WASM MVP is a research execution envelope, not a native ABI",
+  "saturating uses explicit bounded-width clamp logic; widening uses exact i64 intermediates",
+  "the embedded interpreter defines research execution, not a host wasm CLI"
+ ],
+ "obligations_generated": [],
+ "execution_applicability": [
+  "embedded mncs-portable-wasm-mvp interpreter",
+  "no WASI",
+  "no host CLI"
+ ],
+ "evidence_dependencies": [
+  "mncs:target-evidence:portable-wasm-mvp-0.1:declared-research-contract"
+ ],
+ "unsupported": [],
+ "status": "PASS"
+}

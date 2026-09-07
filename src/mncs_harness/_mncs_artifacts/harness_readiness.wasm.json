@@ -1,0 +1,398 @@
+{
+ "schema_version": "0.2",
+ "identity": "mncs:compiler:backend-artifact:41ecb72e641d783c3605102a2be6a3dadbef474a8290b2005522c5b2da563642",
+ "backend": {
+  "identity": "mncs:compiler:backend:6bbc6f37c38ffa3353787ff9ea565d07db3755b42efa8a59871374123adbca15",
+  "name": "mncs-portable-wasm-mvp",
+  "version": "0.1"
+ },
+ "input": {
+  "identity": "mncs:compiler:compiler-artifact:7daa867d4a95633990770c4720484cb38981ec54a68246141f5acd1f5dac5fcf",
+  "representation": "selected_ssa",
+  "schema_version": "0.4",
+  "fingerprint": "e214b0e88e2929cc4360dfc171e720fafc12d0c6b09e92bdc2b2165c571fe4d6"
+ },
+ "target": {
+  "identity": "mncs:compiler:target-contract:7db47a6485cddf8e3bbaa129f3cc126ee396c799b7ff1fb243a0b1bb4663f902",
+  "candidate": "mncs:target:portable-wasm-mvp-0.1",
+  "facts": {
+   "abi": "one exported wasm function per MNCS function; scalars pass directly, composites pass as pointers to arena cells",
+   "bounded-iteration": "language-owned bounded SSA backedges use the private dispatcher loop; iteration metadata remains selected-SSA-bound",
+   "data-layout": "scalar two's-complement; i8/i16/i32 in wasm i32; i64 in wasm i64; composites are immutable 8-byte-slot cells in linear memory addressed by i32 pointers",
+   "integer": "wrapping=wasm wrapping; checked=explicit overflow test then trap; saturating=explicit clamp; widening=exact extended-width arithmetic",
+   "trap": "failure terminators and checked overflow map to wasm unreachable"
+  },
+  "evidence": [
+   "mncs:target-evidence:portable-wasm-mvp-0.1:declared-research-contract"
+  ],
+  "assumptions": [
+   "portable WASM MVP is a research execution envelope, not a native ABI",
+   "the embedded interpreter defines research execution, not a host wasm CLI"
+  ]
+ },
+ "artifact_kind": "wasm_module",
+ "format": "application/wasm; mncs-portable-wasm-mvp-0.1",
+ "bytes_sha256": "4e0768a503fd1320664f06f67421c17295d5eff5832a3dd0104a57e68c8f83d3",
+ "bytes_hex": "0061736d0100000001370960027f7f017f60047f7f7f7f017f60087f7f7f7f7f7f7f7f017f60017f017f60017f017f60017f017f60017f017f60017f017e600000030a09000102030405060708050401008004060b027f0141080b7f0141080b07b3010a12646f6d696e6174655f72656164696e657373000005666f6c6434000105666f6c643800021d666f6c645f72656164696e6573735f5f737065635f356538323861303100031d666f6c645f72656164696e6573735f5f737065635f663130636632333000040869735f726561647900050a6d6e63735f616c6c6f630006106d6e63735f686f73745f6275666665720007166d6e63735f686f73745f6275666665725f72657365740008066d656d6f727902000aa50c09890517017f017f017f017f017f017f017f017f017f017f017f017f017f017f017f017f017f017f017f017f017f017f017f4100211803402018410046044020004102462102200204404102211805410621180b0c010b2018410146044020030f0b201841024604404102210420042103410121180c010b201841034604402001410246210520050440410a211805410e21180b0c010b2018410446044020014102462106200604404112211805411621180b0c010b2018410546044020012103410121180c010b2018410646044020004103462107200704404103211805410721180b0c010b2018410746044020004101462108200804404104211805410821180b0c010b20184108460440410521180c010b2018410946044020092103410121180c010b2018410a4604404102210a200a2109410921180c010b2018410b4604404103210b200b2109410921180c010b2018410c4604404103210c200c2109410921180c010b2018410d4604404103210d200d2109410921180c010b2018410e4604402001410346210e200e0440410b211805410f21180b0c010b2018410f4604402001410146210f200f0440410c211805411021180b0c010b20184110460440410d21180c010b2018411146044020102103410121180c010b201841124604404102211120112110411121180c010b201841134604404103211220122110411121180c010b201841144604404101211320132110411121180c010b201841154604404101211420142110411121180c010b2018411646044020014103462115201504404113211805411721180b0c010b2018411746044020014101462116201604404114211805411821180b0c010b20184118460440411521180c010b20184119460440000b0b000b5704017f017f017f017f4100210703402007410046044041201006210420042000360200200441086a2001360200200441106a2002360200200441186a200336020020041004210520050f0b20074101460440000b0b000b800104017f017f017f017f4100210b0340200b410046044041c0001006210820082000360200200841086a2001360200200841106a2002360200200841186a2003360200200841206a2004360200200841286a2005360200200841306a2006360200200841386a200736020020081003210920090f0b200b4101460440000b0b000bc6010e017e017f017f017e017e017f017e017f017f017e017e017f017f017f4100210e0340200e4100460440420821014100210220022001210421034101210e0c010b200e41014604404200210520042005562106200604404102210e052003210c4103210e0b0c010b200e4102460440200120047d210720002007420386a76a280200210820032008100021094201210a2004200a7d210b2004200b540440000b2009200b210421034101210e0c010b200e4103460440200c0f0b200e4104460440000b0b000bc6010e017e017f017f017e017e017f017e017f017f017e017e017f017f017f4100210e0340200e4100460440420421014100210220022001210421034101210e0c010b200e41014604404200210520042005562106200604404102210e052003210c4103210e0b0c010b200e4102460440200120047d210720002007420386a76a280200210820032008100021094201210a2004200a7d210b2004200b540440000b2009200b210421034101210e0c010b200e4103460440200c0f0b200e4104460440000b0b000bf5010a017f017f017f017f017f017f017f017f017f017f4100210a0340200a410046044020004100462101200104404102210a054106210a0b0c010b200a410146044020020f0b200a410246044041012103200321024101210a0c010b200a410346044041002104200421024101210a0c010b200a410446044041002105200521024101210a0c010b200a410546044041002106200621024101210a0c010b200a410646044020004101462107200704404103210a054107210a0b0c010b200a410746044020004102462108200804404104210a054108210a0b0c010b200a41084604404105210a0c010b200a4109460440000b0b000b1701017f230021012300200041076a4178716a240020010b1801017f200010062101230024012001ad2000ad422086840b0600230124000b",
+ "exports": [
+  "dominate_readiness",
+  "fold4",
+  "fold8",
+  "fold_readiness__spec_5e828a01",
+  "fold_readiness__spec_f10cf230",
+  "is_ready"
+ ],
+ "function_value_contracts": {
+  "dominate_readiness": {
+   "inputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      }
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      }
+     }
+    }
+   ]
+  },
+  "fold4": {
+   "inputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      }
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      }
+     }
+    }
+   ]
+  },
+  "fold8": {
+   "inputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      }
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      }
+     }
+    }
+   ]
+  },
+  "fold_readiness": {
+   "inputs": [
+    {
+     "scalar": {
+      "semantic_type": "[Readiness; N]"
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      }
+     }
+    }
+   ]
+  },
+  "fold_readiness__spec_5e828a01": {
+   "inputs": [
+    {
+     "sequence": {
+      "semantic_type": "[Readiness; 8]",
+      "element": "Readiness",
+      "length": 8
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      }
+     }
+    }
+   ]
+  },
+  "fold_readiness__spec_f10cf230": {
+   "inputs": [
+    {
+     "sequence": {
+      "semantic_type": "[Readiness; 4]",
+      "element": "Readiness",
+      "length": 4
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      }
+     }
+    }
+   ]
+  },
+  "is_ready": {
+   "inputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      }
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ]
+  }
+ },
+ "composite_value_contracts": {
+  "Readiness": {
+   "finite": {
+    "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+    "variants": {
+     "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+     "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+     "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+     "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+    },
+    "payloads": {
+     "0": [],
+     "1": [],
+     "2": [],
+     "3": []
+    }
+   }
+  },
+  "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness": {
+   "finite": {
+    "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+    "variants": {
+     "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+     "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+     "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+     "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+    },
+    "payloads": {
+     "0": [],
+     "1": [],
+     "2": [],
+     "3": []
+    }
+   }
+  }
+ },
+ "assumptions": [
+  "checked overflow traps as unreachable; checked division traps on zero and MIN/-1",
+  "composites (records and payload-bearing finite variants) are immutable cells in linear memory allocated from a bump arena",
+  "portable WASM MVP is a research execution envelope, not a native ABI",
+  "saturating uses explicit bounded-width clamp logic; widening uses exact i64 intermediates",
+  "the embedded interpreter defines research execution, not a host wasm CLI"
+ ],
+ "obligations_generated": [],
+ "execution_applicability": [
+  "embedded mncs-portable-wasm-mvp interpreter",
+  "no WASI",
+  "no host CLI"
+ ],
+ "evidence_dependencies": [
+  "mncs:target-evidence:portable-wasm-mvp-0.1:declared-research-contract"
+ ],
+ "unsupported": [],
+ "status": "PASS"
+}

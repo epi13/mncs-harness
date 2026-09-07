@@ -138,35 +138,37 @@ def evaluate_experiment_fabric(
         and artifact_digest.lower() == certified_artifact_digest.lower()
     )
     exact = certified_commit or certified_digest
-    if missing:
-        classification = "INCOMPATIBLE"
-        action = "dispatch_blocked"
+    # Classification EXECUTES the MNCS kernel (mncs/harness_fabric.mncs via
+    # mncs_exec). The host owns string parsing and capability-name tables;
+    # the precedence order itself is machine-native.
+    from . import mncs_exec
+
+    classification = mncs_exec.classify_fabric(
+        bool(missing),
+        parseable,
+        too_old,
+        exact,
+        version == EXPERIMENT_CERTIFIED_FABRIC_VERSION,
+    )
+    allowed = mncs_exec.fabric_dispatch_allowed(classification)
+    action = "dispatch_allowed" if allowed else "dispatch_blocked"
+    if classification == "INCOMPATIBLE":
         reason = "required persistent-service capabilities are missing"
-    elif not parseable:
-        classification = "UNKNOWN"
-        action = "dispatch_blocked"
+    elif classification == "UNKNOWN":
         reason = "Fabric version is not a parseable PEP 440 identifier"
-    elif too_old:
-        classification = "TOO_OLD"
-        action = "dispatch_blocked"
+    elif classification == "TOO_OLD":
         reason = (
             f"Fabric {version} is older than minimum supported "
             f"{MIN_SUPPORTED_FABRIC_VERSION}"
         )
-    elif exact:
-        classification = "EXPERIMENT_CERTIFIED_EXACT"
-        action = "dispatch_allowed"
+    elif classification == "EXPERIMENT_CERTIFIED_EXACT":
         reason = "Fabric matches the experiment-certified immutable identity"
-    elif version == EXPERIMENT_CERTIFIED_FABRIC_VERSION:
-        classification = "COMPATIBLE_VERSION_ONLY"
-        action = "dispatch_allowed"
+    elif classification == "COMPATIBLE_VERSION_ONLY":
         reason = (
             "Fabric version matches the certified revision but no source "
             "commit or artifact digest is bound"
         )
     else:
-        classification = "COMPATIBLE_NEWER"
-        action = "dispatch_allowed"
         reason = (
             f"Fabric {version} is newer than the certified revision and "
             "advertises the required capabilities"

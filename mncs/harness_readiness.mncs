@@ -1,0 +1,73 @@
+mncs 0.10;
+
+// mncs.harness.readiness.v1 — experiment-readiness verdict combination.
+//
+// Readiness is a four-valued lattice over per-layer states: BLOCKED
+// dominates UNKNOWN dominates DEGRADED dominates READY. Combination can
+// only worsen the verdict; nothing here promotes UNKNOWN or DEGRADED.
+//
+// This module pressures the Profile 0.10 generic-sequence facility
+// (HARNESS-PRESSURE-003/010 follow-up): the authoritative fold is generic
+// over `[Readiness; N]`, with concrete `fold4`/`fold8` envelopes as the
+// host-callable surface. The host owns everything string-shaped — layer
+// names, detail messages, evidence blobs, profile tables — and encodes
+// each required layer as one Readiness value in a fixed agreed order.
+module mncs.harness.readiness.v1;
+
+enum Readiness { READY, DEGRADED, BLOCKED, UNKNOWN }
+
+fn dominate_readiness(left: Readiness, right: Readiness) -> (result: Readiness) {
+    return match left {
+        BLOCKED => Readiness.BLOCKED,
+        UNKNOWN => match right {
+            BLOCKED => Readiness.BLOCKED,
+            UNKNOWN => Readiness.UNKNOWN,
+            DEGRADED => Readiness.UNKNOWN,
+            READY => Readiness.UNKNOWN,
+        },
+        DEGRADED => match right {
+            BLOCKED => Readiness.BLOCKED,
+            UNKNOWN => Readiness.UNKNOWN,
+            DEGRADED => Readiness.DEGRADED,
+            READY => Readiness.DEGRADED,
+        },
+        READY => right,
+    };
+}
+
+// Authoritative generic fold. Every required layer is observed exactly
+// once; no placeholder values exist.
+fn fold_readiness<N: Nat>(layers: [Readiness; N]) -> (result: Readiness) {
+    iterate i over layers carrying acc: Readiness = Readiness.READY {
+        next acc = dominate_readiness(acc, layers[i]);
+    }
+    return acc;
+}
+
+fn fold4(first: Readiness, second: Readiness, third: Readiness, fourth: Readiness) -> (result: Readiness) {
+    let layers: [Readiness; 4] = [first, second, third, fourth];
+    return fold_readiness<4>(layers);
+}
+
+fn fold8(
+    first: Readiness,
+    second: Readiness,
+    third: Readiness,
+    fourth: Readiness,
+    fifth: Readiness,
+    sixth: Readiness,
+    seventh: Readiness,
+    eighth: Readiness
+) -> (result: Readiness) {
+    let layers: [Readiness; 8] = [first, second, third, fourth, fifth, sixth, seventh, eighth];
+    return fold_readiness<8>(layers);
+}
+
+fn is_ready(state: Readiness) -> (result: bool) {
+    return match state {
+        READY => true,
+        DEGRADED => false,
+        BLOCKED => false,
+        UNKNOWN => false,
+    };
+}

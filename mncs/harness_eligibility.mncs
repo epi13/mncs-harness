@@ -1,0 +1,154 @@
+mncs 0.6;
+
+// mncs.harness.eligibility.v1 — model capability and resource gating.
+//
+// The host owns strings and measurements: provider-claim tables, evidence
+// outcomes, byte counts, and policy fractions. What moves here are the two
+// pure admission decisions: per-capability eligibility under an unknown
+// policy, and integer resource-threshold gating after host measurement.
+//
+// Capability rules mirror the harness selection policy exactly:
+//   COMPLETION: observed FAIL denies; a provider claim or observed PASS
+//     admits; otherwise only fail-closed with required observation denies.
+//   TOOLS: observed FAIL denies; observed PASS admits; a bare claim admits
+//     unless mutation requires observation; explore admits unknowns;
+//     provider-claim-compat admits only when unclaimed size ranking is
+//     allowed; anything else denies.
+//   CODE_EDIT: only observed FAIL denies; undemonstrated capability is
+//     noted by the host but never denies here.
+// The OTHER policy code replicates historical behavior for callers that
+// bypass the typed UnknownPolicy (permissive for completion/code-edit,
+// denying for tools); typed configurations never produce it.
+module mncs.harness.eligibility.v1;
+
+enum Capability { COMPLETION, TOOLS, CODE_EDIT }
+
+enum Observed { NONE, PASS, FAIL }
+
+enum UnknownPolicy { FAIL_CLOSED, EXPLORE, PROVIDER_CLAIM_COMPAT, OTHER }
+
+enum ResourceVerdict { OK, MISSING_FACTS, OVER_BUDGET, OVER_AVAILABLE }
+
+fn completion_gate(
+    observed: Observed,
+    claimed: bool,
+    unknown_policy: UnknownPolicy,
+    require_observed: bool
+) -> (result: bool) {
+    return match observed {
+        FAIL => false,
+        PASS => true,
+        NONE => completion_unknown(claimed, unknown_policy, require_observed),
+    };
+}
+
+fn completion_unknown(
+    claimed: bool,
+    unknown_policy: UnknownPolicy,
+    require_observed: bool
+) -> (result: bool) {
+    if claimed {
+        return true;
+    }
+    return match unknown_policy {
+        FAIL_CLOSED => completion_fail_closed(require_observed),
+        EXPLORE => true,
+        PROVIDER_CLAIM_COMPAT => true,
+        OTHER => true,
+    };
+}
+
+fn completion_fail_closed(require_observed: bool) -> (result: bool) {
+    if require_observed {
+        return false;
+    }
+    return true;
+}
+
+fn tools_gate(
+    observed: Observed,
+    claimed: bool,
+    unknown_policy: UnknownPolicy,
+    require_observed: bool,
+    allow_unclaimed: bool
+) -> (result: bool) {
+    return match observed {
+        FAIL => false,
+        PASS => true,
+        NONE => tools_unknown(claimed, unknown_policy, require_observed, allow_unclaimed),
+    };
+}
+
+fn tools_unknown(
+    claimed: bool,
+    unknown_policy: UnknownPolicy,
+    require_observed: bool,
+    allow_unclaimed: bool
+) -> (result: bool) {
+    if claimed {
+        if require_observed {
+            return false;
+        }
+        return true;
+    }
+    return match unknown_policy {
+        FAIL_CLOSED => false,
+        EXPLORE => true,
+        PROVIDER_CLAIM_COMPAT => tools_compat(allow_unclaimed),
+        OTHER => false,
+    };
+}
+
+fn tools_compat(allow_unclaimed: bool) -> (result: bool) {
+    if allow_unclaimed {
+        return true;
+    }
+    return false;
+}
+
+fn code_edit_gate(observed: Observed) -> (result: bool) {
+    return match observed {
+        FAIL => false,
+        PASS => true,
+        NONE => true,
+    };
+}
+
+fn capability_eligible(
+    gate: Capability,
+    observed: Observed,
+    claimed: bool,
+    unknown_policy: UnknownPolicy,
+    require_observed: bool,
+    allow_unclaimed: bool
+) -> (result: bool) {
+    return match gate {
+        COMPLETION => completion_gate(observed, claimed, unknown_policy, require_observed),
+        TOOLS => tools_gate(observed, claimed, unknown_policy, require_observed, allow_unclaimed),
+        CODE_EDIT => code_edit_gate(observed),
+    };
+}
+
+// Integer threshold gating after host measurement. The host precomputes
+// the policy budget (total * fraction) and reports availability only when
+// it is a positive integer; `has_available` distinguishes "measured small"
+// from "not reported" without sentinel overloading in the contract.
+fn resource_gate(
+    facts_complete: bool,
+    size: i64,
+    budget: i64,
+    has_available: bool,
+    available: i64
+) -> (result: ResourceVerdict) {
+    if facts_complete {
+    } else {
+        return ResourceVerdict.MISSING_FACTS;
+    }
+    if size > budget {
+        return ResourceVerdict.OVER_BUDGET;
+    }
+    if has_available && size > available {
+        return ResourceVerdict.OVER_AVAILABLE;
+    }
+    return ResourceVerdict.OK;
+}

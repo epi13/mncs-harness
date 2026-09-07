@@ -83,6 +83,12 @@ class ResidencyManager:
         accelerators = [
             item for item in resources.get("accelerators") or [] if isinstance(item, dict)
         ]
+        # Threshold classification EXECUTES the MNCS kernel
+        # (mncs/harness_eligibility.mncs resource_gate via mncs_exec). The
+        # host owns measurement (facts extraction, policy-fraction
+        # multiply); the budget/availability verdict is machine-native.
+        from . import mncs_exec
+
         facts = {
             "model_size_bytes": size if isinstance(size, int) else None,
             "host_memory_total_bytes": total if isinstance(total, int) else None,
@@ -94,23 +100,33 @@ class ResidencyManager:
                 int(item.get("free_memory_bytes") or 0) for item in accelerators
             ) or None,
         }
-        if (
-            not isinstance(total, int)
-            or not isinstance(size, int)
-            or total <= 0
-            or size <= 0
-            or (require_available and (not isinstance(available, int) or available <= 0))
-        ):
+        facts_complete = (
+            isinstance(total, int)
+            and isinstance(size, int)
+            and total > 0
+            and size > 0
+            and (not require_available or (isinstance(available, int) and available > 0))
+        )
+        maximum = int(total * self.policy.maximum_model_memory_fraction) if isinstance(total, int) else 0
+        has_available = isinstance(available, int) and available > 0
+        verdict = mncs_exec.resource_gate(
+            facts_complete,
+            size if isinstance(size, int) else 0,
+            maximum,
+            has_available,
+            available if has_available else 0,
+        )
+        if facts_complete:
+            facts["policy_model_memory_budget_bytes"] = maximum
+        if verdict == "MISSING_FACTS":
             return False, "bounded model-size and current host-memory facts are required", facts
-        maximum = int(total * self.policy.maximum_model_memory_fraction)
-        facts["policy_model_memory_budget_bytes"] = maximum
-        if size > maximum:
+        if verdict == "OVER_BUDGET":
             return (
                 False,
                 f"model storage size {size} exceeds conservative policy budget {maximum}",
                 facts,
             )
-        if isinstance(available, int) and available > 0 and size > available:
+        if verdict == "OVER_AVAILABLE":
             return (
                 False,
                 f"model storage size {size} exceeds currently available host memory {available}",

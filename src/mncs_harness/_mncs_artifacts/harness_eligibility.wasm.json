@@ -1,0 +1,508 @@
+{
+ "schema_version": "0.2",
+ "identity": "mncs:compiler:backend-artifact:23f44cdadfa91dd4d7cf9333c5dcd2c349670345512973086601d778e33f3471",
+ "backend": {
+  "identity": "mncs:compiler:backend:6bbc6f37c38ffa3353787ff9ea565d07db3755b42efa8a59871374123adbca15",
+  "name": "mncs-portable-wasm-mvp",
+  "version": "0.1"
+ },
+ "input": {
+  "identity": "mncs:compiler:compiler-artifact:17ae650b61ced7f7e93cc2c1c11c91db45e5724d202de3e70c7ed10597eea4a3",
+  "representation": "selected_ssa",
+  "schema_version": "0.4",
+  "fingerprint": "669c38ee58cfb78a33ce6f1df74a9967c3ccbba356b9a2a71e06478bec611c03"
+ },
+ "target": {
+  "identity": "mncs:compiler:target-contract:7db47a6485cddf8e3bbaa129f3cc126ee396c799b7ff1fb243a0b1bb4663f902",
+  "candidate": "mncs:target:portable-wasm-mvp-0.1",
+  "facts": {
+   "abi": "one exported wasm function per MNCS function; scalars pass directly, composites pass as pointers to arena cells",
+   "bounded-iteration": "language-owned bounded SSA backedges use the private dispatcher loop; iteration metadata remains selected-SSA-bound",
+   "data-layout": "scalar two's-complement; i8/i16/i32 in wasm i32; i64 in wasm i64; composites are immutable 8-byte-slot cells in linear memory addressed by i32 pointers",
+   "integer": "wrapping=wasm wrapping; checked=explicit overflow test then trap; saturating=explicit clamp; widening=exact extended-width arithmetic",
+   "trap": "failure terminators and checked overflow map to wasm unreachable"
+  },
+  "evidence": [
+   "mncs:target-evidence:portable-wasm-mvp-0.1:declared-research-contract"
+  ],
+  "assumptions": [
+   "portable WASM MVP is a research execution envelope, not a native ABI",
+   "the embedded interpreter defines research execution, not a host wasm CLI"
+  ]
+ },
+ "artifact_kind": "wasm_module",
+ "format": "application/wasm; mncs-portable-wasm-mvp-0.1",
+ "bytes_sha256": "8010a7521a948d4c5b4733f5ed6f6b0634f4b77814f787bdd5ef7934fc180eae",
+ "bytes_hex": "0061736d0100000001430960067f7f7f7f7f7f017f60017f017f60017f017f60047f7f7f7f017f60037f7f7f017f60057f7e7e7f7e017f60017f017f60057f7f7f7f7f017f60047f7f7f7f017f030a0900010203040506070807a40109136361706162696c6974795f656c696769626c6500000e636f64655f656469745f67617465000116636f6d706c6574696f6e5f6661696c5f636c6f73656400020f636f6d706c6574696f6e5f67617465000312636f6d706c6574696f6e5f756e6b6e6f776e00040d7265736f757263655f6761746500050c746f6f6c735f636f6d70617400060a746f6f6c735f6761746500070d746f6f6c735f756e6b6e6f776e00080adc0e09d00108017f017f017f017f017f017f017f017f4100210d0340200d410046044020004100462106200604404102210d054105210d0b0c010b200d410146044020070f0b200d4102460440200120022003200410032108200821074101210d0c010b200d41034604402001200220032004200510072109200921074101210d0c010b200d410446044020011001210a200a21074101210d0c010b200d41054604402000410146210b200b04404103210d054106210d0b0c010b200d41064604404104210d0c010b200d4107460440000b0b000bbc0108017f017f017f017f017f017f017f017f4100210803402008410046044020004102462101200104404102210805410521080b0c010b2008410146044020020f0b200841024604404100210320032102410121080c010b200841034604404101210420042102410121080c010b200841044604404101210520052102410121080c010b2008410546044020004101462106200604404103210805410621080b0c010b20084106460440410421080c010b20084107460440000b0b000b5f04017f017f017f017f41002104034020044100460440200004404101210405410221040b0c010b200441014604404100210120010f0b20044102460440410321040c010b200441034604404101210220020f0b20044104460440000b0b000bc20108017f017f017f017f017f017f017f017f4100210b0340200b410046044020004102462104200404404102210b054105210b0b0c010b200b410146044020050f0b200b410246044041002106200621054101210b0c010b200b410346044041012107200721054101210b0c010b200b410446044020012002200310042108200821054101210b0c010b200b410546044020004101462109200904404103210b054106210b0b0c010b200b41064604404104210b0c010b200b4107460440000b0b000bae020b017f017f017f017f017f017f017f017f017f017f017f4100210d0340200d4100460440200004404101210d054102210d0b0c010b200d41014604404101210320030f0b200d41024604404103210d0c010b200d410346044020014100462104200404404105210d054109210d0b0c010b200d410446044020050f0b200d4105460440200210022106200621054104210d0c010b200d410646044041012107200721054104210d0c010b200d410746044041012108200821054104210d0c010b200d410846044041012109200921054104210d0c010b200d41094604402001410146210a200a04404106210d05410a210d0b0c010b200d410a4604402001410246210b200b04404107210d05410b210d0b0c010b200d410b4604404108210d0c010b200d410c460440000b0b000be80109017f017f017f017f017f017f017f017f017f4100210d0340200d4100460440200004404101210d054102210d0b0c010b200d41014604404103210d0c010b200d41024604404101210520050f0b200d410346044020012002552106200604404104210d054105210d0b0c010b200d41044604404102210720070f0b200d41054604404106210d0c010b200d41064604402001200455210820032008712109200904404107210d054108210d0b0c010b200d41074604404103210a200a0f0b200d41084604404109210d0c010b200d41094604404100210b200b0f0b200d410a460440000b0b000b5f04017f017f017f017f41002104034020044100460440200004404101210405410221040b0c010b200441014604404101210120010f0b20044102460440410321040c010b200441034604404100210220020f0b20044104460440000b0b000bc40108017f017f017f017f017f017f017f017f4100210c0340200c410046044020004102462105200504404102210c054105210c0b0c010b200c410146044020060f0b200c410246044041002107200721064101210c0c010b200c410346044041012108200821064101210c0c010b200c4104460440200120022003200410082109200921064101210c0c010b200c41054604402000410146210a200a04404103210c054106210c0b0c010b200c41064604404104210c0c010b200c4107460440000b0b000be5020c017f017f017f017f017f017f017f017f017f017f017f017f4100210f0340200f4100460440200004404101210f054102210f0b0c010b200f4101460440200204404104210f054105210f0b0c010b200f41024604404103210f0c010b200f410346044020014100462104200404404108210f05410c210f0b0c010b200f41044604404100210520050f0b200f41054604404106210f0c010b200f41064604404101210620060f0b200f410746044020070f0b200f410846044041002108200821074107210f0c010b200f410946044041012109200921074107210f0c010b200f410a46044020031006210a200a21074107210f0c010b200f410b4604404100210b200b21074107210f0c010b200f410c4604402001410146210c200c04404109210f05410d210f0b0c010b200f410d4604402001410246210d200d0440410a210f05410e210f0b0c010b200f410e460440410b210f0c010b200f410f460440000b0b000b",
+ "exports": [
+  "capability_eligible",
+  "code_edit_gate",
+  "completion_fail_closed",
+  "completion_gate",
+  "completion_unknown",
+  "resource_gate",
+  "tools_compat",
+  "tools_gate",
+  "tools_unknown"
+ ],
+ "function_value_contracts": {
+  "capability_eligible": {
+   "inputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Capability",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Capability::COMPLETION",
+       "1": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Capability::TOOLS",
+       "2": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Capability::CODE_EDIT"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Observed",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Observed::NONE",
+       "1": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Observed::PASS",
+       "2": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Observed::FAIL"
+      }
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::UnknownPolicy",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::FAIL_CLOSED",
+       "1": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::EXPLORE",
+       "2": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::PROVIDER_CLAIM_COMPAT",
+       "3": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::OTHER"
+      }
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ]
+  },
+  "code_edit_gate": {
+   "inputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Observed",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Observed::NONE",
+       "1": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Observed::PASS",
+       "2": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Observed::FAIL"
+      }
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ]
+  },
+  "completion_fail_closed": {
+   "inputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ]
+  },
+  "completion_gate": {
+   "inputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Observed",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Observed::NONE",
+       "1": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Observed::PASS",
+       "2": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Observed::FAIL"
+      }
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::UnknownPolicy",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::FAIL_CLOSED",
+       "1": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::EXPLORE",
+       "2": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::PROVIDER_CLAIM_COMPAT",
+       "3": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::OTHER"
+      }
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ]
+  },
+  "completion_unknown": {
+   "inputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::UnknownPolicy",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::FAIL_CLOSED",
+       "1": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::EXPLORE",
+       "2": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::PROVIDER_CLAIM_COMPAT",
+       "3": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::OTHER"
+      }
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ]
+  },
+  "resource_gate": {
+   "inputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "i64"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "i64"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "i64"
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::ResourceVerdict",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::ResourceVerdict::OK",
+       "1": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::ResourceVerdict::MISSING_FACTS",
+       "2": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::ResourceVerdict::OVER_BUDGET",
+       "3": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::ResourceVerdict::OVER_AVAILABLE"
+      }
+     }
+    }
+   ]
+  },
+  "tools_compat": {
+   "inputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ]
+  },
+  "tools_gate": {
+   "inputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Observed",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Observed::NONE",
+       "1": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Observed::PASS",
+       "2": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Observed::FAIL"
+      }
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::UnknownPolicy",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::FAIL_CLOSED",
+       "1": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::EXPLORE",
+       "2": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::PROVIDER_CLAIM_COMPAT",
+       "3": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::OTHER"
+      }
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ]
+  },
+  "tools_unknown": {
+   "inputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::UnknownPolicy",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::FAIL_CLOSED",
+       "1": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::EXPLORE",
+       "2": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::PROVIDER_CLAIM_COMPAT",
+       "3": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::OTHER"
+      }
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ]
+  }
+ },
+ "composite_value_contracts": {
+  "Capability": {
+   "finite": {
+    "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Capability",
+    "variants": {
+     "0": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Capability::COMPLETION",
+     "1": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Capability::TOOLS",
+     "2": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Capability::CODE_EDIT"
+    },
+    "payloads": {
+     "0": [],
+     "1": [],
+     "2": []
+    }
+   }
+  },
+  "Observed": {
+   "finite": {
+    "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Observed",
+    "variants": {
+     "0": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Observed::NONE",
+     "1": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Observed::PASS",
+     "2": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Observed::FAIL"
+    },
+    "payloads": {
+     "0": [],
+     "1": [],
+     "2": []
+    }
+   }
+  },
+  "ResourceVerdict": {
+   "finite": {
+    "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::ResourceVerdict",
+    "variants": {
+     "0": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::ResourceVerdict::OK",
+     "1": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::ResourceVerdict::MISSING_FACTS",
+     "2": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::ResourceVerdict::OVER_BUDGET",
+     "3": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::ResourceVerdict::OVER_AVAILABLE"
+    },
+    "payloads": {
+     "0": [],
+     "1": [],
+     "2": [],
+     "3": []
+    }
+   }
+  },
+  "UnknownPolicy": {
+   "finite": {
+    "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::UnknownPolicy",
+    "variants": {
+     "0": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::FAIL_CLOSED",
+     "1": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::EXPLORE",
+     "2": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::PROVIDER_CLAIM_COMPAT",
+     "3": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::OTHER"
+    },
+    "payloads": {
+     "0": [],
+     "1": [],
+     "2": [],
+     "3": []
+    }
+   }
+  },
+  "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Capability": {
+   "finite": {
+    "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Capability",
+    "variants": {
+     "0": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Capability::COMPLETION",
+     "1": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Capability::TOOLS",
+     "2": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Capability::CODE_EDIT"
+    },
+    "payloads": {
+     "0": [],
+     "1": [],
+     "2": []
+    }
+   }
+  },
+  "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Observed": {
+   "finite": {
+    "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::Observed",
+    "variants": {
+     "0": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Observed::NONE",
+     "1": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Observed::PASS",
+     "2": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::Observed::FAIL"
+    },
+    "payloads": {
+     "0": [],
+     "1": [],
+     "2": []
+    }
+   }
+  },
+  "mncs:0.2:finite-type:mncs.harness.eligibility.v1::ResourceVerdict": {
+   "finite": {
+    "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::ResourceVerdict",
+    "variants": {
+     "0": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::ResourceVerdict::OK",
+     "1": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::ResourceVerdict::MISSING_FACTS",
+     "2": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::ResourceVerdict::OVER_BUDGET",
+     "3": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::ResourceVerdict::OVER_AVAILABLE"
+    },
+    "payloads": {
+     "0": [],
+     "1": [],
+     "2": [],
+     "3": []
+    }
+   }
+  },
+  "mncs:0.2:finite-type:mncs.harness.eligibility.v1::UnknownPolicy": {
+   "finite": {
+    "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::UnknownPolicy",
+    "variants": {
+     "0": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::FAIL_CLOSED",
+     "1": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::EXPLORE",
+     "2": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::PROVIDER_CLAIM_COMPAT",
+     "3": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::UnknownPolicy::OTHER"
+    },
+    "payloads": {
+     "0": [],
+     "1": [],
+     "2": [],
+     "3": []
+    }
+   }
+  }
+ },
+ "assumptions": [
+  "checked overflow traps as unreachable; checked division traps on zero and MIN/-1",
+  "composites (records and payload-bearing finite variants) are immutable cells in linear memory allocated from a bump arena",
+  "portable WASM MVP is a research execution envelope, not a native ABI",
+  "saturating uses explicit bounded-width clamp logic; widening uses exact i64 intermediates",
+  "the embedded interpreter defines research execution, not a host wasm CLI"
+ ],
+ "obligations_generated": [],
+ "execution_applicability": [
+  "embedded mncs-portable-wasm-mvp interpreter",
+  "no WASI",
+  "no host CLI"
+ ],
+ "evidence_dependencies": [
+  "mncs:target-evidence:portable-wasm-mvp-0.1:declared-research-contract"
+ ],
+ "unsupported": [],
+ "status": "PASS"
+}
