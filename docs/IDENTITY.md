@@ -54,6 +54,26 @@ config file does not exist, an existing legacy config file is used.
 New `mncs-harness init` writes the canonical config location, and new
 Fabric worker profiles default to the canonical state directory.
 
+## Legacy audit (second conversion campaign)
+
+A repository-wide audit for `elh`, `elh-tui`, `elh-fabric`,
+`epi13-harness`, `EPI13_HARNESS_CONFIG`, legacy config/state paths, old
+service names, extension naming, and documentation references concluded:
+
+- **Retained as permanent UX compatibility (not implementation):** the
+  `elh*` / `epi13-harness` CLI entry points. They are load-bearing —
+  CI (`elh eval`), operator docs (~15 files), and the systemd unit
+  (`ExecStart=%h/.local/bin/elh …`) invoke them. All resolve to
+  `mncs_harness` modules; no second tree exists behind them.
+- **Retained as data compatibility (frozen):** schema identifiers,
+  `EPI13_HARNESS_CONFIG`, and legacy config/state read fallbacks (see
+  above). Renaming would orphan operator state.
+- **No accidental residue found:** extension commands/participant/provider
+  are `mncs-*`; the lockfile name is synced; new profiles default to
+  canonical state; commission labels are canonical; no legacy service
+  units exist. The only `epi13` in the extension manifest is the
+  marketplace publisher account.
+
 ## Default model profile
 
 Bundled model tags are a **reference profile**, not a laboratory inventory.

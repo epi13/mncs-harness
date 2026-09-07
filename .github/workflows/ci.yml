@@ -31,13 +31,61 @@ jobs:
           python -m pip install -e .dependencies/mncs-fabric
           python -m pip install -e '.[dev]'
       - name: Ruff
-        run: ruff check src tests
+        run: ruff check src tests scripts
       - name: Unit tests
         run: python -m unittest discover -s tests -v
       - name: Enforcement boundary
         run: python -m pytest tests/test_atlas_binding.py tests/test_atlas_enforcement.py -q -p no:cacheprovider
       - name: Routing evaluations
         run: elh eval
+
+  mncs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Checkout pinned MNCS toolchain
+        uses: actions/checkout@v4
+        with:
+          # MNCS toolchain pin — must match docs/MNCS_TOOLCHAIN.md.
+          repository: epi13/mncs-language
+          ref: 8d79250
+          path: .dependencies/mncs-language
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Checkout experiment-certified MNCS Fabric
+        uses: actions/checkout@v4
+        with:
+          repository: epi13/mncs-fabric
+          ref: 02fea5b5571e3b43a532d904f56468f99c75e482
+          path: .dependencies/mncs-fabric
+      - name: Install
+        run: |
+          python -m pip install -e .dependencies/mncs-fabric
+          python -m pip install -e '.[dev]'
+      - name: Build MNCS executor
+        run: cargo build -p mncs-cli
+        working-directory: .dependencies/mncs-language
+      - name: Ruff
+        run: ruff check src tests scripts
+      - name: Artifact drift gate
+        run: python scripts/build_mncs_artifacts.py --verify
+        env:
+          MNCS_EXECUTOR: ${{ github.workspace }}/.dependencies/mncs-language/target/debug/mncs
+      - name: Conversion ledger gate
+        run: python scripts/check_conversion_ledger.py
+      - name: Real MNCS execution tests
+        run: python -m pytest tests/test_mncs_exec.py tests/test_mncs_logic.py -q -p no:cacheprovider
+        env:
+          MNCS_EXECUTOR: ${{ github.workspace }}/.dependencies/mncs-language/target/debug/mncs
+      - name: Installed-package smoke test
+        run: |
+          python -m venv /tmp/mncs-smoke-venv
+          /tmp/mncs-smoke-venv/bin/pip install -q .
+          /tmp/mncs-smoke-venv/bin/python scripts/fetch_mncs_executor.py --dest /tmp/mncs-smoke-executor
+          MNCS_EXECUTOR=/tmp/mncs-smoke-executor /tmp/mncs-smoke-venv/bin/mncs-harness route "Repair the Python tests in this repository"
+          MNCS_EXECUTOR=/tmp/mncs-smoke-executor /tmp/mncs-smoke-venv/bin/mncs-harness eval
+          MNCS_EXECUTOR=/tmp/mncs-smoke-executor /tmp/mncs-smoke-venv/bin/python -c "from mncs_harness import mncs_exec; print(mncs_exec.primary_role(True, False, True, False, False, False))"
 
   fabric-min-supported:
     runs-on: ubuntu-latest
