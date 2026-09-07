@@ -1,0 +1,732 @@
+{
+ "schema_version": "0.1",
+ "name": "harness-pins",
+ "cases": [
+  {
+   "id": "auto-clean",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.pins.v1",
+     "function": "pin_fields_valid"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.pins.v1::PinMode",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PinMode::AUTO",
+       "discriminant": 0
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": true
+     }
+    }
+   ]
+  },
+  {
+   "id": "auto-with-role",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.pins.v1",
+     "function": "pin_fields_valid"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.pins.v1::PinMode",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PinMode::AUTO",
+       "discriminant": 0
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": false
+     }
+    }
+   ]
+  },
+  {
+   "id": "role-clean",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.pins.v1",
+     "function": "pin_fields_valid"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.pins.v1::PinMode",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PinMode::ROLE",
+       "discriminant": 1
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": true
+     }
+    }
+   ]
+  },
+  {
+   "id": "role-with-worker",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.pins.v1",
+     "function": "pin_fields_valid"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.pins.v1::PinMode",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PinMode::ROLE",
+       "discriminant": 1
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": false
+     }
+    }
+   ]
+  },
+  {
+   "id": "role-missing",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.pins.v1",
+     "function": "pin_fields_valid"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.pins.v1::PinMode",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PinMode::ROLE",
+       "discriminant": 1
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": false
+     }
+    }
+   ]
+  },
+  {
+   "id": "model-clean",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.pins.v1",
+     "function": "pin_fields_valid"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.pins.v1::PinMode",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PinMode::MODEL",
+       "discriminant": 2
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": true
+     }
+    }
+   ]
+  },
+  {
+   "id": "model-with-role",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.pins.v1",
+     "function": "pin_fields_valid"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.pins.v1::PinMode",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PinMode::MODEL",
+       "discriminant": 2
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": false
+     }
+    }
+   ]
+  },
+  {
+   "id": "worker-clean",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.pins.v1",
+     "function": "pin_fields_valid"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.pins.v1::PinMode",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PinMode::WORKER",
+       "discriminant": 3
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": true
+     }
+    }
+   ]
+  },
+  {
+   "id": "worker-model-clean",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.pins.v1",
+     "function": "pin_fields_valid"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.pins.v1::PinMode",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PinMode::WORKER_MODEL",
+       "discriminant": 4
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": true
+     }
+    }
+   ]
+  },
+  {
+   "id": "worker-model-with-role",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.pins.v1",
+     "function": "pin_fields_valid"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.pins.v1::PinMode",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PinMode::WORKER_MODEL",
+       "discriminant": 4
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": false
+     }
+    }
+   ]
+  },
+  {
+   "id": "triple-clean",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.pins.v1",
+     "function": "pin_fields_valid"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.pins.v1::PinMode",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PinMode::WORKER_MODEL_ROLE",
+       "discriminant": 5
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": true
+     }
+    }
+   ]
+  },
+  {
+   "id": "triple-missing-model",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.pins.v1",
+     "function": "pin_fields_valid"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.pins.v1::PinMode",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PinMode::WORKER_MODEL_ROLE",
+       "discriminant": 5
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": false
+     }
+    }
+   ]
+  },
+  {
+   "id": "auto-routes",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.pins.v1",
+     "function": "admit_placement"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.pins.v1::PlaceDecision",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PlaceDecision::AUTO_ALLOWED",
+      "discriminant": 0
+     }
+    }
+   ]
+  },
+  {
+   "id": "role-routes",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.pins.v1",
+     "function": "admit_placement"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.pins.v1::PlaceDecision",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PlaceDecision::AUTO_ALLOWED",
+      "discriminant": 0
+     }
+    }
+   ]
+  },
+  {
+   "id": "pin-honored",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.pins.v1",
+     "function": "admit_placement"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.pins.v1::PlaceDecision",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PlaceDecision::PIN_HONORED",
+      "discriminant": 1
+     }
+    }
+   ]
+  },
+  {
+   "id": "pin-honored-fallback-irrelevant",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.pins.v1",
+     "function": "admit_placement"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.pins.v1::PlaceDecision",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PlaceDecision::PIN_HONORED",
+      "discriminant": 1
+     }
+    }
+   ]
+  },
+  {
+   "id": "fallback-allowed",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.pins.v1",
+     "function": "admit_placement"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.pins.v1::PlaceDecision",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PlaceDecision::FALLBACK_ALLOWED",
+      "discriminant": 3
+     }
+    }
+   ]
+  },
+  {
+   "id": "failed-closed",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.pins.v1",
+     "function": "admit_placement"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.pins.v1::PlaceDecision",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PlaceDecision::PIN_FAILED_CLOSED",
+      "discriminant": 2
+     }
+    }
+   ]
+  }
+ ]
+}

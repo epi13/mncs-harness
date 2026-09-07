@@ -1091,13 +1091,18 @@ class InventoryAwareFabricSession(FabricSession):
                     selected_model=requested.model,
                 )
 
-        manual_failed_open = (
-            requested.mode != "AUTO"
-            and requested.mode != "ROLE"
-            and selection is None
-            and requested.allow_fallback
+        # Placement admission EXECUTES the MNCS kernel
+        # (mncs/harness_pins.mncs admit_placement via mncs_exec): exact pins
+        # fail closed unless the operator allowed fallback.
+        from . import mncs_exec
+
+        admission = mncs_exec.admit_placement(
+            requested.mode in {"AUTO", "ROLE"},
+            selection is not None,
+            requested.allow_fallback,
         )
-        auto_allowed = requested.mode in {"AUTO", "ROLE"} or manual_failed_open
+        manual_failed_open = admission == "FALLBACK_ALLOWED"
+        auto_allowed = admission in {"AUTO_ALLOWED", "FALLBACK_ALLOWED"}
         if auto_allowed:
             exact_candidates = [
                 (worker_id, inventory)

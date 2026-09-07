@@ -1,0 +1,944 @@
+{
+ "schema_version": "0.1",
+ "name": "harness-readiness",
+ "cases": [
+  {
+   "id": "dom-rr",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.readiness.v1",
+     "function": "dominate_readiness"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "discriminant": 0
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+      "discriminant": 0
+     }
+    }
+   ]
+  },
+  {
+   "id": "dom-rb",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.readiness.v1",
+     "function": "dominate_readiness"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "discriminant": 2
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+      "discriminant": 2
+     }
+    }
+   ]
+  },
+  {
+   "id": "dom-ru",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.readiness.v1",
+     "function": "dominate_readiness"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN",
+       "discriminant": 3
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN",
+      "discriminant": 3
+     }
+    }
+   ]
+  },
+  {
+   "id": "dom-rd",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.readiness.v1",
+     "function": "dominate_readiness"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "discriminant": 1
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+      "discriminant": 1
+     }
+    }
+   ]
+  },
+  {
+   "id": "dom-br",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.readiness.v1",
+     "function": "dominate_readiness"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "discriminant": 2
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "discriminant": 0
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+      "discriminant": 2
+     }
+    }
+   ]
+  },
+  {
+   "id": "dom-bu",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.readiness.v1",
+     "function": "dominate_readiness"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "discriminant": 2
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN",
+       "discriminant": 3
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+      "discriminant": 2
+     }
+    }
+   ]
+  },
+  {
+   "id": "dom-ur",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.readiness.v1",
+     "function": "dominate_readiness"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN",
+       "discriminant": 3
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "discriminant": 0
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN",
+      "discriminant": 3
+     }
+    }
+   ]
+  },
+  {
+   "id": "dom-ud",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.readiness.v1",
+     "function": "dominate_readiness"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN",
+       "discriminant": 3
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "discriminant": 1
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN",
+      "discriminant": 3
+     }
+    }
+   ]
+  },
+  {
+   "id": "dom-dr",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.readiness.v1",
+     "function": "dominate_readiness"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "discriminant": 1
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "discriminant": 0
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+      "discriminant": 1
+     }
+    }
+   ]
+  },
+  {
+   "id": "dom-du",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.readiness.v1",
+     "function": "dominate_readiness"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "discriminant": 1
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN",
+       "discriminant": 3
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN",
+      "discriminant": 3
+     }
+    }
+   ]
+  },
+  {
+   "id": "dom-dd",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.readiness.v1",
+     "function": "dominate_readiness"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "discriminant": 1
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "discriminant": 1
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+      "discriminant": 1
+     }
+    }
+   ]
+  },
+  {
+   "id": "fold4-ready",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.readiness.v1",
+     "function": "fold4"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "discriminant": 0
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+      "discriminant": 0
+     }
+    }
+   ]
+  },
+  {
+   "id": "fold4-blocked",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.readiness.v1",
+     "function": "fold4"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "discriminant": 1
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "discriminant": 2
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "discriminant": 0
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+      "discriminant": 2
+     }
+    }
+   ]
+  },
+  {
+   "id": "fold4-unknown-held",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.readiness.v1",
+     "function": "fold4"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "discriminant": 1
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN",
+       "discriminant": 3
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "discriminant": 0
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN",
+      "discriminant": 3
+     }
+    }
+   ]
+  },
+  {
+   "id": "fold4-degraded",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.readiness.v1",
+     "function": "fold4"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "discriminant": 1
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "discriminant": 0
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+      "discriminant": 1
+     }
+    }
+   ]
+  },
+  {
+   "id": "fold8-ready",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.readiness.v1",
+     "function": "fold8"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "discriminant": 0
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+      "discriminant": 0
+     }
+    }
+   ]
+  },
+  {
+   "id": "fold8-blocked-deep",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.readiness.v1",
+     "function": "fold8"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "discriminant": 2
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "discriminant": 0
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+      "discriminant": 2
+     }
+    }
+   ]
+  },
+  {
+   "id": "fold8-degraded",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.readiness.v1",
+     "function": "fold8"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "discriminant": 0
+      }
+     },
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "discriminant": 1
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+      "discriminant": 1
+     }
+    }
+   ]
+  },
+  {
+   "id": "ready-true",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.readiness.v1",
+     "function": "is_ready"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "discriminant": 0
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": true
+     }
+    }
+   ]
+  },
+  {
+   "id": "ready-degraded",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.readiness.v1",
+     "function": "is_ready"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "discriminant": 1
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": false
+     }
+    }
+   ]
+  },
+  {
+   "id": "ready-blocked",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.readiness.v1",
+     "function": "is_ready"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "discriminant": 2
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": false
+     }
+    }
+   ]
+  },
+  {
+   "id": "ready-unknown",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.readiness.v1",
+     "function": "is_ready"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN",
+       "discriminant": 3
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": false
+     }
+    }
+   ]
+  }
+ ]
+}

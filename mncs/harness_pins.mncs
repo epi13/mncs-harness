@@ -1,0 +1,142 @@
+mncs 0.6;
+
+// mncs.harness.pins.v1 — operator pin validation and placement admission.
+//
+// The host owns strings: role/worker/model names, length and control-char
+// validation, and inventory lookup. What moves here is the pure precedence
+// logic: which field combinations are valid per pin mode, and whether a
+// failed manual pin may fall back to automatic placement.
+//
+// PinMode mirrors RoutingOverride modes: AUTO carries no pin; ROLE pins a
+// model role; MODEL pins a model name; WORKER pins a worker; WORKER_MODEL
+// pins a pair; WORKER_MODEL_ROLE pins all three.
+module mncs.harness.pins.v1;
+
+enum PinMode { AUTO, ROLE, MODEL, WORKER, WORKER_MODEL, WORKER_MODEL_ROLE }
+
+enum PlaceDecision { AUTO_ALLOWED, PIN_HONORED, PIN_FAILED_CLOSED, FALLBACK_ALLOWED }
+
+fn no_flags(has_role: bool, has_worker: bool, has_model: bool) -> (result: bool) {
+    if has_role {
+        return false;
+    }
+    if has_worker {
+        return false;
+    }
+    if has_model {
+        return false;
+    }
+    return true;
+}
+
+fn only_role(has_role: bool, has_worker: bool, has_model: bool) -> (result: bool) {
+    if has_role {
+    } else {
+        return false;
+    }
+    if has_worker {
+        return false;
+    }
+    if has_model {
+        return false;
+    }
+    return true;
+}
+
+fn only_model(has_role: bool, has_worker: bool, has_model: bool) -> (result: bool) {
+    if has_role {
+        return false;
+    }
+    if has_worker {
+        return false;
+    }
+    if has_model {
+    } else {
+        return false;
+    }
+    return true;
+}
+
+fn only_worker(has_role: bool, has_worker: bool, has_model: bool) -> (result: bool) {
+    if has_role {
+        return false;
+    }
+    if has_worker {
+    } else {
+        return false;
+    }
+    if has_model {
+        return false;
+    }
+    return true;
+}
+
+fn worker_and_model(has_role: bool, has_worker: bool, has_model: bool) -> (result: bool) {
+    if has_role {
+        return false;
+    }
+    if has_worker {
+    } else {
+        return false;
+    }
+    if has_model {
+    } else {
+        return false;
+    }
+    return true;
+}
+
+fn all_pins(has_role: bool, has_worker: bool, has_model: bool) -> (result: bool) {
+    if has_role {
+    } else {
+        return false;
+    }
+    if has_worker {
+    } else {
+        return false;
+    }
+    if has_model {
+    } else {
+        return false;
+    }
+    return true;
+}
+
+// Field-presence validity per mode. String content validation
+// (non-empty, bounded length, no control characters) stays host-side:
+// the language has no string type (HARNESS-PRESSURE-001).
+fn pin_fields_valid(
+    mode: PinMode,
+    has_role: bool,
+    has_worker: bool,
+    has_model: bool
+) -> (result: bool) {
+    return match mode {
+        AUTO => no_flags(has_role, has_worker, has_model),
+        ROLE => only_role(has_role, has_worker, has_model),
+        MODEL => only_model(has_role, has_worker, has_model),
+        WORKER => only_worker(has_role, has_worker, has_model),
+        WORKER_MODEL => worker_and_model(has_role, has_worker, has_model),
+        WORKER_MODEL_ROLE => all_pins(has_role, has_worker, has_model),
+    };
+}
+
+// Placement admission: exact pins fail closed unless the operator allowed
+// fallback. AUTO and ROLE always route automatically; a honored pin needs
+// no fallback; a failed manual pin falls back only with permission.
+fn admit_placement(
+    auto_or_role: bool,
+    selection_present: bool,
+    allow_fallback: bool
+) -> (result: PlaceDecision) {
+    if auto_or_role {
+        return PlaceDecision.AUTO_ALLOWED;
+    }
+    if selection_present {
+        return PlaceDecision.PIN_HONORED;
+    }
+    if allow_fallback {
+        return PlaceDecision.FALLBACK_ALLOWED;
+    }
+    return PlaceDecision.PIN_FAILED_CLOSED;
+}

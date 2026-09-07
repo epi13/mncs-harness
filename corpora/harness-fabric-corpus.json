@@ -1,0 +1,497 @@
+{
+ "schema_version": "0.1",
+ "name": "harness-fabric",
+ "cases": [
+  {
+   "id": "missing-caps",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.fabric.v1",
+     "function": "classify_fabric"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.fabric.v1::FabricClass",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::INCOMPATIBLE",
+      "discriminant": 0
+     }
+    }
+   ]
+  },
+  {
+   "id": "unparseable",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.fabric.v1",
+     "function": "classify_fabric"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.fabric.v1::FabricClass",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::UNKNOWN",
+      "discriminant": 1
+     }
+    }
+   ]
+  },
+  {
+   "id": "too-old",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.fabric.v1",
+     "function": "classify_fabric"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.fabric.v1::FabricClass",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::TOO_OLD",
+      "discriminant": 2
+     }
+    }
+   ]
+  },
+  {
+   "id": "certified-exact",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.fabric.v1",
+     "function": "classify_fabric"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.fabric.v1::FabricClass",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::EXPERIMENT_CERTIFIED_EXACT",
+      "discriminant": 3
+     }
+    }
+   ]
+  },
+  {
+   "id": "version-only",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.fabric.v1",
+     "function": "classify_fabric"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.fabric.v1::FabricClass",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::COMPATIBLE_VERSION_ONLY",
+      "discriminant": 4
+     }
+    }
+   ]
+  },
+  {
+   "id": "newer",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.fabric.v1",
+     "function": "classify_fabric"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.fabric.v1::FabricClass",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::COMPATIBLE_NEWER",
+      "discriminant": 5
+     }
+    }
+   ]
+  },
+  {
+   "id": "missing-beats-exact",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.fabric.v1",
+     "function": "classify_fabric"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.fabric.v1::FabricClass",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::INCOMPATIBLE",
+      "discriminant": 0
+     }
+    }
+   ]
+  },
+  {
+   "id": "gate-incompatible",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.fabric.v1",
+     "function": "dispatch_allowed"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.fabric.v1::FabricClass",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::INCOMPATIBLE",
+       "discriminant": 0
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": false
+     }
+    }
+   ]
+  },
+  {
+   "id": "gate-unknown",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.fabric.v1",
+     "function": "dispatch_allowed"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.fabric.v1::FabricClass",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::UNKNOWN",
+       "discriminant": 1
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": false
+     }
+    }
+   ]
+  },
+  {
+   "id": "gate-too-old",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.fabric.v1",
+     "function": "dispatch_allowed"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.fabric.v1::FabricClass",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::TOO_OLD",
+       "discriminant": 2
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": false
+     }
+    }
+   ]
+  },
+  {
+   "id": "gate-exact",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.fabric.v1",
+     "function": "dispatch_allowed"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.fabric.v1::FabricClass",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::EXPERIMENT_CERTIFIED_EXACT",
+       "discriminant": 3
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": true
+     }
+    }
+   ]
+  },
+  {
+   "id": "gate-version-only",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.fabric.v1",
+     "function": "dispatch_allowed"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.fabric.v1::FabricClass",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::COMPATIBLE_VERSION_ONLY",
+       "discriminant": 4
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": true
+     }
+    }
+   ]
+  },
+  {
+   "id": "gate-newer",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.fabric.v1",
+     "function": "dispatch_allowed"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.fabric.v1::FabricClass",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::COMPATIBLE_NEWER",
+       "discriminant": 5
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": true
+     }
+    }
+   ]
+  }
+ ]
+}
