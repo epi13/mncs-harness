@@ -121,6 +121,21 @@ fn pin_fields_valid(
     };
 }
 
+// Exact-pin predicate shared by the router (exact pins skip the escalation
+// cascade) and the agent (exact-pin progress branch). AUTO and ROLE route
+// automatically; every other mode carries an operator pin that must resolve
+// before automatic placement may proceed.
+fn is_exact_pin(mode: PinMode) -> (result: bool) {
+    return match mode {
+        AUTO => false,
+        ROLE => false,
+        MODEL => true,
+        WORKER => true,
+        WORKER_MODEL => true,
+        WORKER_MODEL_ROLE => true,
+    };
+}
+
 // Placement admission: exact pins fail closed unless the operator allowed
 // fallback. AUTO and ROLE always route automatically; a honored pin needs
 // no fallback; a failed manual pin falls back only with permission.

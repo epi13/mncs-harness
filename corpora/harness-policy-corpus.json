@@ -699,6 +699,265 @@
      }
     }
    ]
+  },
+  {
+   "id": "pub-proceed",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.policy.v1",
+     "function": "publication_gate"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PublicationDecision",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PublicationDecision::PROCEED",
+      "discriminant": 0
+     }
+    }
+   ]
+  },
+  {
+   "id": "pub-disabled",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.policy.v1",
+     "function": "publication_gate"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PublicationDecision",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PublicationDecision::SKIP_DISABLED",
+      "discriminant": 1
+     }
+    }
+   ]
+  },
+  {
+   "id": "pub-disabled-first",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.policy.v1",
+     "function": "publication_gate"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PublicationDecision",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PublicationDecision::SKIP_NOT_READY",
+      "discriminant": 2
+     }
+    }
+   ]
+  },
+  {
+   "id": "pub-not-ready",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.policy.v1",
+     "function": "publication_gate"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PublicationDecision",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PublicationDecision::SKIP_NOT_READY",
+      "discriminant": 2
+     }
+    }
+   ]
+  },
+  {
+   "id": "pub-ready-before-record",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.policy.v1",
+     "function": "publication_gate"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PublicationDecision",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PublicationDecision::SKIP_NOT_READY",
+      "discriminant": 2
+     }
+    }
+   ]
+  },
+  {
+   "id": "pub-no-record",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.policy.v1",
+     "function": "publication_gate"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PublicationDecision",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PublicationDecision::SKIP_NO_RECORD",
+      "discriminant": 3
+     }
+    }
+   ]
+  },
+  {
+   "id": "pub-disabled-beats-no-record",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.policy.v1",
+     "function": "publication_gate"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PublicationDecision",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PublicationDecision::SKIP_DISABLED",
+      "discriminant": 1
+     }
+    }
+   ]
   }
  ]
 }

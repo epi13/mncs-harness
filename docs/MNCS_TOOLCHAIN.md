@@ -3,22 +3,31 @@
 The harness executes shipped frozen MNCS artifacts; it never compiles at
 runtime. Both sides of that statement are pinned here.
 
-## Pinned toolchain
+Four distinct identities (never conflate them):
 
-- **Repository:** `epi13/mncs-language`
-- **Revision:** `8d79250` (validated 2026-09-06; all 140 corpus cases PASS
-  on both backends with this revision's compiler and executor)
-- **Executor release:** `toolchain/mncs-executor-8d79250`
-  (`mncs-executor-linux-x86_64`)
-- **Executor digest:**
-  `sha256:f7d60825cb58acaff46bed78639d3cffed7da52e9944e2c9ff16dd67795d0210`
+1. **Source toolchain revision** (compiler+executor source):
+   `epi13/mncs-language`
+   `8d79250d54d4e4241c0bb0ae6f5c632345848a6d`
+   (full immutable SHA — validated 2026-09-06; all corpus cases PASS on
+   both backends with this revision's compiler and executor).
+2. **Executor release:** `toolchain/mncs-executor-8d79250`
+   (`mncs-executor-linux-x86_64`)
+3. **Executor digest:**
+   `sha256:f7d60825cb58acaff46bed78639d3cffed7da52e9944e2c9ff16dd67795d0210`
+   (release bytes; reproducible — a local `cargo build --release -p mncs-cli`
+   at the pinned revision produces this exact digest)
+4. **Kernel artifact identities:** `src/mncs_harness/_mncs_artifacts/MANIFEST.json`
+   (per-artifact `identity` + `bytes_sha256`; drift-gated in CI)
+
+`scripts/check_toolchain_identity.py` proves 1–4 agree; CI runs it.
 
 ## Executor resolution order (product runtime)
 
 1. `MNCS_EXECUTOR` environment variable (explicit file path).
-2. `mncs-cli` found on `PATH`.
+2. `mncs-executor` found on `PATH` (the documented distributed name —
+   where `scripts/fetch_mncs_executor.py` installs it by default).
 3. A sibling `mncs-language` checkout build
-   (`../mncs-language/target/{debug,release}/mncs`).
+   (`../mncs-language/target/{debug,release}/mncs`, developers only).
 4. Otherwise fail closed with `MncsRuntimeError` pointing at
    `scripts/fetch_mncs_executor.py`.
 
@@ -32,8 +41,11 @@ python3 scripts/fetch_mncs_executor.py --dest ~/.local/bin/mncs-executor
 ```
 
 Verifies the SHA-256 digest above before marking the file executable.
-CI and the family boundary use this; end users with a checkout can also
-`cargo build --release -p mncs-cli` inside mncs-language instead.
+Ensure `~/.local/bin` is on `PATH` so step 2 resolves it, or export
+`MNCS_EXECUTOR` explicitly (what CI does). CI and the family boundary use
+this; developers with a checkout can also
+`cargo build --release -p mncs-cli` inside mncs-language instead (the
+sibling-checkout fallback in step 3 finds that build).
 
 ## Building artifacts
 

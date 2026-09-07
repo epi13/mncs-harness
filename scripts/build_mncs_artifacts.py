@@ -11,7 +11,7 @@ identity differs from the shipped one (source/artifact drift gate for CI).
 
 The executor binary is resolved exactly like the product runtime does
 (see ``mncs_runtime.find_executor``): ``MNCS_EXECUTOR`` env, then
-``mncs-cli`` on PATH, then a sibling ``mncs-language`` checkout build.
+``mncs-executor`` on PATH, then a sibling ``mncs-language`` checkout build.
 """
 
 from __future__ import annotations
@@ -50,7 +50,7 @@ def find_executor() -> str:
     override = __import__("os").environ.get("MNCS_EXECUTOR")
     if override:
         return override
-    found = shutil.which("mncs-cli")
+    found = shutil.which("mncs-executor")
     if found:
         return found
     for sibling in (
@@ -60,8 +60,9 @@ def find_executor() -> str:
         if sibling.is_file():
             return str(sibling)
     raise SystemExit(
-        "no MNCS executor found: set MNCS_EXECUTOR, put mncs-cli on PATH, "
-        "or check out mncs-language next to mncs-harness and build it"
+        "no MNCS executor found: set MNCS_EXECUTOR, put mncs-executor on PATH "
+        "(python3 scripts/fetch_mncs_executor.py), or check out mncs-language "
+        "next to mncs-harness and build it"
     )
 
 

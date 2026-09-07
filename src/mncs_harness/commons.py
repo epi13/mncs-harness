@@ -386,12 +386,27 @@ class CommonsSession:
     def publish_fabric_evidence(self, execution: dict[str, Any]) -> dict[str, Any]:
         """Translate and optionally publish inert Fabric evidence on the controller."""
 
-        if not self.ready:
+        from . import mncs_exec
+
+        # Admission precedence is MNCS-decided
+        # (mncs.harness.policy.v1::publication_gate); translation and the
+        # publish effect stay host-side.
+        gate = mncs_exec.publication_gate(
+            bool(self.config.publish_fabric_evidence),
+            bool(self.ready),
+            isinstance(execution, dict),
+        )
+        if gate == "SKIP_NOT_READY":
             raise CommonsError(self._status.code, self._status.detail)
-        if not self.config.publish_fabric_evidence:
+        if gate == "SKIP_DISABLED":
             raise CommonsError(
                 "COMMONS_EVIDENCE_PUBLICATION_DISABLED",
                 "controller-generated Fabric evidence publication is disabled",
+            )
+        if gate == "SKIP_NO_RECORD":
+            raise CommonsError(
+                "COMMONS_FABRIC_TRANSLATION_INVALID",
+                "Fabric execution record is not an object",
             )
         try:
             from mncs_commons.adapters.fabric import from_fabric_execution

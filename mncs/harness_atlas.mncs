@@ -1,4 +1,4 @@
-mncs 0.6;
+mncs 0.10;
 
 // mncs.harness.atlas.v1 — Atlas verdict-fold kernel.
 //
@@ -27,10 +27,21 @@ fn fold_pair(left: Grant, right: Grant) -> (result: Grant) {
     };
 }
 
+// Authoritative generic fold over `[Grant; N]` (Profile 0.10 generic
+// sequences; HARNESS-PRESSURE-003/010 are closed for the harness).
+// `fold_pair` is associative, so this equals the migration-era fixed tree
+// on every input; `fold4` remains as the host-callable monomorphic
+// envelope and `fold_pair` as the pairwise step the host loop uses.
+fn fold_all<N: Nat>(grants: [Grant; N]) -> (result: Grant) {
+    iterate i over grants carrying acc: Grant = Grant.GRANTED {
+        next acc = fold_pair(acc, grants[i]);
+    }
+    return acc;
+}
+
 fn fold4(first: Grant, second: Grant, third: Grant, fourth: Grant) -> (result: Grant) {
-    let left: Grant = fold_pair(first, second);
-    let right: Grant = fold_pair(third, fourth);
-    return fold_pair(left, right);
+    let grants: [Grant; 4] = [first, second, third, fourth];
+    return fold_all<4>(grants);
 }
 
 // Dispatch gate: a GRANTED requirement authorizes dispatch only when the

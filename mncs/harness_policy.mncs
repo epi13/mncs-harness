@@ -7,7 +7,7 @@ mncs 0.6;
 // executable allowlists (strings), path resolution, and Git subcommand
 // tables. The host encodes those observations into seven booleans and calls
 // `evaluate_command`; the returned reason code is stable and mirrored in
-// `mncs_logic.py`.
+// the test-only oracle (`tests/mncs_oracle.py`, never production).
 //
 // Reason codes:
 //   0 = allow (workspace-scoped, approval still required host-side)
@@ -74,4 +74,34 @@ fn reason_of(verdict: PolicyVerdict) -> (result_code: i64) {
         PolicyVerdict.Block { reason } => reason,
         Allow { } => 0,
     };
+}
+
+// Evidence-publication admission gate. The host owns the transport (Commons
+// socket, translation library, record bytes); what moves here is the pure
+// precedence over three carried booleans: an unready session skips before
+// configuration is consulted, a disabled publisher skips before the record
+// is consulted, and only then does a missing record skip. Order preserves
+// the historical publisher behavior and is pinned by the corpus: the
+// commons publisher maps SKIP_NOT_READY to the session status code and
+// SKIP_DISABLED to PUBLICATION_DISABLED.
+enum PublicationDecision { PROCEED, SKIP_DISABLED, SKIP_NOT_READY, SKIP_NO_RECORD }
+
+fn publication_gate(
+    configured: bool,
+    session_ready: bool,
+    record_present: bool
+) -> (result: PublicationDecision) {
+    if session_ready {
+    } else {
+        return PublicationDecision.SKIP_NOT_READY;
+    }
+    if configured {
+    } else {
+        return PublicationDecision.SKIP_DISABLED;
+    }
+    if record_present {
+    } else {
+        return PublicationDecision.SKIP_NO_RECORD;
+    }
+    return PublicationDecision.PROCEED;
 }

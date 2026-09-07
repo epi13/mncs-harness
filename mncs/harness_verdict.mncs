@@ -1,4 +1,4 @@
-mncs 0.6;
+mncs 0.10;
 
 // mncs.harness.verdict.v1 — deterministic verifier-evidence combination.
 //
@@ -33,15 +33,28 @@ fn dominate(left: Status, right: Status) -> (result: Status) {
     };
 }
 
-fn combine4(first: Status, second: Status, third: Status, fourth: Status) -> (result: Status) {
-    let left: Status = dominate(first, second);
-    let right: Status = dominate(third, fourth);
-    return dominate(left, right);
+// Authoritative generic fold over `[Status; N]` (Profile 0.10 generic
+// sequences; HARNESS-PRESSURE-003/010 are closed for the harness). The
+// lattice join is associative, so this equals the migration-era fixed tree
+// on every input; `combine4`/`combine8` remain as the host-callable
+// monomorphic envelopes. Unused slots must be passed as PASS by the host
+// with the active count enforced host-side; no missing slot is silently
+// interpreted here.
+fn combine_all<N: Nat>(checks: [Status; N]) -> (result: Status) {
+    iterate i over checks carrying acc: Status = Status.PASS {
+        next acc = dominate(acc, checks[i]);
+    }
+    return acc;
 }
 
-// Eight-check verifier envelope folded as two halves. Unused slots must be
-// passed as PASS by the host with the active count enforced host-side; no
-// missing slot is silently interpreted here.
+fn combine4(first: Status, second: Status, third: Status, fourth: Status) -> (result: Status) {
+    let checks: [Status; 4] = [first, second, third, fourth];
+    return combine_all<4>(checks);
+}
+
+// Eight-check verifier envelope. Unused slots must be passed as PASS by
+// the host with the active count enforced host-side; no missing slot is
+// silently interpreted here.
 fn combine8(
     first: Status,
     second: Status,
@@ -52,9 +65,8 @@ fn combine8(
     seventh: Status,
     eighth: Status
 ) -> (result: Status) {
-    let left: Status = combine4(first, second, third, fourth);
-    let right: Status = combine4(fifth, sixth, seventh, eighth);
-    return dominate(left, right);
+    let checks: [Status; 8] = [first, second, third, fourth, fifth, sixth, seventh, eighth];
+    return combine_all<8>(checks);
 }
 
 fn is_decided(subject: Status) -> (result: bool) {

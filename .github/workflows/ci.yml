@@ -30,6 +30,15 @@ jobs:
         run: |
           python -m pip install -e .dependencies/mncs-fabric
           python -m pip install -e '.[dev]'
+      - name: Provision pinned MNCS executor
+        # Product paths execute real MNCS and fail closed without an
+        # executor. Fetch the digest-verified release build (explicit,
+        # pinned in docs/MNCS_TOOLCHAIN.md) and bind it via MNCS_EXECUTOR.
+        # The transitional Python fallback is removed; this step is what
+        # keeps the normal suite on the canonical runtime.
+        run: |
+          python scripts/fetch_mncs_executor.py --dest '${{ runner.temp }}/mncs-bin/mncs-executor'
+          echo "MNCS_EXECUTOR=${{ runner.temp }}/mncs-bin/mncs-executor" >> "$GITHUB_ENV"
       - name: Ruff
         run: ruff check src tests scripts
       - name: Unit tests
@@ -46,9 +55,11 @@ jobs:
       - name: Checkout pinned MNCS toolchain
         uses: actions/checkout@v4
         with:
-          # MNCS toolchain pin — must match docs/MNCS_TOOLCHAIN.md.
+          # MNCS toolchain pin — FULL immutable SHA, must match
+          # docs/MNCS_TOOLCHAIN.md. A short SHA fails: checkout resolves
+          # `ref` as a branch/tag name first (prior red main, run 34076065814).
           repository: epi13/mncs-language
-          ref: 8d79250
+          ref: 8d79250d54d4e4241c0bb0ae6f5c632345848a6d
           path: .dependencies/mncs-language
       - uses: actions/setup-python@v5
         with:
@@ -68,6 +79,8 @@ jobs:
         working-directory: .dependencies/mncs-language
       - name: Ruff
         run: ruff check src tests scripts
+      - name: Toolchain identity gate
+        run: python scripts/check_toolchain_identity.py
       - name: Artifact drift gate
         run: python scripts/build_mncs_artifacts.py --verify
         env:
@@ -105,6 +118,10 @@ jobs:
         run: |
           python -m pip install -e .dependencies/mncs-fabric
           python -m pip install -e '.[dev]'
+      - name: Provision pinned MNCS executor
+        run: |
+          python scripts/fetch_mncs_executor.py --dest '${{ runner.temp }}/mncs-bin/mncs-executor'
+          echo "MNCS_EXECUTOR=${{ runner.temp }}/mncs-bin/mncs-executor" >> "$GITHUB_ENV"
       - name: Minimum-supported Fabric integration
         run: python -m unittest tests.test_persistent_fabric tests.test_fabric -v
 
@@ -127,5 +144,9 @@ jobs:
         run: |
           python -m pip install -e .dependencies/mncs-fabric
           python -m pip install -e '.[dev]'
+      - name: Provision pinned MNCS executor
+        run: |
+          python scripts/fetch_mncs_executor.py --dest '${{ runner.temp }}/mncs-bin/mncs-executor'
+          echo "MNCS_EXECUTOR=${{ runner.temp }}/mncs-bin/mncs-executor" >> "$GITHUB_ENV"
       - name: Fabric-main integration tests
         run: python -m unittest tests.test_persistent_fabric -v

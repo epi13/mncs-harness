@@ -1,19 +1,13 @@
-"""TRANSITIONAL mirror of the MNCS decision kernels. NOT FOR PRODUCTION USE.
+"""TEST-ONLY oracle for the MNCS decision kernels. NEVER IMPORT FROM src/.
 
-This module duplicates the truth tables of ``mncs/harness_*.mncs`` in Python.
-It exists ONLY for two explicitly transitional purposes:
+This module duplicates the truth tables of ``mncs/harness_*.mncs`` in Python
+for one purpose only: independent agreement checks in ``tests/``
+(``test_mncs_exec.py`` compares real MNCS execution against this oracle, and
+``test_mncs_logic.py`` checks it against ``corpora/*.json``).
 
-1. Operator opt-in fallback when no MNCS executor is available
-   (``MNCS_HARNESS_TRANSITIONAL_PYTHON_DECISIONS=1``), reached solely
-   through ``mncs_exec._transitional``. Loud warning, never canonical,
-   never conformance-bearing.
-2. Test-side oracle in ``tests/test_mncs_logic.py`` (independent agreement
-   checks, not production).
-
-Production decision paths MUST call ``mncs_exec`` (real MNCS execution).
-CI fails any production import of this module outside ``mncs_exec``.
-
-Evidence-pinned host projection of the MNCS decision kernels.
+It is NOT a production implementation and NOT a fallback: production code
+must call ``mncs_exec`` (real MNCS execution, fail-closed). CI fails any
+``src/mncs_harness`` import of this module.
 
 Authority for these truth tables is the MNCS source under ``mncs/``::
 
@@ -21,15 +15,13 @@ Authority for these truth tables is the MNCS source under ``mncs/``::
     mncs/harness_policy.mncs   (mncs.harness.policy.v1)
     mncs/harness_verdict.mncs  (mncs.harness.verdict.v1)
     mncs/harness_atlas.mncs    (mncs.harness.atlas.v1)
+    mncs/harness_pins.mncs     (mncs.harness.pins.v1)
+    mncs/harness_fabric.mncs   (mncs.harness.fabric.v1)
+    mncs/harness_readiness.mncs (mncs.harness.readiness.v1)
+    mncs/harness_eligibility.mncs (mncs.harness.eligibility.v1)
 
-Executable agreement is sealed under ``development-evidence/mncs-execution/``
-(57 corpus cases x portable-WASM + research-bytecode, all PASS) and
-re-checked by ``tests/test_mncs_logic.py`` against ``corpora/*.json``.
-
-This module mirrors those tables in Python so the host can decide without
-spawning the toolchain per request. It is a projection, never a second
-authority: change the ``.mncs`` source and corpus first, re-run the backend
-evidence, then update the mirror.
+It is a projection, never a second authority: change the ``.mncs`` source
+and corpus first, re-run the backend evidence, then update the oracle.
 """
 
 from __future__ import annotations
@@ -38,7 +30,7 @@ import json
 from pathlib import Path
 from typing import Literal
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[1]
 MNCS_DIR = REPO_ROOT / "mncs"
 CORPORA_DIR = REPO_ROOT / "corpora"
 
@@ -220,6 +212,36 @@ def admit_placement(auto_or_role: bool, selection_present: bool, allow_fallback:
     return "PIN_FAILED_CLOSED"
 
 
+def is_exact_pin(mode: str) -> bool:
+    """Mirror of ``mncs.harness.pins.v1::is_exact_pin``."""
+    return mode in ("MODEL", "WORKER", "WORKER_MODEL", "WORKER_MODEL_ROLE")
+
+
+def publication_gate(configured: bool, session_ready: bool, record_present: bool) -> str:
+    """Mirror of ``mncs.harness.policy.v1::publication_gate`` (ready-first)."""
+    if not session_ready:
+        return "SKIP_NOT_READY"
+    if not configured:
+        return "SKIP_DISABLED"
+    if not record_present:
+        return "SKIP_NO_RECORD"
+    return "PROCEED"
+
+
+def capability_source(
+    available: bool,
+    inventory_current: bool,
+    observation_present: bool,
+    legacy_present: bool,
+) -> str:
+    """Mirror of ``mncs.harness.eligibility.v1::capability_source``."""
+    if available and inventory_current and observation_present:
+        return "OBSERVATION"
+    if inventory_current and legacy_present:
+        return "LEGACY"
+    return "NONE"
+
+
 def classify_fabric(
     missing_any: bool,
     parseable: bool,
@@ -295,6 +317,13 @@ def capability_eligible(
     if unknown_policy == "PROVIDER_CLAIM_COMPAT":
         return allow_unclaimed
     return False
+
+
+def residency_admit(has_conflicts: bool, reject_conflicting: bool, already_loaded: bool) -> bool:
+    """Mirror of ``mncs.harness.eligibility.v1::residency_admit``."""
+    if has_conflicts and reject_conflicting and not already_loaded:
+        return False
+    return True
 
 
 def resource_gate(

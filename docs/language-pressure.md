@@ -9,19 +9,20 @@ by changing the language: workarounds live host-side and are measured.
 Authoritative MNCS surface built across both conversion campaigns:
 
 - `mncs/harness_routing.mncs` — primary-role classification + coder chain
-- `mncs/harness_policy.mncs` — command / file-write policy kernel
-- `mncs/harness_verdict.mncs` — status-lattice evidence combination
-- `mncs/harness_atlas.mncs` — Atlas verdict fold, dispatch gate, tool admission
-- `mncs/harness_pins.mncs` — pin shape validation + fail-closed placement
+- `mncs/harness_policy.mncs` — command / file-write policy + publication gate
+- `mncs/harness_verdict.mncs` — generic `combine_all<N>` + envelopes
+- `mncs/harness_atlas.mncs` — generic `fold_all<N>` + dispatch gate, tool admission
+- `mncs/harness_pins.mncs` — pin shape validation + fail-closed placement + exact-pin predicate
 - `mncs/harness_fabric.mncs` — Fabric version/capability precedence + gate
 - `mncs/harness_readiness.mncs` — generic `fold_readiness<N>` + envelopes
-- `mncs/harness_eligibility.mncs` — capability gates + resource thresholds
-- `corpora/harness-*.json` — 140 executable cases, all `PASS` on
-  portable-WASM + research-bytecode (280 backend-case executions)
+- `mncs/harness_eligibility.mncs` — capability/source/residency-admit/resource gates
+- `corpora/harness-*.json` — 168 executable cases, all `PASS` on
+  portable-WASM + research-bytecode (336 backend-case executions)
 - `src/mncs_harness/_mncs_artifacts/` — 16 shipped frozen artifacts +
   identity manifest; production paths execute these through
-  `mncs_exec`/`mncs_runtime` (no per-request compilation)
-- `src/mncs_harness/mncs_logic.py` — TRANSITIONAL mirror only
+  `mncs_exec`/`mncs_runtime` (no per-request compilation, no Python fallback)
+- `tests/mncs_oracle.py` — test-only agreement oracle, never imported
+  from `src/`
 - `tests/test_mncs_exec.py` + `tests/test_mncs_logic.py` — real-execution
   agreement, fail-closed behavior, and corpus checks
 
@@ -112,14 +113,17 @@ express this" from **(B)** "the harness assumed a Python-specific model".
   trees in the older kernels are now migration debt, not language blocks.
   Runtime `up_to` bounds remain unsupported, but nothing in the harness
   still needs that spelling.
-- **Workaround:** fixed-arity fold trees (`combine4`/`combine8`,
-  `fold_pair`/`fold4`); the host chunks open-ended lists into fixed
-  envelopes. **Cost:** O(n) listing behavior becomes host-side chunking
-  code plus one MNCS call per chunk; envelope widths are magic numbers.
-- **Proposed direction:** unify the older kernels on the proven generic
-  pattern; keep concrete envelopes as the host-callable surface (generic
-  entrypoints are reached through monomorphic wrappers, matching the
-  stdlib's own consumer pattern).
+- **UPDATE (closure pass):** the older kernels are unified on the proven
+  pattern — `combine_all<N>` in `harness_verdict.mncs`, `fold_all<N>` in
+  `harness_atlas.mncs`, same exports, same host chunking, all corpora PASS
+  on both backends. No harness surface needs runtime `up_to` bounds.
+  **CLOSED for the harness.**
+- **Workaround (retired for folds):** fixed-arity fold trees
+  (`combine4`/`combine8`, `fold_pair`/`fold4`) remain only as the
+  host-callable monomorphic envelopes over authoritative generic folds;
+  the host chunks open-ended lists into fixed envelopes because the
+  executor ABI takes fixed arguments, not because the language cannot
+  fold sequences.
 
 ## HARNESS-PRESSURE-004 — no realizable I/O effects
 
@@ -139,8 +143,9 @@ express this" from **(B)** "the harness assumed a Python-specific model".
   against `library/` (no I/O modules) and the `mncs execute-backend`
   contract (logical values in/out).
 - **Workaround:** strict split — MNCS owns pure decision kernels, Python
-  owns every effect. The split is enforced by `mncs_logic` docstrings and
-  `tests/test_mncs_logic.py`. **Cost:** the security boundary
+  owns every effect. The split is enforced by `mncs_exec` (no Python
+  fallback exists), `scripts/mncs_harness_check.py`, and
+  `tests/test_mncs_exec.py`. **Cost:** the security boundary
   (workspace confinement, approval) is implemented in the unverified host;
   MNCS can bless decisions but cannot confine effects.
 - **Proposed direction:** do not boil the ocean. The smallest useful step
@@ -282,9 +287,11 @@ express this" from **(B)** "the harness assumed a Python-specific model".
   limit appeared for sequences of finite values; generic specialization
   through wrappers works on portable-WASM and research-bytecode alike.
   The 64-element ceiling never bound real harness envelopes (widest is 12
-  layers). Remaining fixed trees are migration debt (conversion ledger),
-  not pressure.
-- **Workaround (retired):** host-side chunking into fixed envelopes.
+  layers). **CLOSED for the harness (closure pass):** all three fold
+  kernels (readiness, verdict, Atlas) now implement the authoritative fold
+  as a generic `<N>` function with monomorphic envelopes; host chunking
+  remains only as ABI transport, not as a language workaround.
+- **Workaround (retired):** host-side chunking into fixed trees.
 
 ## HARNESS-PRESSURE-011 — exact-cost obligations stay UNKNOWN
 
@@ -410,12 +417,13 @@ application weight without friction:
   whole class of `(bool, str)` and `(bool, int)` Python tuples with
   checked shapes.
 - `source-study` + `experiment run` + sealed result JSON gave the campaign
-  a better evidence story than the Python suite had: 280 backend-case
+  a better evidence story than the Python suite had: 336 backend-case
   executions with identities, step counts, and expectation checks.
 - Profile 0.10 generics (`fold_readiness<N>` over `[Readiness; N]`)
   specialized and executed on both backends on the first attempt that
   used the monomorphic-wrapper pattern — the facility is real, and the
-  earlier fixed-width kernels are now migration debt, not pressure.
+  closure pass unified all three fold kernels (readiness, verdict, Atlas)
+  on it with zero export changes.
 - First-try `completed` status on seven of eight modules (the eighth
   needed only a parameter rename and bool-match rewrite); failure
   diagnostics (`MNE105`, `MNE173`, `MNP094`, `MNP084`, `MNP024`) are

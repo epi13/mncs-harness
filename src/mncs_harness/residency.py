@@ -400,7 +400,16 @@ class ResidencyManager:
                 continue
             loaded_names = self._loaded_names(inventory)
             conflicts = [name for name in loaded_names if name != model_name]
-            if conflicts and self.policy.reject_conflicting_loaded_models and not model.get("loaded"):
+            # Implicit-eviction veto is MNCS-decided
+            # (mncs.harness.eligibility.v1::residency_admit); the host
+            # encodes list-emptiness, policy flags, and loaded state.
+            from . import mncs_exec
+
+            if not mncs_exec.residency_admit(
+                bool(conflicts),
+                bool(self.policy.reject_conflicting_loaded_models),
+                bool(model.get("loaded")),
+            ):
                 results.append({
                     "outcome": "FAIL",
                     "code": "RESIDENCY_CONFLICTING_LOADED_MODELS",

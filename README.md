@@ -182,11 +182,12 @@ policy, verdict, Atlas, pins, fabric-compat, readiness, eligibility) and
 `mncs_exec`, which runs shipped frozen artifacts
 (`src/mncs_harness/_mncs_artifacts/`, 16 across both backends) through the
 pinned MNCS executor — no per-request compilation, fail-closed on any
-defect. `src/mncs_harness/mncs_logic.py` is a transitional mirror only
-(opt-in fallback, never canonical).
+defect. There is no Python fallback: MNCS is the single executable
+authority (`tests/mncs_oracle.py` is a test-only agreement oracle, never
+imported from `src/`).
 
-- Executable corpora: `corpora/` (140 cases, all PASS on portable-WASM +
-  research-bytecode).
+- Executable corpora: `corpora/` (168 cases, all PASS on portable-WASM +
+  research-bytecode — 336 backend-case executions).
 - Conversion inventory: [docs/conversion-ledger.md](docs/conversion-ledger.md)
   (+ `conversion-ledger.json`, CI-validated).
 - Language pressure: [docs/language-pressure.md](docs/language-pressure.md),

@@ -237,7 +237,8 @@ def plan_route(
 
     # Every operator pin is authoritative. Exact worker/model requests must
     # not initialize compatibility routing or walk the escalation cascade.
-    if requested.mode in {"MODEL", "WORKER", "WORKER_MODEL", "WORKER_MODEL_ROLE"}:
+    # Exactness is MNCS-decided (mncs.harness.pins.v1::is_exact_pin).
+    if mncs_exec.is_exact_pin(requested.mode):
         plan = _deterministic_route(profile, config)
         return replace(plan, escalation_roles=(), routing_override=requested)
     if requested.mode != "AUTO":

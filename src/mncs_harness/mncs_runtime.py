@@ -17,10 +17,8 @@ never invoked per request.
 Fail-closed: missing executor, unreadable/tampered artifact, identity or
 digest mismatch, executor error, malformed output, or an ``UNKNOWN`` where
 the caller requires decided — all raise :class:`MncsRuntimeError`. There is
-no silent fallback to a Python copy of the policy. A transitional,
-explicitly-marked Python fallback exists ONLY when the operator sets
-``MNCS_HARNESS_TRANSITIONAL_PYTHON_DECISIONS=1`` (warns loudly, never the
-canonical path, never conformance-bearing).
+no fallback to a Python copy of the policy: MNCS is the single executable
+authority for every converted kernel.
 """
 
 from __future__ import annotations
@@ -30,14 +28,12 @@ import json
 import os
 import shutil
 import subprocess
-import sys
 import tempfile
 from dataclasses import dataclass
 from importlib.resources import files
 from pathlib import Path
 from typing import Any
 
-TRANSITIONAL_ENV = "MNCS_HARNESS_TRANSITIONAL_PYTHON_DECISIONS"
 EXECUTOR_ENV = "MNCS_EXECUTOR"
 BACKEND_ENV = "MNCS_HARNESS_BACKEND"  # "wasm" (default) or "bytecode"
 
@@ -84,7 +80,7 @@ def find_executor() -> str:
         if Path(override).is_file():
             return override
         raise MncsRuntimeError(f"{EXECUTOR_ENV}={override!r} is not a file")
-    found = shutil.which("mncs-cli")
+    found = shutil.which("mncs-executor")
     if found:
         return found
     here = Path(__file__).resolve()
@@ -95,9 +91,9 @@ def find_executor() -> str:
         if sibling.is_file():
             return str(sibling)
     raise MncsRuntimeError(
-        "no MNCS executor available: set MNCS_EXECUTOR, put mncs-cli on PATH, "
-        "or check out mncs-language next to mncs-harness and build it "
-        "(cargo build -p mncs-cli)"
+        "no MNCS executor available: set MNCS_EXECUTOR, put mncs-executor on PATH "
+        "(python3 scripts/fetch_mncs_executor.py), or check out mncs-language "
+        "next to mncs-harness and build it (cargo build -p mncs-cli)"
     )
 
 
@@ -270,16 +266,3 @@ def call(kernel: str, function: str, args: list[Any], *, timeout: int = 120) -> 
     if len(returned) != 1:
         raise MncsRuntimeError(f"MNCS {function} returned {len(returned)} values, want 1")
     return _decode(returned[0])
-
-
-def transitional_allowed() -> bool:
-    """Whether the operator explicitly enabled the transitional Python fallback."""
-    return os.environ.get(TRANSITIONAL_ENV) == "1"
-
-
-def warn_transitional(what: str) -> None:
-    print(
-        f"WARNING: {what} via TRANSITIONAL Python mirror "
-        f"({TRANSITIONAL_ENV}=1); not canonical, not conformance-bearing",
-        file=sys.stderr,
-    )

@@ -3,9 +3,10 @@ mncs 0.6;
 // mncs.harness.eligibility.v1 — model capability and resource gating.
 //
 // The host owns strings and measurements: provider-claim tables, evidence
-// outcomes, byte counts, and policy fractions. What moves here are the two
+// outcomes, byte counts, and policy fractions. What moves here are the
 // pure admission decisions: per-capability eligibility under an unknown
-// policy, and integer resource-threshold gating after host measurement.
+// policy, capability-inventory source selection, residency conflict
+// admission, and integer resource-threshold gating after host measurement.
 //
 // Capability rules mirror the harness selection policy exactly:
 //   COMPLETION: observed FAIL denies; a provider claim or observed PASS
@@ -127,6 +128,52 @@ fn capability_eligible(
         TOOLS => tools_gate(observed, claimed, unknown_policy, require_observed, allow_unclaimed),
         CODE_EDIT => code_edit_gate(observed),
     };
+}
+
+// Capability-source selection for the capability graph. The host owns
+// strings, sorting, path resolution, and inventory transport; it encodes
+// four carried booleans and this function selects which source — if any —
+// the host may project: a live observation wins, else the legacy worker
+// inventory, else nothing. No string comparison happens here
+// (HARNESS-PRESSURE-001); the host maps "AVAILABLE"/"CURRENT" to bools.
+enum CapSource { OBSERVATION, LEGACY, NONE }
+
+fn capability_source(
+    available: bool,
+    inventory_current: bool,
+    observation_present: bool,
+    legacy_present: bool
+) -> (result: CapSource) {
+    if available && inventory_current && observation_present {
+        return CapSource.OBSERVATION;
+    }
+    if inventory_current && legacy_present {
+        return CapSource.LEGACY;
+    }
+    return CapSource.NONE;
+}
+
+// Residency conflict admission. A worker with other loaded models refuses
+// an implicit eviction unless the operator policy tolerates thrash or the
+// assigned model is already loaded. The host encodes list-emptiness,
+// policy flags, and loaded state; the veto itself is MNCS-owned.
+fn residency_admit(
+    has_conflicts: bool,
+    reject_conflicting: bool,
+    already_loaded: bool
+) -> (result: bool) {
+    if has_conflicts {
+    } else {
+        return true;
+    }
+    if reject_conflicting {
+    } else {
+        return true;
+    }
+    if already_loaded {
+        return true;
+    }
+    return false;
 }
 
 // Integer threshold gating after host measurement. The host precomputes

@@ -727,6 +727,168 @@
      }
     }
    ]
+  },
+  {
+   "id": "exact-pin-auto",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.pins.v1",
+     "function": "is_exact_pin"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.pins.v1::PinMode",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PinMode::AUTO",
+       "discriminant": 0
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": false
+     }
+    }
+   ]
+  },
+  {
+   "id": "exact-pin-role",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.pins.v1",
+     "function": "is_exact_pin"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.pins.v1::PinMode",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PinMode::ROLE",
+       "discriminant": 1
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": false
+     }
+    }
+   ]
+  },
+  {
+   "id": "exact-pin-model",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.pins.v1",
+     "function": "is_exact_pin"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.pins.v1::PinMode",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PinMode::MODEL",
+       "discriminant": 2
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": true
+     }
+    }
+   ]
+  },
+  {
+   "id": "exact-pin-worker",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.pins.v1",
+     "function": "is_exact_pin"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.pins.v1::PinMode",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PinMode::WORKER",
+       "discriminant": 3
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": true
+     }
+    }
+   ]
+  },
+  {
+   "id": "exact-pin-worker-model",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.pins.v1",
+     "function": "is_exact_pin"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.pins.v1::PinMode",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PinMode::WORKER_MODEL",
+       "discriminant": 4
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": true
+     }
+    }
+   ]
+  },
+  {
+   "id": "exact-pin-worker-model-role",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.pins.v1",
+     "function": "is_exact_pin"
+    },
+    "arguments": [
+     {
+      "finite": {
+       "type_identity": "mncs:0.2:finite-type:mncs.harness.pins.v1::PinMode",
+       "variant_identity": "mncs:0.2:finite-variant:mncs.harness.pins.v1::PinMode::WORKER_MODEL_ROLE",
+       "discriminant": 5
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": true
+     }
+    }
+   ]
   }
  ]
 }

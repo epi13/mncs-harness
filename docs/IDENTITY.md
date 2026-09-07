@@ -74,6 +74,24 @@ service names, extension naming, and documentation references concluded:
   units exist. The only `epi13` in the extension manifest is the
   marketplace publisher account.
 
+## Legacy audit (closure pass, 2026-09-07)
+
+Re-audited `epi13_local_harness`, `epi13-local-harness`, `epi13-harness`,
+`elh`, `EPI13_HARNESS_CONFIG` across `src/`, `tests/`, `scripts/`,
+`.github/`, `pyproject.toml`:
+
+- No `epi13_local_harness` package, import, or entry point exists. The only
+  mentions are this document, `src/mncs_harness/__init__.py`'s retirement
+  note, and frozen historical evidence.
+- Verdict unchanged: UX aliases (`elh*`, `epi13-harness`) and data
+  compatibility (`EPI13_HARNESS_CONFIG`, legacy config/state read
+  fallbacks, frozen schema IDs) are RETAINED — removal would break live
+  operator setups with zero behavior gain. Canonical identity
+  (`mncs-harness` / `mncs_harness`) is pinned by `tests/test_identity.py`.
+- Distinction enforced: canonical identity (this doc's table) vs
+  user-facing compatibility aliases (above) vs frozen wire/schema IDs
+  (never renamed) vs historical evidence (never rewritten).
+
 ## Default model profile
 
 Bundled model tags are a **reference profile**, not a laboratory inventory.

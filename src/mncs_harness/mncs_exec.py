@@ -3,12 +3,12 @@
 Each entrypoint marshals bounded host observations, calls the shipped frozen
 artifact through :mod:`mncs_harness.mncs_runtime`, decodes the typed result,
 and returns it. Production modules (router, policy, verifiers,
-atlas_binding, …) must import these — never the transitional Python mirror.
+atlas_binding, …) must import these — never any Python reimplementation.
 
 Fail-closed: any MNCS execution defect raises ``MncsRuntimeError`` to the
-caller. The ONLY exception is the explicitly-marked transitional branch
-requiring operator opt-in via ``MNCS_HARNESS_TRANSITIONAL_PYTHON_DECISIONS=1``,
-which warns loudly and is never conformance-bearing.
+caller. There is no Python fallback: a missing executor, broken artifact,
+or malformed result fails the operation, never silently re-decides it in
+Python.
 """
 
 from __future__ import annotations
@@ -51,70 +51,15 @@ def _variant(result: Any, function: str) -> str:
 
 
 def _as_variant(result: Any, function: str, valid: tuple[str, ...]) -> str:
-    """Decode a kernel enum from either shape.
-
-    Real execution returns the ``(variant, payload)`` tuple decoded from the
-    artifact ABI. The explicitly-marked transitional mirror returns the bare
-    host variant string. Both are validated against the kernel's vocabulary.
-    """
-    if isinstance(result, tuple):
-        variant = _variant(result, function)
-    elif isinstance(result, str):
-        variant = result
-    else:
-        raise mncs_runtime.MncsRuntimeError(f"MNCS {function} returned {result!r}")
+    """Decode a kernel enum from the real-execution ``(variant, payload)`` shape."""
+    variant = _variant(result, function)
     if variant not in valid:
         raise mncs_runtime.MncsRuntimeError(f"MNCS {function} returned unknown {variant!r}")
     return variant
 
 
-def _transitional(kernel: str, function: str, *args: Any) -> Any:
-    """TRANSITIONAL-ONLY Python fallback. Requires operator opt-in. Not canonical."""
-    if not mncs_runtime.transitional_allowed():
-        raise mncs_runtime.MncsRuntimeError(
-            f"MNCS execution failed for {function} and no transitional fallback is enabled"
-        )
-    mncs_runtime.warn_transitional(f"{kernel}::{function}")
-    from . import mncs_logic  # TRANSITIONAL-ONLY import; production path never reaches here
-
-    mirror = {
-        (_ROUTING, "classify_route"): mncs_logic.classify_route,
-        (_ROUTING, "needs_coder"): mncs_logic.needs_coder,
-        (_POLICY, "evaluate_command"): mncs_logic.command_reason,
-        (_POLICY, "evaluate_write"): mncs_logic.write_reason,
-        (_VERDICT, "combine8"): lambda chunk: mncs_logic.combine(list(chunk)),
-        (_VERDICT, "combine4"): lambda group: mncs_logic.combine(list(group)),
-        (_VERDICT, "is_decided"): mncs_logic.is_decided,
-        (_ATLAS, "fold4"): lambda group: mncs_logic.fold(list(group)),
-        (_ATLAS, "fold_pair"): mncs_logic.fold_pair,
-        (_ATLAS, "dispatch_gate"): mncs_logic.dispatch_gate,
-        (_ATLAS, "tool_admission"): mncs_logic.tool_admission,
-        (_PINS, "pin_fields_valid"): mncs_logic.pin_fields_valid,
-        (_PINS, "admit_placement"): mncs_logic.admit_placement,
-        (_FABRIC, "classify_fabric"): mncs_logic.classify_fabric,
-        (_FABRIC, "dispatch_allowed"): mncs_logic.fabric_dispatch_allowed,
-        (_READINESS, "dominate_readiness"): mncs_logic.dominate_readiness,
-        (_READINESS, "fold4"): lambda quad: mncs_logic.fold_readiness(list(quad)),
-        (_READINESS, "fold8"): lambda envelope: mncs_logic.fold_readiness(list(envelope)),
-        (_READINESS, "is_ready"): mncs_logic.readiness_ready,
-        (_ELIGIBILITY, "capability_eligible"): mncs_logic.capability_eligible,
-        (_ELIGIBILITY, "resource_gate"): mncs_logic.resource_gate,
-    }[(kernel, function)]
-    return mirror(*args)
-
-
-def _call(
-    kernel: str,
-    function: str,
-    args: list[Any],
-    mirror_args: tuple[Any, ...],
-) -> Any:
-    try:
-        return mncs_runtime.call(kernel, function, args)
-    except mncs_runtime.MncsRuntimeError:
-        if not mncs_runtime.transitional_allowed():
-            raise
-        return _transitional(kernel, function, *mirror_args)
+def _call(kernel: str, function: str, args: list[Any]) -> Any:
+    return mncs_runtime.call(kernel, function, args)
 
 
 def primary_role(
@@ -130,10 +75,7 @@ def primary_role(
         _ROUTING,
         "classify_route",
         [has_code, asks_edit, asks_exec, is_high_risk, has_image, is_complex],
-        (has_code, asks_edit, asks_exec, is_high_risk, has_image, is_complex),
     )
-    if isinstance(result, str) and result in ("e2b", "e4b", "reviewer"):
-        return result  # type: ignore[return-value]  # transitional mirror value
     variant = _as_variant(result, "classify_route", ("E2B", "E4B", "REVIEWER"))
     return {"E2B": "e2b", "E4B": "e4b", "REVIEWER": "reviewer"}[variant]  # type: ignore[return-value]
 
@@ -147,7 +89,6 @@ def needs_coder(primary: str, code_specialist: bool, has_code: bool) -> bool:
         _ROUTING,
         "needs_coder",
         [_finite(_ROUTING_MODULE, "Role", inverse[primary]), code_specialist, has_code],
-        (primary, code_specialist, has_code),
     )
     if not isinstance(result, bool):
         raise mncs_runtime.MncsRuntimeError(f"needs_coder returned non-bool {result!r}")
@@ -176,18 +117,7 @@ def command_reason(
             git_ok,
             path_ok,
         ],
-        (
-            executable_blocked,
-            allowlisted,
-            has_shell_operator,
-            shell_ok,
-            python_ok,
-            git_ok,
-            path_ok,
-        ),
     )
-    if isinstance(result, int) and 0 <= result <= 8:
-        return result  # transitional mirror value
     variant, payload = result if isinstance(result, tuple) else ("", {})
     if variant == "Allow":
         return 0
@@ -198,18 +128,23 @@ def command_reason(
 
 def write_allowed(targets_protected_internals: bool) -> bool:
     """Execute ``mncs.harness.policy.v1::evaluate_write``."""
-    result = _call(
-        _POLICY,
-        "evaluate_write",
-        [targets_protected_internals],
-        (targets_protected_internals,),
-    )
-    if isinstance(result, bool):
-        return result  # transitional mirror value
-    if isinstance(result, int) and result in (0, 8):
-        return result == 0  # transitional mirror value
+    result = _call(_POLICY, "evaluate_write", [targets_protected_internals])
     variant = _as_variant(result, "evaluate_write", ("Allow", "Block"))
     return variant == "Allow"
+
+
+_PUBLICATION = ("PROCEED", "SKIP_DISABLED", "SKIP_NOT_READY", "SKIP_NO_RECORD")
+
+
+def publication_gate(configured: bool, session_ready: bool, record_present: bool) -> str:
+    """Execute ``mncs.harness.policy.v1::publication_gate``.
+
+    Returns PROCEED or the ordered skip reason (disabled beats not-ready
+    beats no-record). The host performs the publish effect or maps the skip
+    to its error code; the precedence itself is MNCS-owned.
+    """
+    result = _call(_POLICY, "publication_gate", [configured, session_ready, record_present])
+    return _as_variant(result, "publication_gate", _PUBLICATION)
 
 
 def _status_arg(status: str) -> tuple[str, str, str]:
@@ -236,12 +171,7 @@ def combine(checks: list[str]) -> HostStatus:
         padded = chunk + ["PASS"] * (8 - len(chunk))
         halves.append(
             _as_variant(
-                _call(
-                    _VERDICT,
-                    "combine8",
-                    [_status_arg(status) for status in padded],
-                    (chunk,),
-                ),
+                _call(_VERDICT, "combine8", [_status_arg(status) for status in padded]),
                 "combine8",
                 ("PASS", "FAIL", "UNKNOWN"),
             )
@@ -252,12 +182,7 @@ def combine(checks: list[str]) -> HostStatus:
             group = (halves[index : index + 4] + ["PASS"] * 4)[:4]
             folded.append(
                 _as_variant(
-                    _call(
-                        _VERDICT,
-                        "combine4",
-                        [_status_arg(status) for status in group],
-                        (group,),
-                    ),
+                    _call(_VERDICT, "combine4", [_status_arg(status) for status in group]),
                     "combine4",
                     ("PASS", "FAIL", "UNKNOWN"),
                 )
@@ -267,7 +192,7 @@ def combine(checks: list[str]) -> HostStatus:
         return halves[0]  # type: ignore[return-value]
     padded = (halves + ["PASS"] * 4)[:4]
     return _as_variant(
-        _call(_VERDICT, "combine4", [_status_arg(status) for status in padded], (padded,)),
+        _call(_VERDICT, "combine4", [_status_arg(status) for status in padded]),
         "combine4",
         ("PASS", "FAIL", "UNKNOWN"),
     )  # type: ignore[return-value]
@@ -275,7 +200,7 @@ def combine(checks: list[str]) -> HostStatus:
 
 def verdict_decided(status: str) -> bool:
     """Execute ``mncs.harness.verdict.v1::is_decided``."""
-    result = _call(_VERDICT, "is_decided", [_status_arg(status)], (status,))
+    result = _call(_VERDICT, "is_decided", [_status_arg(status)])
     if not isinstance(result, bool):
         raise mncs_runtime.MncsRuntimeError(f"is_decided returned non-bool {result!r}")
     return result
@@ -289,9 +214,7 @@ def _grant_arg(grant: str) -> tuple[str, str, str]:
 
 def fold_pair(left: str, right: str) -> HostGrant:
     """Execute ``mncs.harness.atlas.v1::fold_pair``."""
-    result = _call(
-        _ATLAS, "fold_pair", [_grant_arg(left), _grant_arg(right)], (left, right)
-    )
+    result = _call(_ATLAS, "fold_pair", [_grant_arg(left), _grant_arg(right)])
     return _as_variant(result, "fold_pair", ("GRANTED", "UNKNOWN", "REFUSED"))  # type: ignore[return-value]
 
 
@@ -307,7 +230,7 @@ def fold(decisions: list[str]) -> HostGrant:
         group = (decisions[index : index + 4] + ["GRANTED"] * 4)[:4]
         halves.append(
             _as_variant(
-                _call(_ATLAS, "fold4", [_grant_arg(g) for g in group], (group,)),
+                _call(_ATLAS, "fold4", [_grant_arg(g) for g in group]),
                 "fold4",
                 ("GRANTED", "UNKNOWN", "REFUSED"),
             )
@@ -320,19 +243,32 @@ def fold(decisions: list[str]) -> HostGrant:
 
 def tool_admission(granted: bool, covered: bool) -> HostGrant:
     """Execute ``mncs.harness.atlas.v1::tool_admission``."""
-    result = _call(_ATLAS, "tool_admission", [granted, covered], (granted, covered))
+    result = _call(_ATLAS, "tool_admission", [granted, covered])
     return _as_variant(result, "tool_admission", ("GRANTED", "UNKNOWN", "REFUSED"))  # type: ignore[return-value]
 
 
 def dispatch_gate(folded: str, target_matches: bool) -> HostGrant:
     """Execute ``mncs.harness.atlas.v1::dispatch_gate``."""
-    result = _call(
-        _ATLAS, "dispatch_gate", [_grant_arg(folded), target_matches], (folded, target_matches)
-    )
+    result = _call(_ATLAS, "dispatch_gate", [_grant_arg(folded), target_matches])
     return _as_variant(result, "dispatch_gate", ("GRANTED", "UNKNOWN", "REFUSED"))  # type: ignore[return-value]
 
 
 _PIN_MODES = ("AUTO", "ROLE", "MODEL", "WORKER", "WORKER_MODEL", "WORKER_MODEL_ROLE")
+
+
+def is_exact_pin(mode: str) -> bool:
+    """Execute ``mncs.harness.pins.v1::is_exact_pin``.
+
+    AUTO and ROLE route automatically; every other operator mode carries an
+    exact pin. Shared by the router (exact pins skip the escalation cascade)
+    and the agent (exact-pin progress branch).
+    """
+    if mode not in _PIN_MODES:
+        raise mncs_runtime.MncsRuntimeError(f"unknown pin mode {mode!r}")
+    result = _call(_PINS, "is_exact_pin", [_finite(_PINS_MODULE, "PinMode", mode)])
+    if not isinstance(result, bool):
+        raise mncs_runtime.MncsRuntimeError(f"is_exact_pin returned non-bool {result!r}")
+    return result
 
 
 def pin_fields_valid(mode: str, has_role: bool, has_worker: bool, has_model: bool) -> bool:
@@ -348,7 +284,6 @@ def pin_fields_valid(mode: str, has_role: bool, has_worker: bool, has_model: boo
             has_worker,
             has_model,
         ],
-        (mode, has_role, has_worker, has_model),
     )
     if not isinstance(result, bool):
         raise mncs_runtime.MncsRuntimeError(f"pin_fields_valid returned non-bool {result!r}")
@@ -357,12 +292,7 @@ def pin_fields_valid(mode: str, has_role: bool, has_worker: bool, has_model: boo
 
 def admit_placement(auto_or_role: bool, selection_present: bool, allow_fallback: bool) -> str:
     """Execute ``mncs.harness.pins.v1::admit_placement``."""
-    result = _call(
-        _PINS,
-        "admit_placement",
-        [auto_or_role, selection_present, allow_fallback],
-        (auto_or_role, selection_present, allow_fallback),
-    )
+    result = _call(_PINS, "admit_placement", [auto_or_role, selection_present, allow_fallback])
     return _as_variant(
         result,
         "admit_placement",
@@ -382,7 +312,6 @@ def classify_fabric(
         _FABRIC,
         "classify_fabric",
         [missing_any, parseable, too_old, exact, version_is_certified],
-        (missing_any, parseable, too_old, exact, version_is_certified),
     )
     return _as_variant(
         result,
@@ -414,7 +343,6 @@ def fabric_dispatch_allowed(classification: str) -> bool:
         _FABRIC,
         "dispatch_allowed",
         [_finite(_FABRIC_MODULE, "FabricClass", classification)],
-        (classification,),
     )
     if not isinstance(result, bool):
         raise mncs_runtime.MncsRuntimeError(f"dispatch_allowed returned non-bool {result!r}")
@@ -433,10 +361,7 @@ def _readiness_arg(state: str) -> tuple[str, str, str]:
 def dominate_readiness(left: str, right: str) -> str:
     """Execute ``mncs.harness.readiness.v1::dominate_readiness``."""
     result = _call(
-        _READINESS,
-        "dominate_readiness",
-        [_readiness_arg(left), _readiness_arg(right)],
-        (left, right),
+        _READINESS, "dominate_readiness", [_readiness_arg(left), _readiness_arg(right)]
     )
     return _as_variant(result, "dominate_readiness", _READINESS_STATES)
 
@@ -460,12 +385,7 @@ def fold_readiness(layers: list[str]) -> str:
             quad = (head + ["READY"] * 4)[:4]
             partials.append(
                 _as_variant(
-                    _call(
-                        _READINESS,
-                        "fold4",
-                        [_readiness_arg(state) for state in quad],
-                        (quad,),
-                    ),
+                    _call(_READINESS, "fold4", [_readiness_arg(state) for state in quad]),
                     "fold4",
                     _READINESS_STATES,
                 )
@@ -473,12 +393,7 @@ def fold_readiness(layers: list[str]) -> str:
         else:
             partials.append(
                 _as_variant(
-                    _call(
-                        _READINESS,
-                        "fold8",
-                        [_readiness_arg(state) for state in padded],
-                        (padded,),
-                    ),
+                    _call(_READINESS, "fold8", [_readiness_arg(state) for state in padded]),
                     "fold8",
                     _READINESS_STATES,
                 )
@@ -487,12 +402,7 @@ def fold_readiness(layers: list[str]) -> str:
         quad, tail = (tail[:4] + ["READY"] * 4)[:4], tail[4:]
         partials.append(
             _as_variant(
-                _call(
-                    _READINESS,
-                    "fold4",
-                    [_readiness_arg(state) for state in quad],
-                    (quad,),
-                ),
+                _call(_READINESS, "fold4", [_readiness_arg(state) for state in quad]),
                 "fold4",
                 _READINESS_STATES,
             )
@@ -505,9 +415,7 @@ def fold_readiness(layers: list[str]) -> str:
 
 def readiness_ready(state: str) -> bool:
     """Execute ``mncs.harness.readiness.v1::is_ready``."""
-    result = _call(
-        _READINESS, "is_ready", [_readiness_arg(state)], (state,)
-    )
+    result = _call(_READINESS, "is_ready", [_readiness_arg(state)])
     if not isinstance(result, bool):
         raise mncs_runtime.MncsRuntimeError(f"is_ready returned non-bool {result!r}")
     return result
@@ -517,6 +425,7 @@ _CAPABILITIES = ("COMPLETION", "TOOLS", "CODE_EDIT")
 _OBSERVED = ("NONE", "PASS", "FAIL")
 _UNKNOWN_POLICIES = ("FAIL_CLOSED", "EXPLORE", "PROVIDER_CLAIM_COMPAT", "OTHER")
 _RESOURCE_VERDICTS = ("OK", "MISSING_FACTS", "OVER_BUDGET", "OVER_AVAILABLE")
+_CAP_SOURCES = ("OBSERVATION", "LEGACY", "NONE")
 
 
 def capability_eligible(
@@ -533,9 +442,7 @@ def capability_eligible(
     if observed not in _OBSERVED:
         raise mncs_runtime.MncsRuntimeError(f"cannot marshal observed {observed!r}")
     if unknown_policy not in _UNKNOWN_POLICIES:
-        raise mncs_runtime.MncsRuntimeError(
-            f"cannot marshal unknown policy {unknown_policy!r}"
-        )
+        raise mncs_runtime.MncsRuntimeError(f"cannot marshal unknown policy {unknown_policy!r}")
     result = _call(
         _ELIGIBILITY,
         "capability_eligible",
@@ -547,11 +454,49 @@ def capability_eligible(
             require_observed,
             allow_unclaimed,
         ],
-        (capability, observed, claimed, unknown_policy, require_observed, allow_unclaimed),
     )
-    if isinstance(result, bool):
-        return result  # transitional mirror value
-    raise mncs_runtime.MncsRuntimeError(f"capability_eligible returned {result!r}")
+    if not isinstance(result, bool):
+        raise mncs_runtime.MncsRuntimeError(f"capability_eligible returned {result!r}")
+    return result
+
+
+def capability_source(
+    available: bool,
+    inventory_current: bool,
+    observation_present: bool,
+    legacy_present: bool,
+) -> str:
+    """Execute ``mncs.harness.eligibility.v1::capability_source``.
+
+    Selects which capability inventory — live observation, legacy worker
+    inventory, or none — the host capability graph may project. The host
+    encodes availability/currency/presence bools; string matching stays
+    host-side.
+    """
+    result = _call(
+        _ELIGIBILITY,
+        "capability_source",
+        [available, inventory_current, observation_present, legacy_present],
+    )
+    return _as_variant(result, "capability_source", _CAP_SOURCES)
+
+
+def residency_admit(has_conflicts: bool, reject_conflicting: bool, already_loaded: bool) -> bool:
+    """Execute ``mncs.harness.eligibility.v1::residency_admit``.
+
+    True means the worker may proceed to warm the assigned model; False is
+    the implicit-eviction veto (other models loaded, policy rejects thrash,
+    assigned model not already loaded). The host maps False to the
+    RESIDENCY_CONFLICTING_LOADED_MODELS record.
+    """
+    result = _call(
+        _ELIGIBILITY,
+        "residency_admit",
+        [has_conflicts, reject_conflicting, already_loaded],
+    )
+    if not isinstance(result, bool):
+        raise mncs_runtime.MncsRuntimeError(f"residency_admit returned non-bool {result!r}")
+    return result
 
 
 def resource_gate(
@@ -566,6 +511,5 @@ def resource_gate(
         _ELIGIBILITY,
         "resource_gate",
         [facts_complete, size, budget, has_available, available],
-        (facts_complete, size, budget, has_available, available),
     )
     return _as_variant(result, "resource_gate", _RESOURCE_VERDICTS)

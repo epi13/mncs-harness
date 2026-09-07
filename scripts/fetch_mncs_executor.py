@@ -57,6 +57,7 @@ def main() -> None:
         )
         raise SystemExit(1)
     dest = Path(os.path.expanduser(args.dest))
+    dest.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile(dir=str(dest.parent), delete=False) as staged:
         staged.write(data)
         staged_path = Path(staged.name)

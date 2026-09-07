@@ -1475,6 +1475,580 @@
      }
     }
    ]
+  },
+  {
+   "id": "capsrc-observation",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.eligibility.v1",
+     "function": "capability_source"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::CapSource",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::CapSource::OBSERVATION",
+      "discriminant": 0
+     }
+    }
+   ]
+  },
+  {
+   "id": "capsrc-observation-no-legacy",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.eligibility.v1",
+     "function": "capability_source"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::CapSource",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::CapSource::OBSERVATION",
+      "discriminant": 0
+     }
+    }
+   ]
+  },
+  {
+   "id": "capsrc-legacy",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.eligibility.v1",
+     "function": "capability_source"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::CapSource",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::CapSource::LEGACY",
+      "discriminant": 1
+     }
+    }
+   ]
+  },
+  {
+   "id": "capsrc-legacy-unavailable",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.eligibility.v1",
+     "function": "capability_source"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::CapSource",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::CapSource::LEGACY",
+      "discriminant": 1
+     }
+    }
+   ]
+  },
+  {
+   "id": "capsrc-none-stale",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.eligibility.v1",
+     "function": "capability_source"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::CapSource",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::CapSource::NONE",
+      "discriminant": 2
+     }
+    }
+   ]
+  },
+  {
+   "id": "capsrc-none-empty",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.eligibility.v1",
+     "function": "capability_source"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::CapSource",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::CapSource::NONE",
+      "discriminant": 2
+     }
+    }
+   ]
+  },
+  {
+   "id": "capsrc-none-no-source",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.eligibility.v1",
+     "function": "capability_source"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.eligibility.v1::CapSource",
+      "variant_identity": "mncs:0.2:finite-variant:mncs.harness.eligibility.v1::CapSource::NONE",
+      "discriminant": 2
+     }
+    }
+   ]
+  },
+  {
+   "id": "resadmit-0",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.eligibility.v1",
+     "function": "residency_admit"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": true
+     }
+    }
+   ]
+  },
+  {
+   "id": "resadmit-1",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.eligibility.v1",
+     "function": "residency_admit"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": true
+     }
+    }
+   ]
+  },
+  {
+   "id": "resadmit-2",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.eligibility.v1",
+     "function": "residency_admit"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": true
+     }
+    }
+   ]
+  },
+  {
+   "id": "resadmit-3",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.eligibility.v1",
+     "function": "residency_admit"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": true
+     }
+    }
+   ]
+  },
+  {
+   "id": "resadmit-4",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.eligibility.v1",
+     "function": "residency_admit"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": false
+     }
+    }
+   ]
+  },
+  {
+   "id": "resadmit-5",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.eligibility.v1",
+     "function": "residency_admit"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": true
+     }
+    }
+   ]
+  },
+  {
+   "id": "resadmit-x0",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.eligibility.v1",
+     "function": "residency_admit"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": true
+     }
+    }
+   ]
+  },
+  {
+   "id": "resadmit-x1",
+   "request": {
+    "schema_version": "0.1",
+    "target": {
+     "module": "mncs.harness.eligibility.v1",
+     "function": "residency_admit"
+    },
+    "arguments": [
+     {
+      "boolean": {
+       "value": false
+      }
+     },
+     {
+      "boolean": {
+       "value": true
+      }
+     },
+     {
+      "boolean": {
+       "value": false
+      }
+     }
+    ],
+    "step_budget": 2048
+   },
+   "expected": [
+    {
+     "boolean": {
+      "value": true
+     }
+    }
+   ]
   }
  ]
 }

@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Iterable
 
+from . import mncs_exec
 from .fabric import FabricStatus
 
 
@@ -48,13 +49,20 @@ def build_capability_graph(
             ),
         }
         observation = source.get("capability_observation")
+        # Source selection is MNCS-decided
+        # (mncs.harness.eligibility.v1::capability_source); the host encodes
+        # availability/currency/presence bools and projects the selected
+        # string-shaped inventory. String matching stays host-side
+        # (HARNESS-PRESSURE-001).
+        source_selection = mncs_exec.capability_source(
+            worker["availability"] == "AVAILABLE",
+            worker["capability_inventory_status"] == "CURRENT",
+            isinstance(observation, dict)
+            and isinstance(observation.get("capabilities"), list),
+            isinstance(source.get("model_inventory"), list),
+        )
         capabilities: list[dict[str, object]] = []
-        if (
-            worker["availability"] == "AVAILABLE"
-            and worker["capability_inventory_status"] == "CURRENT"
-            and isinstance(observation, dict)
-            and isinstance(observation.get("capabilities"), list)
-        ):
+        if source_selection == "OBSERVATION" and isinstance(observation, dict):
             for entry in observation["capabilities"]:
                 if not isinstance(entry, dict):
                     continue
@@ -66,10 +74,7 @@ def build_capability_graph(
                         "capability_identity": entry.get("capability_identity"),
                     }
                 )
-        elif (
-            worker["capability_inventory_status"] == "CURRENT"
-            and isinstance(source.get("model_inventory"), list)
-        ):
+        elif source_selection == "LEGACY":
             capabilities.extend(
                 {
                     "kind": "model",

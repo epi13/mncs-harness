@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from . import mncs_exec
 from .atlas_binding import ExecutionRequirement
 from .capability_graph import build_capability_graph
 from .commons import CommonsError, CommonsSession, CommonsStatus
@@ -123,10 +124,16 @@ class LocalAgent:
         )
 
     def _publish_fabric_evidence(self, metadata: dict[str, Any]) -> None:
-        if not self.config.commons.publish_fabric_evidence or not self.commons_session.ready:
-            return
         record = getattr(self.fabric_session, "last_execution_record", None)
-        if not isinstance(record, dict):
+        # Admission precedence is MNCS-decided
+        # (mncs.harness.policy.v1::publication_gate); the publish effect
+        # stays host-side.
+        gate = mncs_exec.publication_gate(
+            bool(self.config.commons.publish_fabric_evidence),
+            bool(self.commons_session.ready),
+            isinstance(record, dict),
+        )
+        if gate != "PROCEED":
             return
         try:
             result = self.commons_session.publish_fabric_evidence(record)
@@ -165,12 +172,14 @@ class LocalAgent:
 
     @staticmethod
     def _exact_manual_route(override: RoutingOverride | None) -> bool:
-        return override is not None and override.mode in {
-            "MODEL",
-            "WORKER",
-            "WORKER_MODEL",
-            "WORKER_MODEL_ROLE",
-        }
+        """Whether the override carries an exact operator pin (MNCS-decided).
+
+        AUTO and ROLE route automatically; every other mode pins a worker,
+        model, or pair through ``mncs.harness.pins.v1::is_exact_pin``.
+        """
+        if override is None:
+            return False
+        return mncs_exec.is_exact_pin(override.mode)
 
     def _declared_resident(self, worker_id: str | None) -> str | None:
         if not worker_id:

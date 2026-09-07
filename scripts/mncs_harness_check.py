@@ -10,7 +10,7 @@ always carries the verdict file; a FAIL verdict is data, never a crash.
    bypass of the MNCS decision boundary, corpus coverage per kernel.
 3. LIVE MNCS execution: one hardcoded vector per kernel function through
    the real production path (mncs_exec -> shipped artifact -> executor).
-   The executor resolves via MNCS_EXECUTOR, mncs-cli on PATH, or a
+   The executor resolves via MNCS_EXECUTOR, mncs-executor on PATH, or a
    digest-verified release download into the runner temp area. Any live
    failure FAILS the boundary. UNKNOWN is never emitted: decided vectors
    have exact expectations, and every failure mode is FAIL.
@@ -38,13 +38,13 @@ PROVIDER = "mncs-harness-pytest"
 
 REQUIRED_EXPORTS = {
     "harness_routing": {"classify_route", "needs_coder"},
-    "harness_policy": {"evaluate_command", "evaluate_write"},
+    "harness_policy": {"evaluate_command", "evaluate_write", "publication_gate"},
     "harness_verdict": {"dominate", "combine4", "combine8", "is_decided"},
     "harness_atlas": {"fold_pair", "fold4", "dispatch_gate", "tool_admission"},
-    "harness_pins": {"pin_fields_valid", "admit_placement"},
+    "harness_pins": {"pin_fields_valid", "admit_placement", "is_exact_pin"},
     "harness_fabric": {"classify_fabric", "dispatch_allowed"},
     "harness_readiness": {"dominate_readiness", "fold4", "fold8", "is_ready"},
-    "harness_eligibility": {"capability_eligible", "resource_gate"},
+    "harness_eligibility": {"capability_eligible", "capability_source", "residency_admit", "resource_gate"},
 }
 
 # (label, mncs_exec function, args, expected) — expectations are hardcoded
@@ -61,11 +61,17 @@ LIVE_VECTORS = [
     ("atlas.tool", "tool_admission", (True, True), "GRANTED"),
     ("pins.shape", "pin_fields_valid", ("WORKER_MODEL", False, True, True), True),
     ("pins.admit", "admit_placement", (False, False, False), "PIN_FAILED_CLOSED"),
+    ("pins.exact", "is_exact_pin", ("WORKER_MODEL_ROLE",), True),
+    ("pins.auto", "is_exact_pin", ("AUTO",), False),
+    ("policy.pub", "publication_gate", (True, True, True), "PROCEED"),
+    ("policy.pub-skip", "publication_gate", (False, False, False), "SKIP_NOT_READY"),
     ("fabric.class", "classify_fabric", (False, True, False, False, False), "COMPATIBLE_NEWER"),
     ("fabric.gate", "fabric_dispatch_allowed", ("UNKNOWN",), False),
     ("readiness.fold", "fold_readiness", (["READY", "DEGRADED"],), "DEGRADED"),
     ("readiness.ready", "readiness_ready", ("READY",), True),
     ("eligibility.gate", "capability_eligible", ("TOOLS", "NONE", False, "FAIL_CLOSED", False, False), False),
+    ("eligibility.capsrc", "capability_source", (True, True, False, True), "LEGACY"),
+    ("eligibility.resadmit", "residency_admit", (True, True, False), False),
     ("eligibility.resource", "resource_gate", (True, 150, 200, True, 100), "OVER_AVAILABLE"),
 ]
 
@@ -127,13 +133,14 @@ def _static_gates(repo: Path) -> list[str]:
 
     offenders = []
     for path in (repo / "src" / "mncs_harness").glob("*.py"):
-        if path.name in ("mncs_logic.py", "mncs_exec.py"):
+        if path.name == "mncs_exec.py":
             continue
-        if "mncs_logic" in path.read_text(encoding="utf-8"):
+        text = path.read_text(encoding="utf-8")
+        if "mncs_logic" in text or "mncs_oracle" in text:
             offenders.append(path.name)
     if offenders:
         raise RuntimeError(f"Python bypass of MNCS boundary in {offenders}")
-    notes.append("no production module imports the Python mirror")
+    notes.append("no production module reimplements decisions (oracle is tests-only)")
 
     corpora = {path.stem.replace("-corpus", "").replace("-", "_") for path in (repo / "corpora").glob("*.json")}
     missing = set(REQUIRED_EXPORTS) - corpora
@@ -149,10 +156,9 @@ def _ensure_executor(repo: Path) -> tuple[str, str]:
         if Path(override).is_file():
             return override, f"MNCS_EXECUTOR={override}"
         raise RuntimeError(f"MNCS_EXECUTOR={override!r} is not a file; refusing to guess")
-    for candidate in ("mncs-cli", "mncs-executor"):
-        found = _which(candidate)
-        if found:
-            return found, f"{candidate} on PATH"
+    found = _which("mncs-executor")
+    if found:
+        return found, "mncs-executor on PATH"
     scratch = Path(os.environ.get("RUNNER_TEMP", tempfile.gettempdir()))
     dest = scratch / "mncs-executor"
     if not dest.is_file():
@@ -181,7 +187,8 @@ def _live_gates(repo: Path, python: str, executor: str) -> list[str]:
     env = dict(os.environ)
     env["PYTHONPATH"] = str(repo / "src") + (f":{env['PYTHONPATH']}" if env.get("PYTHONPATH") else "")
     env["MNCS_EXECUTOR"] = executor
-    env.pop("MNCS_HARNESS_TRANSITIONAL_PYTHON_DECISIONS", None)
+    # No Python-fallback variable exists anymore: the live probe must pass on
+    # real MNCS execution with exactly this environment.
     probe_path = Path(tempfile.gettempdir()) / "mncs-boundary-probe.py"
     probe_path.write_text(
         "import json, sys\n"

@@ -1,9 +1,10 @@
 """Pin the host projection to the MNCS kernels and executable corpora.
 
 Authority: ``mncs/harness_*.mncs`` + ``corpora/*.json`` + backend evidence
-under ``development-evidence/mncs-execution/``. These tests prove that
-``mncs_logic`` reproduces every corpus vector and that the live host paths
-(router, policy, verifier, Atlas fold) agree with the mirror.
+under ``development-evidence/mncs-execution/``. These tests prove that the
+test-only oracle (``tests/mncs_oracle.py``, never imported from ``src/``)
+reproduces every corpus vector and that the live host paths
+(router, policy, verifier, Atlas fold) agree with the kernels.
 """
 
 from __future__ import annotations
@@ -13,7 +14,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from mncs_harness import mncs_exec, mncs_logic
+import mncs_oracle
+
+from mncs_harness import mncs_exec
 from mncs_harness.atlas_binding import AtlasDecision, _fold_capability
 from mncs_harness.config import load_config
 from mncs_harness.experiment_readiness import _overall
@@ -50,7 +53,7 @@ def _decode(value: dict):
 def _run_mirror(module: str, function: str, args: list):
     if module == "mncs.harness.routing.v1":
         if function == "classify_route":
-            return mncs_logic.classify_route(*args)
+            return mncs_oracle.classify_route(*args)
         if function == "needs_coder":
             primary = {
                 "E2B": "e2b",
@@ -58,60 +61,70 @@ def _run_mirror(module: str, function: str, args: list):
                 "CODER": "coder",
                 "REVIEWER": "reviewer",
             }[args[0]]
-            return mncs_logic.needs_coder(primary, args[1], args[2])
+            return mncs_oracle.needs_coder(primary, args[1], args[2])
     if module == "mncs.harness.policy.v1":
         if function == "evaluate_command":
-            return mncs_logic.command_reason(*args)
+            return mncs_oracle.command_reason(*args)
         if function == "evaluate_write":
-            return mncs_logic.write_reason(*args)
+            return mncs_oracle.write_reason(*args)
+        if function == "publication_gate":
+            return mncs_oracle.publication_gate(args[0], args[1], args[2])
         if function == "reason_of":
             variant, payload = args[0]
             return payload.get("reason", 0) if variant == "Block" else 0
     if module == "mncs.harness.verdict.v1":
         statuses = [item[0] for item in args if isinstance(item, tuple)]
         if function == "dominate":
-            return mncs_logic.dominate(statuses[0], statuses[1])
+            return mncs_oracle.dominate(statuses[0], statuses[1])
         if function in ("combine4", "combine8"):
-            return mncs_logic.combine(statuses)
+            return mncs_oracle.combine(statuses)
         if function == "is_decided":
-            return mncs_logic.is_decided(statuses[0])
+            return mncs_oracle.is_decided(statuses[0])
     if module == "mncs.harness.atlas.v1":
         if function == "tool_admission":
-            return mncs_logic.tool_admission(args[0], args[1])
+            return mncs_oracle.tool_admission(args[0], args[1])
         if function == "dispatch_gate":
-            return mncs_logic.dispatch_gate(args[0][0], args[1])
+            return mncs_oracle.dispatch_gate(args[0][0], args[1])
         grants = [item[0] for item in args if isinstance(item, tuple)]
         if function == "fold_pair":
-            return mncs_logic.fold_pair(grants[0], grants[1])
+            return mncs_oracle.fold_pair(grants[0], grants[1])
         if function == "fold4":
-            return mncs_logic.fold(grants)
+            return mncs_oracle.fold(grants)
     if module == "mncs.harness.pins.v1":
         if function == "pin_fields_valid":
-            return mncs_logic.pin_fields_valid(args[0], args[1], args[2], args[3])
+            return mncs_oracle.pin_fields_valid(args[0], args[1], args[2], args[3])
         if function == "admit_placement":
-            return mncs_logic.admit_placement(args[0], args[1], args[2])
+            return mncs_oracle.admit_placement(args[0], args[1], args[2])
+        if function == "is_exact_pin":
+            return mncs_oracle.is_exact_pin(args[0])
     if module == "mncs.harness.fabric.v1":
         if function == "classify_fabric":
-            return mncs_logic.classify_fabric(*args)
+            return mncs_oracle.classify_fabric(*args)
         if function == "dispatch_allowed":
-            return mncs_logic.fabric_dispatch_allowed(args[0])
+            return mncs_oracle.fabric_dispatch_allowed(args[0])
     if module == "mncs.harness.eligibility.v1":
         if function == "capability_eligible":
-            return mncs_logic.capability_eligible(
+            return mncs_oracle.capability_eligible(
                 args[0], args[1], args[2], args[3], args[4], args[5]
             )
         if function == "resource_gate":
-            return mncs_logic.resource_gate(
+            return mncs_oracle.resource_gate(
                 args[0], args[1], args[2], args[3], args[4]
             )
+        if function == "capability_source":
+            return mncs_oracle.capability_source(
+                args[0], args[1], args[2], args[3]
+            )
+        if function == "residency_admit":
+            return mncs_oracle.residency_admit(args[0], args[1], args[2])
     if module == "mncs.harness.readiness.v1":
         states = [item for item in args if isinstance(item, str)]
         if function == "dominate_readiness":
-            return mncs_logic.dominate_readiness(states[0], states[1])
+            return mncs_oracle.dominate_readiness(states[0], states[1])
         if function in ("fold4", "fold8"):
-            return mncs_logic.fold_readiness(states)
+            return mncs_oracle.fold_readiness(states)
         if function == "is_ready":
-            return mncs_logic.readiness_ready(states[0])
+            return mncs_oracle.readiness_ready(states[0])
     raise AssertionError(f"no mirror for {module}::{function}")
 
 
@@ -149,7 +162,7 @@ def _mirror_name(result) -> str:
 
 class CorpusAgreementTests(unittest.TestCase):
     def _check_corpus(self, name: str, module: str) -> None:
-        for case in mncs_logic.corpus_cases(name):
+        for case in mncs_oracle.corpus_cases(name):
             target = case["request"]["target"]
             self.assertEqual(target["module"], module, case["id"])
             args = [_decode(item) for item in case["request"]["arguments"]]
@@ -231,11 +244,11 @@ class LivePathAgreementTests(unittest.TestCase):
                 file_reference_count=0,
             )
             plan = _deterministic_route(profile, self.config)
-            kernel = mncs_logic.classify_route(*flags)
+            kernel = mncs_oracle.classify_route(*flags)
             self.assertEqual(plan.primary_role, kernel, flags)
             self.assertEqual(
                 "coder" in plan.escalation_roles,
-                mncs_logic.needs_coder(
+                mncs_oracle.needs_coder(
                     "e4b",
                     self.config.routing.code_specialist_enabled,
                     has_code,
@@ -386,8 +399,8 @@ class LivePathAgreementTests(unittest.TestCase):
 
     def test_verdict_lattice_properties(self) -> None:
         for left, right in itertools.product(["PASS", "FAIL", "UNKNOWN"], repeat=2):
-            folded = mncs_logic.dominate(left, right)
-            self.assertEqual(folded, mncs_logic.dominate(right, left))
+            folded = mncs_oracle.dominate(left, right)
+            self.assertEqual(folded, mncs_oracle.dominate(right, left))
             if "FAIL" in (left, right):
                 self.assertEqual(folded, "FAIL")
             elif "UNKNOWN" in (left, right):
@@ -395,8 +408,8 @@ class LivePathAgreementTests(unittest.TestCase):
             else:
                 self.assertEqual(folded, "PASS")
         # UNKNOWN is never promoted by combination.
-        self.assertEqual(mncs_logic.combine(["UNKNOWN", "PASS"]), "UNKNOWN")
-        self.assertFalse(mncs_logic.is_decided("UNKNOWN"))
+        self.assertEqual(mncs_oracle.combine(["UNKNOWN", "PASS"]), "UNKNOWN")
+        self.assertFalse(mncs_oracle.is_decided("UNKNOWN"))
 
 
 if __name__ == "__main__":
