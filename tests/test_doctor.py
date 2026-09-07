@@ -9,10 +9,10 @@ from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 
-from epi13_local_harness.cli import _bounded_probe, doctor_outcome
-from epi13_local_harness.config import load_config
-from epi13_local_harness.fleet import FleetService
-from epi13_local_harness.models import resolve_execution_profile
+from mncs_harness.cli import _bounded_probe, doctor_outcome
+from mncs_harness.config import load_config
+from mncs_harness.fleet import FleetService
+from mncs_harness.models import resolve_execution_profile
 
 
 class DoctorProbeTests(unittest.TestCase):
@@ -144,7 +144,7 @@ class DoctorProbeTests(unittest.TestCase):
             [
                 sys.executable,
                 "-m",
-                "epi13_local_harness.cli",
+                "mncs_harness.cli",
                 "--config",
                 "/missing/elh-doctor-regression.toml",
                 "doctor",

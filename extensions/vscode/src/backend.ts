@@ -47,7 +47,7 @@ export class Epi13Backend implements vscode.Disposable {
     const pythonPath = this.getResolvedPythonPath();
     const repositoryPath = this.getResolvedRepositoryPath();
     this.output.appendLine(`Starting backend using ${pythonPath}`);
-    this.proc = spawn(pythonPath, ['-m', 'epi13_local_harness.bridge', '--stdio'], {
+    this.proc = spawn(pythonPath, ['-m', 'mncs_harness.bridge', '--stdio'], {
       cwd: repositoryPath,
       env: { ...process.env, PYTHONUNBUFFERED: '1' },
       stdio: ['pipe', 'pipe', 'pipe'],
@@ -132,7 +132,7 @@ export class Epi13Backend implements vscode.Disposable {
   }
 
   async openSettings(): Promise<void> {
-    await vscode.commands.executeCommand('workbench.action.openSettings', 'epi13LocalHarness');
+    await vscode.commands.executeCommand('workbench.action.openSettings', 'mncsHarness');
   }
 
   async selectPythonInterpreter(): Promise<void> {
@@ -140,7 +140,7 @@ export class Epi13Backend implements vscode.Disposable {
     if (!pathResult) {
       return;
     }
-    await vscode.workspace.getConfiguration('epi13LocalHarness').update('pythonPath', pathResult, true);
+    await vscode.workspace.getConfiguration('mncsHarness').update('pythonPath', pathResult, true);
     this.pythonPath = pathResult;
   }
 
@@ -149,7 +149,7 @@ export class Epi13Backend implements vscode.Disposable {
     if (!repo) {
       return;
     }
-    await vscode.workspace.getConfiguration('epi13LocalHarness').update('repositoryPath', repo, true);
+    await vscode.workspace.getConfiguration('mncsHarness').update('repositoryPath', repo, true);
     this.repositoryPath = repo;
   }
 

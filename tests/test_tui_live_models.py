@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import unittest
 
-from epi13_local_harness.fabric import FabricStatus
-from epi13_local_harness.tui import (
+from mncs_harness.fabric import FabricStatus
+from mncs_harness.tui import (
     _common_fabric_inventory,
     fabric_model_inventory_table,
     fabric_status_summary,

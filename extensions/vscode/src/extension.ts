@@ -11,7 +11,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const output = vscode.window.createOutputChannel('MNCS Harness');
   context.subscriptions.push(output);
 
-  const config = vscode.workspace.getConfiguration('epi13LocalHarness');
+  const config = vscode.workspace.getConfiguration('mncsHarness');
   const repositoryPath = config.get<string>('repositoryPath', '');
   const pythonPath = config.get<string>('pythonPath', '');
   const configPath = config.get<string>('configPath', '');
@@ -29,21 +29,21 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   participant = new Epi13Participant(backend);
 
   context.subscriptions.push(
-    vscode.lm.registerLanguageModelChatProvider('epi13-local', provider),
-    vscode.chat.createChatParticipant('epi13.localHarness', participant.handleRequest),
-    vscode.commands.registerCommand('epi13-local-harness.startBackend', () => backend?.start()),
-    vscode.commands.registerCommand('epi13-local-harness.stopBackend', () => backend?.stop()),
-    vscode.commands.registerCommand('epi13-local-harness.restartBackend', () => backend?.restart()),
-    vscode.commands.registerCommand('epi13-local-harness.runDoctor', () => backend?.doctor()),
-    vscode.commands.registerCommand('epi13-local-harness.previewRoute', () => backend?.previewRoute()),
-    vscode.commands.registerCommand('epi13-local-harness.showModels', () => backend?.showModels()),
-    vscode.commands.registerCommand('epi13-local-harness.showLanes', () => backend?.showLanes()),
-    vscode.commands.registerCommand('epi13-local-harness.showMetrics', () => backend?.showMetrics()),
-    vscode.commands.registerCommand('epi13-local-harness.openConfig', () => backend?.openConfig()),
-    vscode.commands.registerCommand('epi13-local-harness.openSettings', () => backend?.openSettings()),
-    vscode.commands.registerCommand('epi13-local-harness.showLogs', () => output.show(true)),
-    vscode.commands.registerCommand('epi13-local-harness.selectPythonInterpreter', () => backend?.selectPythonInterpreter()),
-    vscode.commands.registerCommand('epi13-local-harness.selectRepository', () => backend?.selectRepository()),
+    vscode.lm.registerLanguageModelChatProvider('mncs', provider),
+    vscode.chat.createChatParticipant('mncs.harness', participant.handleRequest),
+    vscode.commands.registerCommand('mncs-harness.startBackend', () => backend?.start()),
+    vscode.commands.registerCommand('mncs-harness.stopBackend', () => backend?.stop()),
+    vscode.commands.registerCommand('mncs-harness.restartBackend', () => backend?.restart()),
+    vscode.commands.registerCommand('mncs-harness.runDoctor', () => backend?.doctor()),
+    vscode.commands.registerCommand('mncs-harness.previewRoute', () => backend?.previewRoute()),
+    vscode.commands.registerCommand('mncs-harness.showModels', () => backend?.showModels()),
+    vscode.commands.registerCommand('mncs-harness.showLanes', () => backend?.showLanes()),
+    vscode.commands.registerCommand('mncs-harness.showMetrics', () => backend?.showMetrics()),
+    vscode.commands.registerCommand('mncs-harness.openConfig', () => backend?.openConfig()),
+    vscode.commands.registerCommand('mncs-harness.openSettings', () => backend?.openSettings()),
+    vscode.commands.registerCommand('mncs-harness.showLogs', () => output.show(true)),
+    vscode.commands.registerCommand('mncs-harness.selectPythonInterpreter', () => backend?.selectPythonInterpreter()),
+    vscode.commands.registerCommand('mncs-harness.selectRepository', () => backend?.selectRepository()),
   );
 
   await backend.start({ lazy: true });

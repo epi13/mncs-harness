@@ -13,9 +13,9 @@ from pathlib import Path
 from atlas_fixtures import TRUSTED_TEST_ISSUERS
 from atlas_fixtures import payload as atlas_payload
 
-from epi13_local_harness.atlas_binding import ExecutionRequirement
-from epi13_local_harness.config import load_config
-from epi13_local_harness.tools import ToolRegistry
+from mncs_harness.atlas_binding import ExecutionRequirement
+from mncs_harness.config import load_config
+from mncs_harness.tools import ToolRegistry
 
 
 class ToolTests(unittest.TestCase):

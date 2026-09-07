@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from epi13_local_harness.config import initialize_config, load_config
+from mncs_harness.config import initialize_config, load_config
 
 PINNED_REVISION = "35ca4a0469f180f1cf05a630df8842fa17ac18e3"
 
@@ -103,7 +103,7 @@ kind = "ssh"
                 load_config(destination)
 
     def test_defaults_contain_no_fabric_credentials(self) -> None:
-        text = Path("src/epi13_local_harness/default_config.toml").read_text(encoding="utf-8")
+        text = Path("src/mncs_harness/default_config.toml").read_text(encoding="utf-8")
         self.assertNotIn("client_key", text)
         self.assertNotIn("password", text.lower())
         self.assertNotIn("token", text.lower())

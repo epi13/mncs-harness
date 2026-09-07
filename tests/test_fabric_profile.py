@@ -5,8 +5,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from epi13_local_harness.config import initialize_config, load_config
-from epi13_local_harness.fabric_profile import build_parser, configure_remote, upsert_toml_section
+from mncs_harness.config import initialize_config, load_config
+from mncs_harness.fabric_profile import build_parser, configure_remote, upsert_toml_section
 
 
 class FabricProfileTests(unittest.TestCase):

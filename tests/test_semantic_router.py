@@ -6,9 +6,9 @@ from dataclasses import replace
 from pathlib import Path
 from unittest.mock import patch
 
-from epi13_local_harness.config import load_config
-from epi13_local_harness.router import profile_task
-from epi13_local_harness.semantic_router import (
+from mncs_harness.config import load_config
+from mncs_harness.router import profile_task
+from mncs_harness.semantic_router import (
     LfmPromptRouter,
     SemanticRouterError,
     activate_router,
@@ -86,7 +86,7 @@ class SemanticRouterTests(unittest.TestCase):
             loader=lambda: (FakeAutoModel, FakeTokenizer),
         )
         with patch(
-            "epi13_local_harness.semantic_router._missing_dependencies",
+            "mncs_harness.semantic_router._missing_dependencies",
             return_value=(),
         ):
             result = backend.route(
@@ -111,7 +111,7 @@ class SemanticRouterTests(unittest.TestCase):
             loader=lambda: (FakeAutoModel, FakeTokenizer),
         )
         with patch(
-            "epi13_local_harness.semantic_router._missing_dependencies",
+            "mncs_harness.semantic_router._missing_dependencies",
             return_value=(),
         ):
             with self.assertRaisesRegex(SemanticRouterError, "40-character"):
@@ -122,7 +122,7 @@ class SemanticRouterTests(unittest.TestCase):
         config = self._config()
         profile = profile_task("Explain this file.", config)
         with patch(
-            "epi13_local_harness.semantic_router.get_router_backend",
+            "mncs_harness.semantic_router.get_router_backend",
             side_effect=SemanticRouterError("checkpoint unavailable"),
         ):
             result, reason = route_with_backend("Explain this file.", config, profile)
@@ -138,11 +138,11 @@ class SemanticRouterTests(unittest.TestCase):
         )
         with (
             patch(
-                "epi13_local_harness.semantic_router.get_router_backend",
+                "mncs_harness.semantic_router.get_router_backend",
                 return_value=failing,
             ),
             patch(
-                "epi13_local_harness.semantic_router._missing_dependencies",
+                "mncs_harness.semantic_router._missing_dependencies",
                 return_value=(),
             ),
             patch.object(

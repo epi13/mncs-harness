@@ -33,13 +33,13 @@ distributed = [
 dev = ["pytest>=8.0", "ruff>=0.9"]
 
 [project.scripts]
-mncs-harness = "epi13_local_harness.cli:main"
-mncs-harness-tui = "epi13_local_harness.tui:main"
-mncs-harness-fabric = "epi13_local_harness.fabric_controller_light:main"
-epi13-harness = "epi13_local_harness.cli:main"
-elh = "epi13_local_harness.cli:main"
-elh-tui = "epi13_local_harness.tui:main"
-elh-fabric = "epi13_local_harness.fabric_controller_light:main"
+mncs-harness = "mncs_harness.cli:main"
+mncs-harness-tui = "mncs_harness.tui:main"
+mncs-harness-fabric = "mncs_harness.fabric_controller_light:main"
+epi13-harness = "mncs_harness.cli:main"
+elh = "mncs_harness.cli:main"
+elh-tui = "mncs_harness.tui:main"
+elh-fabric = "mncs_harness.fabric_controller_light:main"
 
 [project.urls]
 Homepage = "https://github.com/epi13/mncs-harness"
@@ -48,14 +48,13 @@ Issues = "https://github.com/epi13/mncs-harness/issues"
 Atlas = "https://github.com/epi13/mncs-atlas"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/epi13_local_harness", "src/mncs_harness"]
+packages = ["src/mncs_harness"]
 
 [tool.hatch.build]
 include = [
-  "src/epi13_local_harness/**/*.py",
-  "src/epi13_local_harness/default_config.toml",
-  "src/epi13_local_harness/default_evals.jsonl",
   "src/mncs_harness/**/*.py",
+  "src/mncs_harness/default_config.toml",
+  "src/mncs_harness/default_evals.jsonl",
 ]
 
 [tool.ruff]

@@ -4,8 +4,8 @@ import unittest
 from dataclasses import replace
 from unittest.mock import patch
 
-from epi13_local_harness.config import load_config
-from epi13_local_harness.ollama import OllamaClient
+from mncs_harness.config import load_config
+from mncs_harness.ollama import OllamaClient
 
 
 class OllamaResidencyTests(unittest.TestCase):

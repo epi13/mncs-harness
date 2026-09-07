@@ -7,8 +7,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from epi13_local_harness import fabric_controller_light
-from epi13_local_harness.config import initialize_config, load_config
+from mncs_harness import fabric_controller_light
+from mncs_harness.config import initialize_config, load_config
 
 
 class ControllerLightTests(unittest.TestCase):

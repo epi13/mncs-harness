@@ -1,7 +1,7 @@
 import unittest
 
-from epi13_local_harness.model_evidence import CapabilityEvidence
-from epi13_local_harness.model_selection import select_installed_model
+from mncs_harness.model_evidence import CapabilityEvidence
+from mncs_harness.model_selection import select_installed_model
 
 INVENTORY = [
     {"name": "alpha-general:24b", "size": 15_177_374_099, "capabilities": ["completion"]},

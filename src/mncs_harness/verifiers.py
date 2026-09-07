@@ -6,6 +6,7 @@ import subprocess
 import tomllib
 from pathlib import Path
 
+from . import mncs_logic
 from .models import VerificationConfig, VerificationResult
 
 
@@ -94,8 +95,12 @@ class Verifier:
         if not expanded:
             checks.append("No modified files required deterministic syntax verification")
 
+        # Acceptance follows the MNCS status lattice (mncs/harness_verdict.mncs):
+        # per-check outcomes fold with FAIL dominating; any failure refuses.
+        envelope: list[mncs_logic.Status] = ["FAIL"] * len(failures) + ["PASS"] * len(checks)
+        verdict = mncs_logic.combine(envelope)
         return VerificationResult(
-            passed=not failures,
+            passed=verdict == "PASS" and mncs_logic.is_decided(verdict),
             checks=tuple(checks),
             failures=tuple(failures),
         )

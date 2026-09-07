@@ -4,7 +4,7 @@ import json
 import unittest
 from pathlib import Path
 
-from epi13_local_harness.fabric_compat import (
+from mncs_harness.fabric_compat import (
     EXPERIMENT_CERTIFIED_FABRIC_ARTIFACT_DIGEST,
     EXPERIMENT_CERTIFIED_FABRIC_COMMIT,
     EXPERIMENT_CERTIFIED_FABRIC_VERSION,

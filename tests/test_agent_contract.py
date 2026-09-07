@@ -13,7 +13,7 @@ def contract_text() -> str:
 
 def test_contract_names_existing_paths():
     text = contract_text()
-    for ref in ("docs/IDENTITY.md", "src/epi13_local_harness/"):
+    for ref in ("docs/IDENTITY.md", "src/mncs_harness/"):
         assert ref in text, f"contract must mention {ref}"
         assert (REPO / ref).exists(), f"contract names missing {ref}"
 

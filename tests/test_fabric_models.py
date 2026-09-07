@@ -7,9 +7,9 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from epi13_local_harness import fabric_profile
-from epi13_local_harness.fabric_compat import require_execution_bundle_archive_api
-from epi13_local_harness.fabric_models import (
+from mncs_harness import fabric_profile
+from mncs_harness.fabric_compat import require_execution_bundle_archive_api
+from mncs_harness.fabric_models import (
     _configured_models,
     _render_installer,
     _validate_models,

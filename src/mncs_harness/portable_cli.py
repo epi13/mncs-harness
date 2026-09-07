@@ -3,7 +3,7 @@
 Generated setuptools/hatch console scripts point at the absolute interpreter
 used during ``pip install``. That path is invisible inside MNCS Control's
 workspace mount, so ``./.venv/bin/elh`` fails even when
-``./.venv/bin/python -m epi13_local_harness.cli`` works.
+``./.venv/bin/python -m mncs_harness.cli`` works.
 
 The wrappers exec the ``python`` next to themselves and therefore survive
 workspace remounts.
@@ -17,13 +17,13 @@ import sys
 from pathlib import Path
 
 WRAPPERS = {
-    "mncs-harness": "epi13_local_harness.cli",
-    "mncs-harness-tui": "epi13_local_harness.tui",
-    "mncs-harness-fabric": "epi13_local_harness.fabric_controller_light",
-    "elh": "epi13_local_harness.cli",
-    "epi13-harness": "epi13_local_harness.cli",
-    "elh-tui": "epi13_local_harness.tui",
-    "elh-fabric": "epi13_local_harness.fabric_controller_light",
+    "mncs-harness": "mncs_harness.cli",
+    "mncs-harness-tui": "mncs_harness.tui",
+    "mncs-harness-fabric": "mncs_harness.fabric_controller_light",
+    "elh": "mncs_harness.cli",
+    "epi13-harness": "mncs_harness.cli",
+    "elh-tui": "mncs_harness.tui",
+    "elh-fabric": "mncs_harness.fabric_controller_light",
 }
 
 _POSIX_WRAPPER = """\

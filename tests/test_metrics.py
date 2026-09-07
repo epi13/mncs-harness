@@ -5,8 +5,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from epi13_local_harness.metrics import MetricsStore
-from epi13_local_harness.models import (
+from mncs_harness.metrics import MetricsStore
+from mncs_harness.models import (
     ModelAttempt,
     RoutePlan,
     SemanticRouteResult,

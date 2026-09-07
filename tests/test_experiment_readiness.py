@@ -6,8 +6,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from epi13_local_harness.config import load_config
-from epi13_local_harness.experiment_readiness import (
+from mncs_harness.config import load_config
+from mncs_harness.experiment_readiness import (
     BLOCKED,
     DEGRADED,
     READY,
@@ -17,12 +17,12 @@ from epi13_local_harness.experiment_readiness import (
     inspect_live_config,
     probe_artifact_write,
 )
-from epi13_local_harness.experiment_stack import (
+from mncs_harness.experiment_stack import (
     CLAIM_BOUNDARY,
     PROVENANCE_INCOMPLETE,
     digest_record,
 )
-from epi13_local_harness.fabric_compat import (
+from mncs_harness.fabric_compat import (
     EXPERIMENT_CERTIFIED_FABRIC_COMMIT,
     EXPERIMENT_CERTIFIED_FABRIC_VERSION,
     EXPERIMENT_REQUIRED_CAPABILITIES,

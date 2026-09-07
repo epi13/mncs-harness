@@ -5,9 +5,9 @@ from dataclasses import replace
 from pathlib import Path
 from unittest.mock import patch
 
-from epi13_local_harness.config import load_config
-from epi13_local_harness.models import RoutingOverride
-from epi13_local_harness.router import plan_route
+from mncs_harness.config import load_config
+from mncs_harness.models import RoutingOverride
+from mncs_harness.router import plan_route
 
 
 class RouterTests(unittest.TestCase):
@@ -72,7 +72,7 @@ class RouterTests(unittest.TestCase):
             ),
         )
         with patch(
-            "epi13_local_harness.semantic_router.route_with_backend",
+            "mncs_harness.semantic_router.route_with_backend",
             side_effect=AssertionError("transformers backend must not run"),
         ):
             plan = plan_route("Fix parser.py.", config)
@@ -105,7 +105,7 @@ class RouterTests(unittest.TestCase):
             ),
         )
         with patch(
-            "epi13_local_harness.semantic_router.route_with_backend",
+            "mncs_harness.semantic_router.route_with_backend",
             side_effect=AssertionError("semantic router must not run for an exact pin"),
         ):
             plan = plan_route(

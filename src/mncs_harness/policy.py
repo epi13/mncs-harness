@@ -3,6 +3,7 @@ from __future__ import annotations
 import shlex
 from pathlib import Path
 
+from . import mncs_logic
 from .models import PolicyConfig, PolicyDecision
 
 BLOCKED_EXECUTABLES = {
@@ -83,72 +84,85 @@ class CommandPolicy:
         except ValueError as exc:
             return [], PolicyDecision(False, "blocked", str(exc))
 
+        # Host boundary: lexing, allowlists, and path resolution produce
+        # plain observations. The allow/block ordering itself is the MNCS
+        # kernel (mncs/harness_policy.mncs, mirrored in mncs_logic).
         executable = Path(argv[0]).name
-        if executable in BLOCKED_EXECUTABLES:
-            return argv, PolicyDecision(
-                False, "blocked", f"Executable {executable!r} is blocked by policy"
-            )
-        if executable not in self.allowed:
-            return argv, PolicyDecision(
-                False, "blocked", f"Executable {executable!r} is not allowlisted"
-            )
-
         joined = " ".join(argv).lower()
-        if any(token in joined for token in ("&&", "||", ";", "`", "$(", ">", "<")):
-            return argv, PolicyDecision(
-                False, "blocked", "Shell operators and redirection are not supported"
-            )
 
+        executable_blocked = executable in BLOCKED_EXECUTABLES
+        allowlisted = executable in self.allowed
+        has_shell_operator = any(
+            token in joined for token in ("&&", "||", ";", "`", "$(", ">", "<")
+        )
+
+        shell_ok, shell_detail = True, ""
         if executable in {"bash", "sh"}:
             if "-c" in argv or "--command" in argv:
-                return argv, PolicyDecision(
-                    False, "blocked", "Shell command strings are blocked; use an explicit tool"
-                )
-            if "-n" not in argv:
-                return argv, PolicyDecision(
-                    False, "blocked", "Shells may only be used for syntax checking with -n"
-                )
+                shell_ok = False
+                shell_detail = "Shell command strings are blocked; use an explicit tool"
+            elif "-n" not in argv:
+                shell_ok = False
+                shell_detail = "Shells may only be used for syntax checking with -n"
 
+        python_ok, python_detail = True, ""
         if executable in {"python", "python3"}:
             if "-c" in argv:
-                return argv, PolicyDecision(False, "blocked", "python -c is blocked")
-            if "-m" in argv:
+                python_ok, python_detail = False, "python -c is blocked"
+            elif "-m" in argv:
                 index = argv.index("-m")
                 module = argv[index + 1] if index + 1 < len(argv) else ""
                 if module not in SAFE_PYTHON_MODULES:
-                    return argv, PolicyDecision(
-                        False, "blocked", f"Python module {module!r} is not allowlisted"
-                    )
+                    python_ok = False
+                    python_detail = f"Python module {module!r} is not allowlisted"
             elif len(argv) > 1:
-                script = argv[1]
                 try:
-                    self.guard.resolve(script, must_exist=True)
+                    self.guard.resolve(argv[1], must_exist=True)
                 except ValueError as exc:
-                    return argv, PolicyDecision(False, "blocked", str(exc))
+                    python_ok, python_detail = False, str(exc)
 
+        git_ok, git_detail = True, ""
         if executable == "git":
             subcommand = next((arg for arg in argv[1:] if not arg.startswith("-")), "")
             if subcommand not in SAFE_GIT_SUBCOMMANDS:
-                return argv, PolicyDecision(
-                    False, "blocked", f"Git subcommand {subcommand!r} is not allowlisted"
-                )
-            for first, second in DANGEROUS_GIT_PATTERNS:
-                if first in argv and second in argv:
-                    return argv, PolicyDecision(False, "blocked", "Dangerous Git operation")
+                git_ok = False
+                git_detail = f"Git subcommand {subcommand!r} is not allowlisted"
+            elif any(first in argv and second in argv for first, second in DANGEROUS_GIT_PATTERNS):
+                git_ok, git_detail = False, "Dangerous Git operation"
 
+        path_ok, path_detail = True, ""
         for argument in argv[1:]:
             if argument.startswith("/"):
                 try:
                     self.guard.resolve(argument, must_exist=False)
                 except ValueError:
-                    return argv, PolicyDecision(
-                        False, "blocked", f"Absolute path is outside workspace: {argument}"
-                    )
+                    path_ok = False
+                    path_detail = f"Absolute path is outside workspace: {argument}"
+                    break
             if argument.startswith("~"):
-                return argv, PolicyDecision(
-                    False, "blocked", "Home-relative command paths are not supported"
-                )
+                path_ok, path_detail = False, "Home-relative command paths are not supported"
+                break
 
+        reason = mncs_logic.command_reason(
+            executable_blocked,
+            allowlisted,
+            has_shell_operator,
+            shell_ok,
+            python_ok,
+            git_ok,
+            path_ok,
+        )
+        details = {
+            mncs_logic.BLOCKED_EXECUTABLE: f"Executable {executable!r} is blocked by policy",
+            mncs_logic.NOT_ALLOWLISTED: f"Executable {executable!r} is not allowlisted",
+            mncs_logic.SHELL_OPERATOR: "Shell operators and redirection are not supported",
+            mncs_logic.SHELL_RULE: shell_detail,
+            mncs_logic.PYTHON_RULE: python_detail,
+            mncs_logic.GIT_RULE: git_detail,
+            mncs_logic.PATH_RULE: path_detail,
+        }
+        if reason != mncs_logic.ALLOW:
+            return argv, PolicyDecision(False, "blocked", details[reason])
         return argv, PolicyDecision(
             True,
             "medium",
@@ -158,7 +172,8 @@ class CommandPolicy:
 
 
 def file_write_decision(path: Path, config: PolicyConfig) -> PolicyDecision:
-    if path.name in {".git", ".env"} or ".git" in path.parts:
+    protected = path.name in {".git", ".env"} or ".git" in path.parts
+    if mncs_logic.write_reason(protected) != mncs_logic.ALLOW:
         return PolicyDecision(False, "blocked", "Writing Git internals or .env is blocked")
     return PolicyDecision(
         True,

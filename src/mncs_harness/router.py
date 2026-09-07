@@ -4,6 +4,7 @@ import re
 from dataclasses import replace
 from pathlib import Path
 
+from . import mncs_logic
 from .models import HarnessConfig, RoutePlan, RoutingOverride, SemanticRouteResult, TaskProfile
 
 CODE_TERMS = {
@@ -115,26 +116,38 @@ def _deterministic_route(profile: TaskProfile, config: HarnessConfig) -> RoutePl
             return preferred
         return next(iter(config.models))
 
-    if profile.is_high_risk or profile.has_image or profile.is_complex:
+    # Primary classification is the MNCS kernel (mncs/harness_routing.mncs,
+    # mirrored in mncs_logic); the host only maps the kernel role through
+    # configured-model availability and owns the escalation chain.
+    kernel = mncs_logic.classify_route(
+        profile.has_code,
+        profile.asks_for_edit,
+        profile.asks_for_execution,
+        profile.is_high_risk,
+        profile.has_image,
+        profile.is_complex,
+    )
+    specialist = config.routing.code_specialist_enabled and "coder" in config.models
+
+    if kernel == "reviewer":
         primary = available("reviewer")
         escalations: tuple[str, ...] = ()
         reasons = (
             *profile.reasons,
             "reviewer selected for risk, multimodality, or complexity",
         )
-    elif profile.has_code and (profile.asks_for_edit or profile.asks_for_execution):
+    elif kernel == "e4b":
         primary = available("e4b")
         chain: list[str] = []
-        if config.routing.code_specialist_enabled and "coder" in config.models:
+        if mncs_logic.needs_coder("e4b", specialist, profile.has_code):
             chain.append("coder")
         if "reviewer" in config.models:
             chain.append("reviewer")
         escalations = tuple(chain)
-        reasons = (*profile.reasons, "E4B selected as primary tool-using worker")
-    elif profile.asks_for_edit or profile.asks_for_execution:
-        primary = available("e4b")
-        escalations = ("reviewer",) if "reviewer" in config.models else ()
-        reasons = (*profile.reasons, "E4B selected because the request needs tools")
+        if profile.has_code:
+            reasons = (*profile.reasons, "E4B selected as primary tool-using worker")
+        else:
+            reasons = (*profile.reasons, "E4B selected because the request needs tools")
     else:
         primary = available("e2b")
         escalations = tuple(role for role in ("e4b", "reviewer") if role in config.models)

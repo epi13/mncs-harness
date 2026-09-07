@@ -10,17 +10,17 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from unittest.mock import patch
 
-from epi13_local_harness.agent import LocalAgent
-from epi13_local_harness.config import load_config
-from epi13_local_harness.fabric import (
+from mncs_harness.agent import LocalAgent
+from mncs_harness.config import load_config
+from mncs_harness.fabric import (
     FabricSession,
     FabricStatus,
     FabricUnavailable,
     _invocation_script,
     _parse_stage_lines,
 )
-from epi13_local_harness.models import FabricConfig, FabricWorkerConfig, MetricsConfig
-from epi13_local_harness.provider import FabricOllamaProvider, ProviderError
+from mncs_harness.models import FabricConfig, FabricWorkerConfig, MetricsConfig
+from mncs_harness.provider import FabricOllamaProvider, ProviderError
 
 
 class _OllamaFixture(BaseHTTPRequestHandler):
@@ -275,7 +275,7 @@ class FabricTests(unittest.TestCase):
                 session.config,
                 state_path=Path(directory) / "fabric.jsonl",
             )
-            from epi13_local_harness.config import load_config
+            from mncs_harness.config import load_config
 
             model = load_config(Path("/missing/config.toml")).models["e2b"]
             accepted = session.submit_chat(
@@ -313,7 +313,7 @@ class FabricTests(unittest.TestCase):
                 session.config,
                 state_path=Path(directory) / "fabric.jsonl",
             )
-            from epi13_local_harness.config import load_config
+            from mncs_harness.config import load_config
 
             model = load_config(Path("/missing/config.toml")).models["coder"]
             session.submit_chat(

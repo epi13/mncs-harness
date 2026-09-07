@@ -419,14 +419,14 @@ def _generate_enrollment(
         "worker",
         worker_id,
         worker_fp,
-        metadata={"purpose": "epi13-local-harness-persistent-worker"},
+        metadata={"purpose": "mncs-harness-persistent-worker"},
     )
     worker_trust = TrustStore(files["worker_trust"])
     worker_trust.enroll(
         "controller",
         controller_id,
         controller_fp,
-        metadata={"purpose": "epi13-local-harness-persistent-controller"},
+        metadata={"purpose": "mncs-harness-persistent-controller"},
     )
     for path in (files["ca_key"], files["controller_key"], files["worker_key"]):
         try:

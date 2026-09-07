@@ -4,7 +4,7 @@ import base64
 import unittest
 from pathlib import Path
 
-from epi13_local_harness.fabric_commission import (
+from mncs_harness.fabric_commission import (
     _encoded_powershell,
     _managed_stop_script,
     _scp_base,

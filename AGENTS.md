@@ -16,12 +16,17 @@ exist. Contract drift is a defect.
 
 ## 1. MNCS-language is the implementation default
 
-Decision logic that MNCS can express belongs in MNCS source, not in
-`src/epi13_local_harness/` Python. Host code here is routing, governance,
-approval, and transport. Before adding capability to the harness, check
-mncs-language (`library/std`, `library/core`); a missing MNCS capability is
-a language-pressure event routed to mncs-language, never a reason to grow a
-harness-local substitute.
+Decision logic that MNCS can express belongs in MNCS source under
+`mncs/`, not in `src/mncs_harness/` Python. Host code here is I/O,
+process management, transport, approval interaction, and the string/bytes
+boundary that encodes host observations into MNCS-callable values.
+Authoritative decision kernels live in `mncs/harness_*.mncs` with executable
+corpora under `corpora/`; `src/mncs_harness/mncs_logic.py` is their
+evidence-pinned host projection, never a second authority. Before adding
+capability to the harness, check mncs-language (`library/std`,
+`library/core`); a missing MNCS capability is a language-pressure event
+routed to mncs-language and recorded in `docs/language-pressure.md`, never
+a reason to grow a harness-local substitute.
 
 ## 2. Pressure routing
 
