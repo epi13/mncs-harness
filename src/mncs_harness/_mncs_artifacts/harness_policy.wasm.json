@@ -1,0 +1,217 @@
+{
+ "schema_version": "0.2",
+ "identity": "mncs:compiler:backend-artifact:f7638e93439ced63026652caf1946edc89ec11c5cfff35501618a08685f7f055",
+ "backend": {
+  "identity": "mncs:compiler:backend:6bbc6f37c38ffa3353787ff9ea565d07db3755b42efa8a59871374123adbca15",
+  "name": "mncs-portable-wasm-mvp",
+  "version": "0.1"
+ },
+ "input": {
+  "identity": "mncs:compiler:compiler-artifact:79f4a8c7759866042f255f5f56ffd528599ad9a76282a40415c5e7983b02465e",
+  "representation": "selected_ssa",
+  "schema_version": "0.4",
+  "fingerprint": "774c8dc07732653538161e00f74e53354dfa2deeaee40182d83fc61f4a7e8e7d"
+ },
+ "target": {
+  "identity": "mncs:compiler:target-contract:7db47a6485cddf8e3bbaa129f3cc126ee396c799b7ff1fb243a0b1bb4663f902",
+  "candidate": "mncs:target:portable-wasm-mvp-0.1",
+  "facts": {
+   "abi": "one exported wasm function per MNCS function; scalars pass directly, composites pass as pointers to arena cells",
+   "bounded-iteration": "language-owned bounded SSA backedges use the private dispatcher loop; iteration metadata remains selected-SSA-bound",
+   "data-layout": "scalar two's-complement; i8/i16/i32 in wasm i32; i64 in wasm i64; composites are immutable 8-byte-slot cells in linear memory addressed by i32 pointers",
+   "integer": "wrapping=wasm wrapping; checked=explicit overflow test then trap; saturating=explicit clamp; widening=exact extended-width arithmetic",
+   "trap": "failure terminators and checked overflow map to wasm unreachable"
+  },
+  "evidence": [
+   "mncs:target-evidence:portable-wasm-mvp-0.1:declared-research-contract"
+  ],
+  "assumptions": [
+   "portable WASM MVP is a research execution envelope, not a native ABI",
+   "the embedded interpreter defines research execution, not a host wasm CLI"
+  ]
+ },
+ "artifact_kind": "wasm_module",
+ "format": "application/wasm; mncs-portable-wasm-mvp-0.1",
+ "bytes_sha256": "a6c54954b3dc19ccf7db23affef274ffd8897d36cd789222ebbf78e56554d503",
+ "bytes_hex": "0061736d0100000001230660077f7f7f7f7f7f7f017f60017f017f60017f017e60017f017f60017f017e600000030706000102030405050401008004060b027f0141080b7f0141080b077307106576616c756174655f636f6d6d616e6400000e6576616c756174655f7772697465000109726561736f6e5f6f6600020a6d6e63735f616c6c6f630003106d6e63735f686f73745f6275666665720004166d6e63735f686f73745f6275666665725f72657365740005066d656d6f727902000aad0706e10411017e017f017e017f017e017f017e017f017e017f017e017f017e017f017f017f017f41002117034020174100460440200004404101211705410221170b0c010b201741014604404201210741101003210820084101360200200841086a200737020020080f0b20174102460440410321170c010b20174103460440200104404104211705410521170b0c010b20174104460440410621170c010b201741054604404202210941101003210a200a4101360200200a41086a2009370200200a0f0b20174106460440200204404107211705410821170b0c010b201741074604404203210b41101003210c200c4101360200200c41086a200b370200200c0f0b20174108460440410921170c010b2017410946044020030440410a211705410b21170b0c010b2017410a460440410c21170c010b2017410b4604404204210d41101003210e200e4101360200200e41086a200d370200200e0f0b2017410c46044020040440410d211705410e21170b0c010b2017410d460440410f21170c010b2017410e4604404205210f41101003211020104101360200201041086a200f37020020100f0b2017410f460440200504404110211705411121170b0c010b20174110460440411221170c010b201741114604404206211141101003211220124101360200201241086a201137020020120f0b20174112460440200604404113211705411421170b0c010b20174113460440411521170c010b201741144604404207211341101003211420144101360200201441086a201337020020140f0b201741154604404108100321152015410036020020150f0b20174116460440000b0b000b810105017e017f017f017f017f41002105034020054100460440200004404101210505410221050b0c010b200541014604404208210141101003210220024101360200200241086a200137020020020f0b20054102460440410321050c010b200541034604404108100321032003410036020020030f0b20054104460440000b0b000b8c0106017f017e017e017e017e017f4100210603402006410046044020002802004101462101200104404102210605410421060b0c010b2006410146044020020f0b20064102460440200041086a290200210320032102410121060c010b200641034604404200210420042102410121060c010b20064104460440410321060c010b20064105460440000b0b000b1701017f230021012300200041076a4178716a240020010b1801017f200010032101230024012001ad2000ad422086840b0600230124000b",
+ "exports": [
+  "evaluate_command",
+  "evaluate_write",
+  "reason_of"
+ ],
+ "function_value_contracts": {
+  "evaluate_command": {
+   "inputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Allow",
+       "1": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block"
+      },
+      "payloads": {
+       "0": [],
+       "1": [
+        [
+         "reason",
+         "i64"
+        ]
+       ]
+      }
+     }
+    }
+   ]
+  },
+  "evaluate_write": {
+   "inputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Allow",
+       "1": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block"
+      },
+      "payloads": {
+       "0": [],
+       "1": [
+        [
+         "reason",
+         "i64"
+        ]
+       ]
+      }
+     }
+    }
+   ]
+  },
+  "reason_of": {
+   "inputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Allow",
+       "1": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block"
+      },
+      "payloads": {
+       "0": [],
+       "1": [
+        [
+         "reason",
+         "i64"
+        ]
+       ]
+      }
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "scalar": {
+      "semantic_type": "i64"
+     }
+    }
+   ]
+  }
+ },
+ "composite_value_contracts": {
+  "PolicyVerdict": {
+   "finite": {
+    "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+    "variants": {
+     "0": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Allow",
+     "1": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block"
+    },
+    "payloads": {
+     "0": [],
+     "1": [
+      [
+       "reason",
+       "i64"
+      ]
+     ]
+    }
+   }
+  },
+  "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict": {
+   "finite": {
+    "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+    "variants": {
+     "0": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Allow",
+     "1": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block"
+    },
+    "payloads": {
+     "0": [],
+     "1": [
+      [
+       "reason",
+       "i64"
+      ]
+     ]
+    }
+   }
+  }
+ },
+ "assumptions": [
+  "checked overflow traps as unreachable; checked division traps on zero and MIN/-1",
+  "composites (records and payload-bearing finite variants) are immutable cells in linear memory allocated from a bump arena",
+  "portable WASM MVP is a research execution envelope, not a native ABI",
+  "saturating uses explicit bounded-width clamp logic; widening uses exact i64 intermediates",
+  "the embedded interpreter defines research execution, not a host wasm CLI"
+ ],
+ "obligations_generated": [],
+ "execution_applicability": [
+  "embedded mncs-portable-wasm-mvp interpreter",
+  "no WASI",
+  "no host CLI"
+ ],
+ "evidence_dependencies": [
+  "mncs:target-evidence:portable-wasm-mvp-0.1:declared-research-contract"
+ ],
+ "unsupported": [],
+ "status": "PASS"
+}

@@ -3,7 +3,7 @@ from __future__ import annotations
 import shlex
 from pathlib import Path
 
-from . import mncs_logic
+from . import mncs_exec
 from .models import PolicyConfig, PolicyDecision
 
 BLOCKED_EXECUTABLES = {
@@ -85,8 +85,8 @@ class CommandPolicy:
             return [], PolicyDecision(False, "blocked", str(exc))
 
         # Host boundary: lexing, allowlists, and path resolution produce
-        # plain observations. The allow/block ordering itself is the MNCS
-        # kernel (mncs/harness_policy.mncs, mirrored in mncs_logic).
+        # plain observations. The allow/block ordering itself EXECUTES the
+        # MNCS kernel (mncs/harness_policy.mncs via mncs_exec).
         executable = Path(argv[0]).name
         joined = " ".join(argv).lower()
 
@@ -143,7 +143,7 @@ class CommandPolicy:
                 path_ok, path_detail = False, "Home-relative command paths are not supported"
                 break
 
-        reason = mncs_logic.command_reason(
+        reason = mncs_exec.command_reason(
             executable_blocked,
             allowlisted,
             has_shell_operator,
@@ -153,15 +153,15 @@ class CommandPolicy:
             path_ok,
         )
         details = {
-            mncs_logic.BLOCKED_EXECUTABLE: f"Executable {executable!r} is blocked by policy",
-            mncs_logic.NOT_ALLOWLISTED: f"Executable {executable!r} is not allowlisted",
-            mncs_logic.SHELL_OPERATOR: "Shell operators and redirection are not supported",
-            mncs_logic.SHELL_RULE: shell_detail,
-            mncs_logic.PYTHON_RULE: python_detail,
-            mncs_logic.GIT_RULE: git_detail,
-            mncs_logic.PATH_RULE: path_detail,
+            1: f"Executable {executable!r} is blocked by policy",
+            2: f"Executable {executable!r} is not allowlisted",
+            3: "Shell operators and redirection are not supported",
+            4: shell_detail,
+            5: python_detail,
+            6: git_detail,
+            7: path_detail,
         }
-        if reason != mncs_logic.ALLOW:
+        if reason != 0:  # 0 is the kernel's Allow code (mncs/harness_policy.mncs)
             return argv, PolicyDecision(False, "blocked", details[reason])
         return argv, PolicyDecision(
             True,
@@ -173,7 +173,7 @@ class CommandPolicy:
 
 def file_write_decision(path: Path, config: PolicyConfig) -> PolicyDecision:
     protected = path.name in {".git", ".env"} or ".git" in path.parts
-    if mncs_logic.write_reason(protected) != mncs_logic.ALLOW:
+    if not mncs_exec.write_allowed(protected):  # executes mncs/harness_policy.mncs
         return PolicyDecision(False, "blocked", "Writing Git internals or .env is blocked")
     return PolicyDecision(
         True,

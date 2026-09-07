@@ -1,0 +1,176 @@
+{
+ "schema_version": "0.2",
+ "identity": "mncs:compiler:backend-artifact:335dcc38e400d71ed6d7e31b032864e387e4c8b04f18115da87106fd5af016b1",
+ "backend": {
+  "identity": "mncs:compiler:backend:6bbc6f37c38ffa3353787ff9ea565d07db3755b42efa8a59871374123adbca15",
+  "name": "mncs-portable-wasm-mvp",
+  "version": "0.1"
+ },
+ "input": {
+  "identity": "mncs:compiler:compiler-artifact:65dbb7eb5c1923baf9a23504604717cd689cb0acba9dbe078169f6d23d85a616",
+  "representation": "selected_ssa",
+  "schema_version": "0.4",
+  "fingerprint": "118cd777a3cc51c75487ece6b4b1169fd49d8484025800cc87bc40979ddf6260"
+ },
+ "target": {
+  "identity": "mncs:compiler:target-contract:7db47a6485cddf8e3bbaa129f3cc126ee396c799b7ff1fb243a0b1bb4663f902",
+  "candidate": "mncs:target:portable-wasm-mvp-0.1",
+  "facts": {
+   "abi": "one exported wasm function per MNCS function; scalars pass directly, composites pass as pointers to arena cells",
+   "bounded-iteration": "language-owned bounded SSA backedges use the private dispatcher loop; iteration metadata remains selected-SSA-bound",
+   "data-layout": "scalar two's-complement; i8/i16/i32 in wasm i32; i64 in wasm i64; composites are immutable 8-byte-slot cells in linear memory addressed by i32 pointers",
+   "integer": "wrapping=wasm wrapping; checked=explicit overflow test then trap; saturating=explicit clamp; widening=exact extended-width arithmetic",
+   "trap": "failure terminators and checked overflow map to wasm unreachable"
+  },
+  "evidence": [
+   "mncs:target-evidence:portable-wasm-mvp-0.1:declared-research-contract"
+  ],
+  "assumptions": [
+   "portable WASM MVP is a research execution envelope, not a native ABI",
+   "the embedded interpreter defines research execution, not a host wasm CLI"
+  ]
+ },
+ "artifact_kind": "wasm_module",
+ "format": "application/wasm; mncs-portable-wasm-mvp-0.1",
+ "bytes_sha256": "f3ac64b2ab68c5226bcd8523f7bde3f380f30a714e26c2ce11567bd79a43ad3b",
+ "bytes_hex": "0061736d0100000001120260067f7f7f7f7f7f017f60037f7f7f017f03030200010720020e636c6173736966795f726f75746500000b6e656564735f636f64657200010ada0502dd030a017f017f017f017f017f017f017f017f017f017f4100210f0340200f4100460440200304404101210f054102210f0b0c010b200f41014604404103210620060f0b200f41024604404103210f0c010b200f4103460440200404404104210f054105210f0b0c010b200f41044604404103210720070f0b200f41054604404106210f0c010b200f4106460440200504404107210f054108210f0b0c010b200f41074604404103210820080f0b200f41084604404109210f0c010b200f410946044020000440410a210f05410b210f0b0c010b200f410a46044020010440410d210f05410e210f0b0c010b200f410b460440410c210f0c010b200f410c460440200104404113210f054114210f0b0c010b200f410d4604404101210920090f0b200f410e460440410f210f0c010b200f410f460440200204404110210f054111210f0b0c010b200f41104604404101210a200a0f0b200f41114604404112210f0c010b200f4112460440410c210f0c010b200f41134604404101210b200b0f0b200f41144604404115210f0c010b200f4115460440200204404116210f054117210f0b0c010b200f41164604404101210c200c0f0b200f41174604404118210f0c010b200f41184604404100210d200d0f0b200f4119460440000b0b000bf8010a017f017f017f017f017f017f017f017f017f017f4100210c0340200c410046044020004101462103200304404102210c054106210c0b0c010b200c410146044020040f0b200c410246044020012002712105200521044101210c0c010b200c410346044041002106200621044101210c0c010b200c410446044041002107200721044101210c0c010b200c410546044041002108200821044101210c0c010b200c410646044020004100462109200904404103210c054107210c0b0c010b200c41074604402000410246210a200a04404104210c054108210c0b0c010b200c41084604404105210c0c010b200c4109460440000b0b000b",
+ "exports": [
+  "classify_route",
+  "needs_coder"
+ ],
+ "function_value_contracts": {
+  "classify_route": {
+   "inputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.routing.v1::Role",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.routing.v1::Role::E2B",
+       "1": "mncs:0.2:finite-variant:mncs.harness.routing.v1::Role::E4B",
+       "2": "mncs:0.2:finite-variant:mncs.harness.routing.v1::Role::CODER",
+       "3": "mncs:0.2:finite-variant:mncs.harness.routing.v1::Role::REVIEWER"
+      }
+     }
+    }
+   ]
+  },
+  "needs_coder": {
+   "inputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.routing.v1::Role",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.routing.v1::Role::E2B",
+       "1": "mncs:0.2:finite-variant:mncs.harness.routing.v1::Role::E4B",
+       "2": "mncs:0.2:finite-variant:mncs.harness.routing.v1::Role::CODER",
+       "3": "mncs:0.2:finite-variant:mncs.harness.routing.v1::Role::REVIEWER"
+      }
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ]
+  }
+ },
+ "composite_value_contracts": {
+  "Role": {
+   "finite": {
+    "type_identity": "mncs:0.2:finite-type:mncs.harness.routing.v1::Role",
+    "variants": {
+     "0": "mncs:0.2:finite-variant:mncs.harness.routing.v1::Role::E2B",
+     "1": "mncs:0.2:finite-variant:mncs.harness.routing.v1::Role::E4B",
+     "2": "mncs:0.2:finite-variant:mncs.harness.routing.v1::Role::CODER",
+     "3": "mncs:0.2:finite-variant:mncs.harness.routing.v1::Role::REVIEWER"
+    },
+    "payloads": {
+     "0": [],
+     "1": [],
+     "2": [],
+     "3": []
+    }
+   }
+  },
+  "mncs:0.2:finite-type:mncs.harness.routing.v1::Role": {
+   "finite": {
+    "type_identity": "mncs:0.2:finite-type:mncs.harness.routing.v1::Role",
+    "variants": {
+     "0": "mncs:0.2:finite-variant:mncs.harness.routing.v1::Role::E2B",
+     "1": "mncs:0.2:finite-variant:mncs.harness.routing.v1::Role::E4B",
+     "2": "mncs:0.2:finite-variant:mncs.harness.routing.v1::Role::CODER",
+     "3": "mncs:0.2:finite-variant:mncs.harness.routing.v1::Role::REVIEWER"
+    },
+    "payloads": {
+     "0": [],
+     "1": [],
+     "2": [],
+     "3": []
+    }
+   }
+  }
+ },
+ "assumptions": [
+  "checked overflow traps as unreachable; checked division traps on zero and MIN/-1",
+  "composites (records and payload-bearing finite variants) are immutable cells in linear memory allocated from a bump arena",
+  "portable WASM MVP is a research execution envelope, not a native ABI",
+  "saturating uses explicit bounded-width clamp logic; widening uses exact i64 intermediates",
+  "the embedded interpreter defines research execution, not a host wasm CLI"
+ ],
+ "obligations_generated": [],
+ "execution_applicability": [
+  "embedded mncs-portable-wasm-mvp interpreter",
+  "no WASI",
+  "no host CLI"
+ ],
+ "evidence_dependencies": [
+  "mncs:target-evidence:portable-wasm-mvp-0.1:declared-research-contract"
+ ],
+ "unsupported": [],
+ "status": "PASS"
+}
