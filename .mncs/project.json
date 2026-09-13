@@ -1,0 +1,18 @@
+{
+  "schema_version": "mncs-family.repository-manifest/v0alpha1",
+  "repository": "mncs-harness",
+  "revision": 2,
+  "manifest_location": "in-repository",
+  "authority": {"note": "Harness owns deployment routing, approvals, model/tool policy, and deployment acceptance; it does not own execution or conformance."},
+  "contracts": {
+    "provides": [
+      {"contract": "actor-provenance", "version": "0.1", "kind": "record-schema", "stability": "experimental", "fingerprint_sources": ["src/epi13_local_harness/actor_provenance.py"]},
+      {"contract": "experiment-stack", "version": "1", "kind": "record-schema", "stability": "experimental", "fingerprint_sources": ["src/epi13_local_harness/experiment_stack.py"]}
+    ],
+    "consumes": [
+      {"contract": "mncs-fabric.public-controller-contract", "envelope": {"op": "compatible-minor", "version": "0.2.0a17"}, "required": true, "evidence_refs": ["src/epi13_local_harness/fabric_compat.py"]},
+      {"contract": "mncs-commons.record-store-api", "envelope": {"op": "compatible-minor", "version": "0.5.0.dev1"}, "required": true, "evidence_refs": ["pyproject.toml"]}
+    ],
+    "tests": [{"test": "harness-tests", "covers": ["actor-provenance", "experiment-stack"], "obligation": "self", "command": {"argv": ["python", "-m", "unittest", "discover", "-s", "tests"]}}]
+  }
+}
