@@ -1,16 +1,16 @@
 {
  "schema_version": "0.5",
- "identity": "mncs:compiler:backend-artifact:0905fef2f6e4a18e11a2434b3586bbb9cc6ed078230fe5420e6a7b0db3e3b2af",
+ "identity": "mncs:compiler:backend-artifact:28313559259fbf16d771d94e0a3b1535e0498d3469487ddc3928d14c7f95e53c",
  "backend": {
   "identity": "mncs:compiler:backend:6bbc6f37c38ffa3353787ff9ea565d07db3755b42efa8a59871374123adbca15",
   "name": "mncs-portable-wasm-mvp",
   "version": "0.1"
  },
  "input": {
-  "identity": "mncs:compiler:compiler-artifact:bf3884f126f594cceef744235116fc4738a319bebb0180b35295fe46e5b44a74",
+  "identity": "mncs:compiler:compiler-artifact:5ae5cc66ad1479a19bf6ddd40b23279d091997db65b57e25a138dc34ff486175",
   "representation": "selected_ssa",
   "schema_version": "0.5",
-  "fingerprint": "6f04baa2843a6cea58dfc9150261a069a58b49ec6cbb6bfe75302a2e0f3b26fa"
+  "fingerprint": "831a6501f53676ef8fa096b0d1225bc6fec049d6c626964ba7ae3bbf923d7839"
  },
  "target": {
   "identity": "mncs:compiler:target-contract:7db47a6485cddf8e3bbaa129f3cc126ee396c799b7ff1fb243a0b1bb4663f902",
