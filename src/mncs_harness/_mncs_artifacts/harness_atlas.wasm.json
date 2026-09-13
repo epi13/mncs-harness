@@ -1,16 +1,16 @@
 {
- "schema_version": "0.2",
- "identity": "mncs:compiler:backend-artifact:3d63962720009c30c331e6c3b1673ecef786788f03f466c1190e5d40ed8e9b1f",
+ "schema_version": "0.5",
+ "identity": "mncs:compiler:backend-artifact:1643d3a641fe552832e59c16244c59ac561aca4282d960ef5ebd337b3965bf0e",
  "backend": {
   "identity": "mncs:compiler:backend:6bbc6f37c38ffa3353787ff9ea565d07db3755b42efa8a59871374123adbca15",
   "name": "mncs-portable-wasm-mvp",
   "version": "0.1"
  },
  "input": {
-  "identity": "mncs:compiler:compiler-artifact:bd79781fc8dd84cd797c15c3090b08e4819fe3a1a0e99cf1894969b134614928",
+  "identity": "mncs:compiler:compiler-artifact:a4b1d2bef4c5e8df3e6fe29d2b2473759f419802b4a5c8e69be1c410bb00ad6c",
   "representation": "selected_ssa",
-  "schema_version": "0.4",
-  "fingerprint": "321b9b1ce5e9146d5594421a669f9711b3b5f0751ff231684dcffef06402d7ed"
+  "schema_version": "0.5",
+  "fingerprint": "dc11082fb9ae01f9df864d9ab35a1af2a16ee4a4897c114f6bff188db58d1524"
  },
  "target": {
   "identity": "mncs:compiler:target-contract:7db47a6485cddf8e3bbaa129f3cc126ee396c799b7ff1fb243a0b1bb4663f902",
@@ -32,14 +32,14 @@
  },
  "artifact_kind": "wasm_module",
  "format": "application/wasm; mncs-portable-wasm-mvp-0.1",
- "bytes_sha256": "756ffeea1f84e7e50e0ce0476159eb6ee2c269edaa685dcbf4b96930adcff19b",
- "bytes_hex": "0061736d01000000012d0860027f7f017f60047f7f7f7f017f60017f017f60027f7f017f60027f7f017f60017f017f60017f017e6000000309080001020304050607050401008004060b027f0141080b7f0141080b079201090d64697370617463685f67617465000005666f6c6434000117666f6c645f616c6c5f5f737065635f6631306366323330000209666f6c645f7061697200030e746f6f6c5f61646d697373696f6e00040a6d6e63735f616c6c6f630005106d6e63735f686f73745f6275666665720006166d6e63735f686f73745f6275666665725f72657365740007066d656d6f727902000aac0808ed0108017f017f017f017f017f017f017f017f41002109034020094100460440200104404101210905410221090b0c010b2009410146044020000f0b20094102460440410321090c010b2009410346044020004100462102200204404105210905410821090b0c010b2009410446044020030f0b200941054604404102210420042103410421090c010b200941064604404102210520052103410421090c010b200941074604404101210620062103410421090c010b2009410846044020004102462107200704404106210905410921090b0c010b20094109460440410721090c010b2009410a460440000b0b000b5704017f017f017f017f4100210703402007410046044041201005210420042000360200200441086a2001360200200441106a2002360200200441186a200336020020041002210520050f0b20074101460440000b0b000bc6010e017e017f017f017e017e017f017e017f017f017e017e017f017f017f4100210e0340200e4100460440420421014100210220022001210421034101210e0c010b200e41014604404200210520042005562106200604404102210e052003210c4103210e0b0c010b200e4102460440200120047d210720002007420386a76a280200210820032008100321094201210a2004200a7d210b2004200b540440000b2009200b210421034101210e0c010b200e4103460440200c0f0b200e4104460440000b0b000bca020c017f017f017f017f017f017f017f017f017f017f017f017f4100210d0340200d410046044020004100462102200204404102210d054105210d0b0c010b200d410146044020030f0b200d4102460440200121034101210d0c010b200d410346044041022104200421034101210d0c010b200d410446044020014100462105200504404108210d05410b210d0b0c010b200d410546044020004102462106200604404103210d054106210d0b0c010b200d41064604404104210d0c010b200d4107460440200721034101210d0c010b200d410846044041012108200821074107210d0c010b200d410946044041022109200921074107210d0c010b200d410a4604404101210a200a21074107210d0c010b200d410b4604402001410246210b200b04404109210d05410c210d0b0c010b200d410c460440410a210d0c010b200d410d460440000b0b000b960105017f017f017f017f017f41002106034020064100460440200004404101210605410221060b0c010b20064101460440410321060c010b200641024604404102210220020f0b20064103460440200104404104210605410521060b0c010b20064104460440410621060c010b200641054604404102210320030f0b200641064604404100210420040f0b20064107460440000b0b000b1701017f230021012300200041076a4178716a240020010b1801017f200010052101230024012001ad2000ad422086840b0600230124000b",
+ "bytes_sha256": "1f412bdea7e57de53e3606a7e10d2d9d821af32094aff7e222287904f098a50c",
+ "bytes_hex": "0061736d01000000012d0860027f7f017f60047f7f7f7f017f60017f017f60027f7f017f60027f7f017f60017f017f60017f017e60000003090800010203040506070504010080040615047f0141080b7f0141000b7f0141000b7f0141080b07a502092a6d6e63735f6d6e63735f6861726e6573735f61746c61735f76315f5f64697370617463685f5f676174650000216d6e63735f6d6e63735f6861726e6573735f61746c61735f76315f5f666f6c64340001376d6e63735f6d6e63735f6861726e6573735f61746c61735f76315f5f666f6c645f5f616c6c5f5f5f5f737065635f5f66313063663233300002266d6e63735f6d6e63735f6861726e6573735f61746c61735f76315f5f666f6c645f5f7061697200032b6d6e63735f6d6e63735f6861726e6573735f61746c61735f76315f5f746f6f6c5f5f61646d697373696f6e00040a6d6e63735f616c6c6f630005106d6e63735f686f73745f6275666665720006166d6e63735f686f73745f6275666665725f72657365740007066d656d6f727902000ab00908ed0108017f017f017f017f017f017f017f017f41002109034020094100460440200104404101210905410221090b0c010b2009410146044020000f0b20094102460440410321090c010b2009410346044020004100462102200204404105210905410821090b0c010b2009410446044020030f0b200941054604404102210420042103410421090c010b200941064604404102210520052103410421090c010b200941074604404101210620062103410421090c010b2009410846044020004102462107200704404106210905410921090b0c010b20094109460440410721090c010b2009410a460440000b0b000b5704017f017f017f017f4100210703402007410046044041201005210420042000360200200441086a2001360200200441106a2002360200200441186a200336020020041002210520050f0b20074101460440000b0b000bca0213017e017f017f017e017e017f017e017f017f017e017e017f017f017f017f017e017e017e017e410024024100210e0340200e4100460440420421014100210220022001210421034101210e0c010b200e4101460440230245044023002401410124020b4200210520042005562106200604404102210e052003210c410024024103210e0b0c010b200e4102460440200120047d210720002007420386a76a280200210820032008100321094201210a2004200a7d210b2004200b540440000b2009200b21042103230123034f04402000280200ad2110200041086a280200ad2111200041106a280200ad2112200041186a280200ad21132301240041201005210020002010a7360200200041086a2011a7360200200041106a2012a7360200200041186a2013a73602000b4101210e0c010b200e4103460440200c0f0b200e4104460440000b0b000bca020c017f017f017f017f017f017f017f017f017f017f017f017f4100210d0340200d410046044020004100462102200204404102210d054105210d0b0c010b200d410146044020030f0b200d4102460440200121034101210d0c010b200d410346044041022104200421034101210d0c010b200d410446044020014100462105200504404108210d05410b210d0b0c010b200d410546044020004102462106200604404103210d054106210d0b0c010b200d41064604404104210d0c010b200d4107460440200721034101210d0c010b200d410846044041012108200821074107210d0c010b200d410946044041022109200921074107210d0c010b200d410a4604404101210a200a21074107210d0c010b200d410b4604402001410246210b200b04404109210d05410c210d0b0c010b200d410c460440410a210d0c010b200d410d460440000b0b000b960105017f017f017f017f017f41002106034020064100460440200004404101210605410221060b0c010b20064101460440410321060c010b200641024604404102210220020f0b20064103460440200104404104210605410521060b0c010b20064104460440410621060c010b200641054604404102210320030f0b200641064604404100210420040f0b20064107460440000b0b000b1701017f230021012300200041076a4178716a240020010b1801017f200010052101230024032001ad2000ad422086840b0600230324000b",
  "exports": [
-  "dispatch_gate",
-  "fold4",
-  "fold_all__spec_f10cf230",
-  "fold_pair",
-  "tool_admission"
+  "mncs_mncs_harness_atlas_v1__dispatch__gate",
+  "mncs_mncs_harness_atlas_v1__fold4",
+  "mncs_mncs_harness_atlas_v1__fold__all____spec__f10cf230",
+  "mncs_mncs_harness_atlas_v1__fold__pair",
+  "mncs_mncs_harness_atlas_v1__tool__admission"
  ],
  "function_value_contracts": {
   "dispatch_gate": {
@@ -47,10 +47,16 @@
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "name": "Grant",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
        "1": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
        "2": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED"
+      },
+      "variant_names": {
+       "0": "GRANTED",
+       "1": "UNKNOWN",
+       "2": "REFUSED"
       }
      }
     },
@@ -64,10 +70,16 @@
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "name": "Grant",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
        "1": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
        "2": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED"
+      },
+      "variant_names": {
+       "0": "GRANTED",
+       "1": "UNKNOWN",
+       "2": "REFUSED"
       }
      }
     }
@@ -78,40 +90,64 @@
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "name": "Grant",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
        "1": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
        "2": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED"
+      },
+      "variant_names": {
+       "0": "GRANTED",
+       "1": "UNKNOWN",
+       "2": "REFUSED"
       }
      }
     },
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "name": "Grant",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
        "1": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
        "2": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED"
+      },
+      "variant_names": {
+       "0": "GRANTED",
+       "1": "UNKNOWN",
+       "2": "REFUSED"
       }
      }
     },
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "name": "Grant",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
        "1": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
        "2": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED"
+      },
+      "variant_names": {
+       "0": "GRANTED",
+       "1": "UNKNOWN",
+       "2": "REFUSED"
       }
      }
     },
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "name": "Grant",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
        "1": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
        "2": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED"
+      },
+      "variant_names": {
+       "0": "GRANTED",
+       "1": "UNKNOWN",
+       "2": "REFUSED"
       }
      }
     }
@@ -120,10 +156,16 @@
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "name": "Grant",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
        "1": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
        "2": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED"
+      },
+      "variant_names": {
+       "0": "GRANTED",
+       "1": "UNKNOWN",
+       "2": "REFUSED"
       }
      }
     }
@@ -133,7 +175,16 @@
    "inputs": [
     {
      "scalar": {
-      "semantic_type": "[Grant; N]"
+      "semantic_type": {
+       "sequence": {
+        "element": {
+         "named": "Grant"
+        },
+        "bound": {
+         "param": "N"
+        }
+       }
+      }
      }
     }
    ],
@@ -141,10 +192,16 @@
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "name": "Grant",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
        "1": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
        "2": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED"
+      },
+      "variant_names": {
+       "0": "GRANTED",
+       "1": "UNKNOWN",
+       "2": "REFUSED"
       }
      }
     }
@@ -155,7 +212,12 @@
     {
      "sequence": {
       "semantic_type": "[Grant; 4]",
-      "element": "Grant",
+      "element": {
+       "finite": {
+        "identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+        "name": "Grant"
+       }
+      },
       "length": 4
      }
     }
@@ -164,10 +226,16 @@
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "name": "Grant",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
        "1": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
        "2": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED"
+      },
+      "variant_names": {
+       "0": "GRANTED",
+       "1": "UNKNOWN",
+       "2": "REFUSED"
       }
      }
     }
@@ -178,20 +246,32 @@
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "name": "Grant",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
        "1": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
        "2": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED"
+      },
+      "variant_names": {
+       "0": "GRANTED",
+       "1": "UNKNOWN",
+       "2": "REFUSED"
       }
      }
     },
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "name": "Grant",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
        "1": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
        "2": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED"
+      },
+      "variant_names": {
+       "0": "GRANTED",
+       "1": "UNKNOWN",
+       "2": "REFUSED"
       }
      }
     }
@@ -200,10 +280,301 @@
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "name": "Grant",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
        "1": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
        "2": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED"
+      },
+      "variant_names": {
+       "0": "GRANTED",
+       "1": "UNKNOWN",
+       "2": "REFUSED"
+      }
+     }
+    }
+   ]
+  },
+  "mncs.harness.atlas.v1::dispatch_gate": {
+   "inputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "name": "Grant",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+       "1": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+       "2": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED"
+      },
+      "variant_names": {
+       "0": "GRANTED",
+       "1": "UNKNOWN",
+       "2": "REFUSED"
+      }
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "name": "Grant",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+       "1": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+       "2": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED"
+      },
+      "variant_names": {
+       "0": "GRANTED",
+       "1": "UNKNOWN",
+       "2": "REFUSED"
+      }
+     }
+    }
+   ]
+  },
+  "mncs.harness.atlas.v1::fold4": {
+   "inputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "name": "Grant",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+       "1": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+       "2": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED"
+      },
+      "variant_names": {
+       "0": "GRANTED",
+       "1": "UNKNOWN",
+       "2": "REFUSED"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "name": "Grant",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+       "1": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+       "2": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED"
+      },
+      "variant_names": {
+       "0": "GRANTED",
+       "1": "UNKNOWN",
+       "2": "REFUSED"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "name": "Grant",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+       "1": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+       "2": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED"
+      },
+      "variant_names": {
+       "0": "GRANTED",
+       "1": "UNKNOWN",
+       "2": "REFUSED"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "name": "Grant",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+       "1": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+       "2": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED"
+      },
+      "variant_names": {
+       "0": "GRANTED",
+       "1": "UNKNOWN",
+       "2": "REFUSED"
+      }
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "name": "Grant",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+       "1": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+       "2": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED"
+      },
+      "variant_names": {
+       "0": "GRANTED",
+       "1": "UNKNOWN",
+       "2": "REFUSED"
+      }
+     }
+    }
+   ]
+  },
+  "mncs.harness.atlas.v1::fold_all": {
+   "inputs": [
+    {
+     "scalar": {
+      "semantic_type": {
+       "sequence": {
+        "element": {
+         "named": "Grant"
+        },
+        "bound": {
+         "param": "N"
+        }
+       }
+      }
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "name": "Grant",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+       "1": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+       "2": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED"
+      },
+      "variant_names": {
+       "0": "GRANTED",
+       "1": "UNKNOWN",
+       "2": "REFUSED"
+      }
+     }
+    }
+   ]
+  },
+  "mncs.harness.atlas.v1::fold_all__spec_f10cf230": {
+   "inputs": [
+    {
+     "sequence": {
+      "semantic_type": "[Grant; 4]",
+      "element": {
+       "finite": {
+        "identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+        "name": "Grant"
+       }
+      },
+      "length": 4
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "name": "Grant",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+       "1": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+       "2": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED"
+      },
+      "variant_names": {
+       "0": "GRANTED",
+       "1": "UNKNOWN",
+       "2": "REFUSED"
+      }
+     }
+    }
+   ]
+  },
+  "mncs.harness.atlas.v1::fold_pair": {
+   "inputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "name": "Grant",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+       "1": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+       "2": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED"
+      },
+      "variant_names": {
+       "0": "GRANTED",
+       "1": "UNKNOWN",
+       "2": "REFUSED"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "name": "Grant",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+       "1": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+       "2": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED"
+      },
+      "variant_names": {
+       "0": "GRANTED",
+       "1": "UNKNOWN",
+       "2": "REFUSED"
+      }
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "name": "Grant",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+       "1": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+       "2": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED"
+      },
+      "variant_names": {
+       "0": "GRANTED",
+       "1": "UNKNOWN",
+       "2": "REFUSED"
+      }
+     }
+    }
+   ]
+  },
+  "mncs.harness.atlas.v1::tool_admission": {
+   "inputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "name": "Grant",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
+       "1": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
+       "2": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED"
+      },
+      "variant_names": {
+       "0": "GRANTED",
+       "1": "UNKNOWN",
+       "2": "REFUSED"
       }
      }
     }
@@ -226,10 +597,16 @@
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+      "name": "Grant",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
        "1": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
        "2": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED"
+      },
+      "variant_names": {
+       "0": "GRANTED",
+       "1": "UNKNOWN",
+       "2": "REFUSED"
       }
      }
     }
@@ -240,10 +617,16 @@
   "Grant": {
    "finite": {
     "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+    "name": "Grant",
     "variants": {
      "0": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
      "1": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
      "2": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED"
+    },
+    "variant_names": {
+     "0": "GRANTED",
+     "1": "UNKNOWN",
+     "2": "REFUSED"
     },
     "payloads": {
      "0": [],
@@ -255,10 +638,16 @@
   "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant": {
    "finite": {
     "type_identity": "mncs:0.2:finite-type:mncs.harness.atlas.v1::Grant",
+    "name": "Grant",
     "variants": {
      "0": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::GRANTED",
      "1": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::UNKNOWN",
      "2": "mncs:0.2:finite-variant:mncs.harness.atlas.v1::Grant::REFUSED"
+    },
+    "variant_names": {
+     "0": "GRANTED",
+     "1": "UNKNOWN",
+     "2": "REFUSED"
     },
     "payloads": {
      "0": [],

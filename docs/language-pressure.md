@@ -18,7 +18,7 @@ Authoritative MNCS surface built across both conversion campaigns:
 - `mncs/harness_eligibility.mncs` — capability/source/residency-admit/resource gates
 - `corpora/harness-*.json` — 168 executable cases, all `PASS` on
   portable-WASM + research-bytecode (336 backend-case executions)
-- `src/mncs_harness/_mncs_artifacts/` — 16 shipped frozen artifacts +
+- `src/mncs_harness/_mncs_artifacts/` — 18 shipped frozen artifacts +
   identity manifest; production paths execute these through
   `mncs_exec`/`mncs_runtime` (no per-request compilation, no Python fallback)
 - `tests/mncs_oracle.py` — test-only agreement oracle, never imported
@@ -32,6 +32,37 @@ Reproducers for the compiler-proven entries live under
 Conventions: severity is `BLOCKER` / `MAJOR` / `MODERATE` / `ERGONOMIC` /
 `DOCUMENTATION`. Every entry distinguishes **(A)** "MNCS cannot currently
 express this" from **(B)** "the harness assumed a Python-specific model".
+
+---
+
+## HARNESS-PRESSURE-016 — source-level function names versus backend exports
+
+- **Area:** compiler ABI / artifact integration
+- **Severity:** MAJOR
+- **Harness requirement:** `mncs_runtime` must invoke a stable source-level
+  function such as `mncs.harness.pins.v1::pin_fields_valid` while validating
+  the exact backend artifact identity and export contract.
+- **Observed behavior:** current `mncs-language` artifact generation keeps
+  source-level names in `function_value_contracts` but emits backend exports
+  with qualified, escaped names such as
+  `mncs_mncs_harness_pins_v1__pin__fields__valid`. The prior runtime treated
+  the physical export list as the source-level API and failed closed with
+  *"...pin_fields_valid is not an artifact export"*. Verdict: **(B)** — the
+  adapter assumed that backend export spelling was semantic API.
+- **Reproduction:** run `python scripts/build_mncs_artifacts.py` with the
+  current language executor, then invoke the pre-refresh runtime against
+  `harness_pins.wasm.json` or `harness_atlas.wasm.json`.
+- **Resolution:** regenerated all 18 frozen artifacts with current
+  `mncs-language` `main`; `mncs_runtime` now accepts either legacy direct
+  exports or current source-level function contracts and retains the stable
+  source-level execution request. `tests/test_mncs_exec.py` validates required
+  functions through either representation.
+- **Evidence:** `python scripts/build_mncs_artifacts.py --verify`, the real
+  execution agreement suite, and the artifact identity manifest all pass with
+  the current executor.
+- **Commons coordination:** the cross-repository pressure record and its
+  resolved adapter change are linked here once the content-addressed Commons
+  identity is generated.
 
 ---
 

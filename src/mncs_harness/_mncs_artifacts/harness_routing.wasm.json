@@ -1,16 +1,16 @@
 {
- "schema_version": "0.2",
- "identity": "mncs:compiler:backend-artifact:335dcc38e400d71ed6d7e31b032864e387e4c8b04f18115da87106fd5af016b1",
+ "schema_version": "0.5",
+ "identity": "mncs:compiler:backend-artifact:0905fef2f6e4a18e11a2434b3586bbb9cc6ed078230fe5420e6a7b0db3e3b2af",
  "backend": {
   "identity": "mncs:compiler:backend:6bbc6f37c38ffa3353787ff9ea565d07db3755b42efa8a59871374123adbca15",
   "name": "mncs-portable-wasm-mvp",
   "version": "0.1"
  },
  "input": {
-  "identity": "mncs:compiler:compiler-artifact:65dbb7eb5c1923baf9a23504604717cd689cb0acba9dbe078169f6d23d85a616",
+  "identity": "mncs:compiler:compiler-artifact:bf3884f126f594cceef744235116fc4738a319bebb0180b35295fe46e5b44a74",
   "representation": "selected_ssa",
-  "schema_version": "0.4",
-  "fingerprint": "118cd777a3cc51c75487ece6b4b1169fd49d8484025800cc87bc40979ddf6260"
+  "schema_version": "0.5",
+  "fingerprint": "6f04baa2843a6cea58dfc9150261a069a58b49ec6cbb6bfe75302a2e0f3b26fa"
  },
  "target": {
   "identity": "mncs:compiler:target-contract:7db47a6485cddf8e3bbaa129f3cc126ee396c799b7ff1fb243a0b1bb4663f902",
@@ -32,11 +32,11 @@
  },
  "artifact_kind": "wasm_module",
  "format": "application/wasm; mncs-portable-wasm-mvp-0.1",
- "bytes_sha256": "f3ac64b2ab68c5226bcd8523f7bde3f380f30a714e26c2ce11567bd79a43ad3b",
- "bytes_hex": "0061736d0100000001120260067f7f7f7f7f7f017f60037f7f7f017f03030200010720020e636c6173736966795f726f75746500000b6e656564735f636f64657200010ada0502dd030a017f017f017f017f017f017f017f017f017f017f4100210f0340200f4100460440200304404101210f054102210f0b0c010b200f41014604404103210620060f0b200f41024604404103210f0c010b200f4103460440200404404104210f054105210f0b0c010b200f41044604404103210720070f0b200f41054604404106210f0c010b200f4106460440200504404107210f054108210f0b0c010b200f41074604404103210820080f0b200f41084604404109210f0c010b200f410946044020000440410a210f05410b210f0b0c010b200f410a46044020010440410d210f05410e210f0b0c010b200f410b460440410c210f0c010b200f410c460440200104404113210f054114210f0b0c010b200f410d4604404101210920090f0b200f410e460440410f210f0c010b200f410f460440200204404110210f054111210f0b0c010b200f41104604404101210a200a0f0b200f41114604404112210f0c010b200f4112460440410c210f0c010b200f41134604404101210b200b0f0b200f41144604404115210f0c010b200f4115460440200204404116210f054117210f0b0c010b200f41164604404101210c200c0f0b200f41174604404118210f0c010b200f41184604404100210d200d0f0b200f4119460440000b0b000bf8010a017f017f017f017f017f017f017f017f017f017f4100210c0340200c410046044020004101462103200304404102210c054106210c0b0c010b200c410146044020040f0b200c410246044020012002712105200521044101210c0c010b200c410346044041002106200621044101210c0c010b200c410446044041002107200721044101210c0c010b200c410546044041002108200821044101210c0c010b200c410646044020004100462109200904404103210c054107210c0b0c010b200c41074604402000410246210a200a04404104210c054108210c0b0c010b200c41084604404105210c0c010b200c4109460440000b0b000b",
+ "bytes_sha256": "0f74dd9dad81338609d5b2b0985c430a6bd00138aeab4c3cb6c5ac111d56dec1",
+ "bytes_hex": "0061736d0100000001120260067f7f7f7f7f7f017f60037f7f7f017f0303020001075e022d6d6e63735f6d6e63735f6861726e6573735f726f7574696e675f76315f5f636c6173736966795f5f726f75746500002a6d6e63735f6d6e63735f6861726e6573735f726f7574696e675f76315f5f6e656564735f5f636f64657200010ada0502dd030a017f017f017f017f017f017f017f017f017f017f4100210f0340200f4100460440200304404101210f054102210f0b0c010b200f41014604404103210620060f0b200f41024604404103210f0c010b200f4103460440200404404104210f054105210f0b0c010b200f41044604404103210720070f0b200f41054604404106210f0c010b200f4106460440200504404107210f054108210f0b0c010b200f41074604404103210820080f0b200f41084604404109210f0c010b200f410946044020000440410a210f05410b210f0b0c010b200f410a46044020010440410d210f05410e210f0b0c010b200f410b460440410c210f0c010b200f410c460440200104404113210f054114210f0b0c010b200f410d4604404101210920090f0b200f410e460440410f210f0c010b200f410f460440200204404110210f054111210f0b0c010b200f41104604404101210a200a0f0b200f41114604404112210f0c010b200f4112460440410c210f0c010b200f41134604404101210b200b0f0b200f41144604404115210f0c010b200f4115460440200204404116210f054117210f0b0c010b200f41164604404101210c200c0f0b200f41174604404118210f0c010b200f41184604404100210d200d0f0b200f4119460440000b0b000bf8010a017f017f017f017f017f017f017f017f017f017f4100210c0340200c410046044020004101462103200304404102210c054106210c0b0c010b200c410146044020040f0b200c410246044020012002712105200521044101210c0c010b200c410346044041002106200621044101210c0c010b200c410446044041002107200721044101210c0c010b200c410546044041002108200821044101210c0c010b200c410646044020004100462109200904404103210c054107210c0b0c010b200c41074604402000410246210a200a04404104210c054108210c0b0c010b200c41084604404105210c0c010b200c4109460440000b0b000b",
  "exports": [
-  "classify_route",
-  "needs_coder"
+  "mncs_mncs_harness_routing_v1__classify__route",
+  "mncs_mncs_harness_routing_v1__needs__coder"
  ],
  "function_value_contracts": {
   "classify_route": {
@@ -76,12 +76,112 @@
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.routing.v1::Role",
+      "name": "Role",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.routing.v1::Role::E2B",
        "1": "mncs:0.2:finite-variant:mncs.harness.routing.v1::Role::E4B",
        "2": "mncs:0.2:finite-variant:mncs.harness.routing.v1::Role::CODER",
        "3": "mncs:0.2:finite-variant:mncs.harness.routing.v1::Role::REVIEWER"
+      },
+      "variant_names": {
+       "0": "E2B",
+       "1": "E4B",
+       "2": "CODER",
+       "3": "REVIEWER"
       }
+     }
+    }
+   ]
+  },
+  "mncs.harness.routing.v1::classify_route": {
+   "inputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.routing.v1::Role",
+      "name": "Role",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.routing.v1::Role::E2B",
+       "1": "mncs:0.2:finite-variant:mncs.harness.routing.v1::Role::E4B",
+       "2": "mncs:0.2:finite-variant:mncs.harness.routing.v1::Role::CODER",
+       "3": "mncs:0.2:finite-variant:mncs.harness.routing.v1::Role::REVIEWER"
+      },
+      "variant_names": {
+       "0": "E2B",
+       "1": "E4B",
+       "2": "CODER",
+       "3": "REVIEWER"
+      }
+     }
+    }
+   ]
+  },
+  "mncs.harness.routing.v1::needs_coder": {
+   "inputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.routing.v1::Role",
+      "name": "Role",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.routing.v1::Role::E2B",
+       "1": "mncs:0.2:finite-variant:mncs.harness.routing.v1::Role::E4B",
+       "2": "mncs:0.2:finite-variant:mncs.harness.routing.v1::Role::CODER",
+       "3": "mncs:0.2:finite-variant:mncs.harness.routing.v1::Role::REVIEWER"
+      },
+      "variant_names": {
+       "0": "E2B",
+       "1": "E4B",
+       "2": "CODER",
+       "3": "REVIEWER"
+      }
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
      }
     }
    ]
@@ -91,11 +191,18 @@
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.routing.v1::Role",
+      "name": "Role",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.routing.v1::Role::E2B",
        "1": "mncs:0.2:finite-variant:mncs.harness.routing.v1::Role::E4B",
        "2": "mncs:0.2:finite-variant:mncs.harness.routing.v1::Role::CODER",
        "3": "mncs:0.2:finite-variant:mncs.harness.routing.v1::Role::REVIEWER"
+      },
+      "variant_names": {
+       "0": "E2B",
+       "1": "E4B",
+       "2": "CODER",
+       "3": "REVIEWER"
       }
      }
     },
@@ -123,11 +230,18 @@
   "Role": {
    "finite": {
     "type_identity": "mncs:0.2:finite-type:mncs.harness.routing.v1::Role",
+    "name": "Role",
     "variants": {
      "0": "mncs:0.2:finite-variant:mncs.harness.routing.v1::Role::E2B",
      "1": "mncs:0.2:finite-variant:mncs.harness.routing.v1::Role::E4B",
      "2": "mncs:0.2:finite-variant:mncs.harness.routing.v1::Role::CODER",
      "3": "mncs:0.2:finite-variant:mncs.harness.routing.v1::Role::REVIEWER"
+    },
+    "variant_names": {
+     "0": "E2B",
+     "1": "E4B",
+     "2": "CODER",
+     "3": "REVIEWER"
     },
     "payloads": {
      "0": [],
@@ -140,11 +254,18 @@
   "mncs:0.2:finite-type:mncs.harness.routing.v1::Role": {
    "finite": {
     "type_identity": "mncs:0.2:finite-type:mncs.harness.routing.v1::Role",
+    "name": "Role",
     "variants": {
      "0": "mncs:0.2:finite-variant:mncs.harness.routing.v1::Role::E2B",
      "1": "mncs:0.2:finite-variant:mncs.harness.routing.v1::Role::E4B",
      "2": "mncs:0.2:finite-variant:mncs.harness.routing.v1::Role::CODER",
      "3": "mncs:0.2:finite-variant:mncs.harness.routing.v1::Role::REVIEWER"
+    },
+    "variant_names": {
+     "0": "E2B",
+     "1": "E4B",
+     "2": "CODER",
+     "3": "REVIEWER"
     },
     "payloads": {
      "0": [],

@@ -1,16 +1,16 @@
 {
- "schema_version": "0.2",
- "identity": "mncs:compiler:backend-artifact:41ecb72e641d783c3605102a2be6a3dadbef474a8290b2005522c5b2da563642",
+ "schema_version": "0.5",
+ "identity": "mncs:compiler:backend-artifact:b33484aa5dd090fe8222ace8059a951fd6cdbbe8bde9e6b82a4e2d3394525e1b",
  "backend": {
   "identity": "mncs:compiler:backend:6bbc6f37c38ffa3353787ff9ea565d07db3755b42efa8a59871374123adbca15",
   "name": "mncs-portable-wasm-mvp",
   "version": "0.1"
  },
  "input": {
-  "identity": "mncs:compiler:compiler-artifact:7daa867d4a95633990770c4720484cb38981ec54a68246141f5acd1f5dac5fcf",
+  "identity": "mncs:compiler:compiler-artifact:09b31a0eaa415ad5415a702adde2c0688217831871df1c529804c5a0e057d310",
   "representation": "selected_ssa",
-  "schema_version": "0.4",
-  "fingerprint": "e214b0e88e2929cc4360dfc171e720fafc12d0c6b09e92bdc2b2165c571fe4d6"
+  "schema_version": "0.5",
+  "fingerprint": "c9887cf6fbf34262ace5ab52ad45af2f4b030ca7ef96f0456f1fc376aac7196d"
  },
  "target": {
   "identity": "mncs:compiler:target-contract:7db47a6485cddf8e3bbaa129f3cc126ee396c799b7ff1fb243a0b1bb4663f902",
@@ -32,15 +32,15 @@
  },
  "artifact_kind": "wasm_module",
  "format": "application/wasm; mncs-portable-wasm-mvp-0.1",
- "bytes_sha256": "4e0768a503fd1320664f06f67421c17295d5eff5832a3dd0104a57e68c8f83d3",
- "bytes_hex": "0061736d0100000001370960027f7f017f60047f7f7f7f017f60087f7f7f7f7f7f7f7f017f60017f017f60017f017f60017f017f60017f017f60017f017e600000030a09000102030405060708050401008004060b027f0141080b7f0141080b07b3010a12646f6d696e6174655f72656164696e657373000005666f6c6434000105666f6c643800021d666f6c645f72656164696e6573735f5f737065635f356538323861303100031d666f6c645f72656164696e6573735f5f737065635f663130636632333000040869735f726561647900050a6d6e63735f616c6c6f630006106d6e63735f686f73745f6275666665720007166d6e63735f686f73745f6275666665725f72657365740008066d656d6f727902000aa50c09890517017f017f017f017f017f017f017f017f017f017f017f017f017f017f017f017f017f017f017f017f017f017f017f4100211803402018410046044020004102462102200204404102211805410621180b0c010b2018410146044020030f0b201841024604404102210420042103410121180c010b201841034604402001410246210520050440410a211805410e21180b0c010b2018410446044020014102462106200604404112211805411621180b0c010b2018410546044020012103410121180c010b2018410646044020004103462107200704404103211805410721180b0c010b2018410746044020004101462108200804404104211805410821180b0c010b20184108460440410521180c010b2018410946044020092103410121180c010b2018410a4604404102210a200a2109410921180c010b2018410b4604404103210b200b2109410921180c010b2018410c4604404103210c200c2109410921180c010b2018410d4604404103210d200d2109410921180c010b2018410e4604402001410346210e200e0440410b211805410f21180b0c010b2018410f4604402001410146210f200f0440410c211805411021180b0c010b20184110460440410d21180c010b2018411146044020102103410121180c010b201841124604404102211120112110411121180c010b201841134604404103211220122110411121180c010b201841144604404101211320132110411121180c010b201841154604404101211420142110411121180c010b2018411646044020014103462115201504404113211805411721180b0c010b2018411746044020014101462116201604404114211805411821180b0c010b20184118460440411521180c010b20184119460440000b0b000b5704017f017f017f017f4100210703402007410046044041201006210420042000360200200441086a2001360200200441106a2002360200200441186a200336020020041004210520050f0b20074101460440000b0b000b800104017f017f017f017f4100210b0340200b410046044041c0001006210820082000360200200841086a2001360200200841106a2002360200200841186a2003360200200841206a2004360200200841286a2005360200200841306a2006360200200841386a200736020020081003210920090f0b200b4101460440000b0b000bc6010e017e017f017f017e017e017f017e017f017f017e017e017f017f017f4100210e0340200e4100460440420821014100210220022001210421034101210e0c010b200e41014604404200210520042005562106200604404102210e052003210c4103210e0b0c010b200e4102460440200120047d210720002007420386a76a280200210820032008100021094201210a2004200a7d210b2004200b540440000b2009200b210421034101210e0c010b200e4103460440200c0f0b200e4104460440000b0b000bc6010e017e017f017f017e017e017f017e017f017f017e017e017f017f017f4100210e0340200e4100460440420421014100210220022001210421034101210e0c010b200e41014604404200210520042005562106200604404102210e052003210c4103210e0b0c010b200e4102460440200120047d210720002007420386a76a280200210820032008100021094201210a2004200a7d210b2004200b540440000b2009200b210421034101210e0c010b200e4103460440200c0f0b200e4104460440000b0b000bf5010a017f017f017f017f017f017f017f017f017f017f4100210a0340200a410046044020004100462101200104404102210a054106210a0b0c010b200a410146044020020f0b200a410246044041012103200321024101210a0c010b200a410346044041002104200421024101210a0c010b200a410446044041002105200521024101210a0c010b200a410546044041002106200621024101210a0c010b200a410646044020004101462107200704404103210a054107210a0b0c010b200a410746044020004102462108200804404104210a054108210a0b0c010b200a41084604404105210a0c010b200a4109460440000b0b000b1701017f230021012300200041076a4178716a240020010b1801017f200010062101230024012001ad2000ad422086840b0600230124000b",
+ "bytes_sha256": "52ebc5bbd138a1b387667ddfe769b7fd522a64452cec05294c2630aa0ff739cd",
+ "bytes_hex": "0061736d0100000001370960027f7f017f60047f7f7f7f017f60087f7f7f7f7f7f7f7f017f60017f017f60017f017f60017f017f60017f017f60017f017e600000030a09000102030405060708050401008004061f067f0141080b7f0141000b7f0141000b7f0141000b7f0141000b7f0141080b07fd020a336d6e63735f6d6e63735f6861726e6573735f72656164696e6573735f76315f5f646f6d696e6174655f5f72656164696e6573730000256d6e63735f6d6e63735f6861726e6573735f72656164696e6573735f76315f5f666f6c64340001256d6e63735f6d6e63735f6861726e6573735f72656164696e6573735f76315f5f666f6c64380002416d6e63735f6d6e63735f6861726e6573735f72656164696e6573735f76315f5f666f6c645f5f72656164696e6573735f5f5f5f737065635f5f35653832386130310003416d6e63735f6d6e63735f6861726e6573735f72656164696e6573735f76315f5f666f6c645f5f72656164696e6573735f5f5f5f737065635f5f66313063663233300004296d6e63735f6d6e63735f6861726e6573735f72656164696e6573735f76315f5f69735f5f726561647900050a6d6e63735f616c6c6f630006106d6e63735f686f73745f6275666665720007166d6e63735f686f73745f6275666665725f72657365740008066d656d6f727902000a8e0f09890517017f017f017f017f017f017f017f017f017f017f017f017f017f017f017f017f017f017f017f017f017f017f017f4100211803402018410046044020004102462102200204404102211805410621180b0c010b2018410146044020030f0b201841024604404102210420042103410121180c010b201841034604402001410246210520050440410a211805410e21180b0c010b2018410446044020014102462106200604404112211805411621180b0c010b2018410546044020012103410121180c010b2018410646044020004103462107200704404103211805410721180b0c010b2018410746044020004101462108200804404104211805410821180b0c010b20184108460440410521180c010b2018410946044020092103410121180c010b2018410a4604404102210a200a2109410921180c010b2018410b4604404103210b200b2109410921180c010b2018410c4604404103210c200c2109410921180c010b2018410d4604404103210d200d2109410921180c010b2018410e4604402001410346210e200e0440410b211805410f21180b0c010b2018410f4604402001410146210f200f0440410c211805411021180b0c010b20184110460440410d21180c010b2018411146044020102103410121180c010b201841124604404102211120112110411121180c010b201841134604404103211220122110411121180c010b201841144604404101211320132110411121180c010b201841154604404101211420142110411121180c010b2018411646044020014103462115201504404113211805411721180b0c010b2018411746044020014101462116201604404114211805411821180b0c010b20184118460440411521180c010b20184119460440000b0b000b5704017f017f017f017f4100210703402007410046044041201006210420042000360200200441086a2001360200200441106a2002360200200441186a200336020020041004210520050f0b20074101460440000b0b000b800104017f017f017f017f4100210b0340200b410046044041c0001006210820082000360200200841086a2001360200200841106a2002360200200841186a2003360200200841206a2004360200200841286a2005360200200841306a2006360200200841386a200736020020081003210920090f0b200b4101460440000b0b000bab0317017e017f017f017e017e017f017e017f017f017e017e017f017f017f017f017e017e017e017e017e017e017e017e410024034100210e0340200e4100460440420821014100210220022001210421034101210e0c010b200e4101460440230345044023002401410124030b4200210520042005562106200604404102210e052003210c410024034103210e0b0c010b200e4102460440200120047d210720002007420386a76a280200210820032008100021094201210a2004200a7d210b2004200b540440000b2009200b21042103230123054f04402000280200ad2110200041086a280200ad2111200041106a280200ad2112200041186a280200ad2113200041206a280200ad2114200041286a280200ad2115200041306a280200ad2116200041386a280200ad21172301240041c0001006210020002010a7360200200041086a2011a7360200200041106a2012a7360200200041186a2013a7360200200041206a2014a7360200200041286a2015a7360200200041306a2016a7360200200041386a2017a73602000b4101210e0c010b200e4103460440200c0f0b200e4104460440000b0b000bca0213017e017f017f017e017e017f017e017f017f017e017e017f017f017f017f017e017e017e017e410024044100210e0340200e4100460440420421014100210220022001210421034101210e0c010b200e4101460440230445044023002402410124040b4200210520042005562106200604404102210e052003210c410024044103210e0b0c010b200e4102460440200120047d210720002007420386a76a280200210820032008100021094201210a2004200a7d210b2004200b540440000b2009200b21042103230223054f04402000280200ad2110200041086a280200ad2111200041106a280200ad2112200041186a280200ad21132302240041201006210020002010a7360200200041086a2011a7360200200041106a2012a7360200200041186a2013a73602000b4101210e0c010b200e4103460440200c0f0b200e4104460440000b0b000bf5010a017f017f017f017f017f017f017f017f017f017f4100210a0340200a410046044020004100462101200104404102210a054106210a0b0c010b200a410146044020020f0b200a410246044041012103200321024101210a0c010b200a410346044041002104200421024101210a0c010b200a410446044041002105200521024101210a0c010b200a410546044041002106200621024101210a0c010b200a410646044020004101462107200704404103210a054107210a0b0c010b200a410746044020004102462108200804404104210a054108210a0b0c010b200a41084604404105210a0c010b200a4109460440000b0b000b1701017f230021012300200041076a4178716a240020010b1801017f200010062101230024052001ad2000ad422086840b0600230524000b",
  "exports": [
-  "dominate_readiness",
-  "fold4",
-  "fold8",
-  "fold_readiness__spec_5e828a01",
-  "fold_readiness__spec_f10cf230",
-  "is_ready"
+  "mncs_mncs_harness_readiness_v1__dominate__readiness",
+  "mncs_mncs_harness_readiness_v1__fold4",
+  "mncs_mncs_harness_readiness_v1__fold8",
+  "mncs_mncs_harness_readiness_v1__fold__readiness____spec__5e828a01",
+  "mncs_mncs_harness_readiness_v1__fold__readiness____spec__f10cf230",
+  "mncs_mncs_harness_readiness_v1__is__ready"
  ],
  "function_value_contracts": {
   "dominate_readiness": {
@@ -48,22 +48,36 @@
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "name": "Readiness",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
        "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
        "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
        "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "READY",
+       "1": "DEGRADED",
+       "2": "BLOCKED",
+       "3": "UNKNOWN"
       }
      }
     },
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "name": "Readiness",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
        "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
        "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
        "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "READY",
+       "1": "DEGRADED",
+       "2": "BLOCKED",
+       "3": "UNKNOWN"
       }
      }
     }
@@ -72,11 +86,18 @@
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "name": "Readiness",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
        "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
        "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
        "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "READY",
+       "1": "DEGRADED",
+       "2": "BLOCKED",
+       "3": "UNKNOWN"
       }
      }
     }
@@ -87,44 +108,72 @@
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "name": "Readiness",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
        "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
        "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
        "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "READY",
+       "1": "DEGRADED",
+       "2": "BLOCKED",
+       "3": "UNKNOWN"
       }
      }
     },
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "name": "Readiness",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
        "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
        "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
        "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "READY",
+       "1": "DEGRADED",
+       "2": "BLOCKED",
+       "3": "UNKNOWN"
       }
      }
     },
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "name": "Readiness",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
        "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
        "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
        "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "READY",
+       "1": "DEGRADED",
+       "2": "BLOCKED",
+       "3": "UNKNOWN"
       }
      }
     },
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "name": "Readiness",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
        "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
        "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
        "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "READY",
+       "1": "DEGRADED",
+       "2": "BLOCKED",
+       "3": "UNKNOWN"
       }
      }
     }
@@ -133,11 +182,18 @@
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "name": "Readiness",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
        "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
        "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
        "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "READY",
+       "1": "DEGRADED",
+       "2": "BLOCKED",
+       "3": "UNKNOWN"
       }
      }
     }
@@ -148,88 +204,144 @@
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "name": "Readiness",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
        "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
        "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
        "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "READY",
+       "1": "DEGRADED",
+       "2": "BLOCKED",
+       "3": "UNKNOWN"
       }
      }
     },
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "name": "Readiness",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
        "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
        "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
        "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "READY",
+       "1": "DEGRADED",
+       "2": "BLOCKED",
+       "3": "UNKNOWN"
       }
      }
     },
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "name": "Readiness",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
        "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
        "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
        "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "READY",
+       "1": "DEGRADED",
+       "2": "BLOCKED",
+       "3": "UNKNOWN"
       }
      }
     },
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "name": "Readiness",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
        "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
        "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
        "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "READY",
+       "1": "DEGRADED",
+       "2": "BLOCKED",
+       "3": "UNKNOWN"
       }
      }
     },
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "name": "Readiness",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
        "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
        "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
        "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "READY",
+       "1": "DEGRADED",
+       "2": "BLOCKED",
+       "3": "UNKNOWN"
       }
      }
     },
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "name": "Readiness",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
        "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
        "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
        "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "READY",
+       "1": "DEGRADED",
+       "2": "BLOCKED",
+       "3": "UNKNOWN"
       }
      }
     },
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "name": "Readiness",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
        "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
        "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
        "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "READY",
+       "1": "DEGRADED",
+       "2": "BLOCKED",
+       "3": "UNKNOWN"
       }
      }
     },
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "name": "Readiness",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
        "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
        "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
        "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "READY",
+       "1": "DEGRADED",
+       "2": "BLOCKED",
+       "3": "UNKNOWN"
       }
      }
     }
@@ -238,11 +350,18 @@
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "name": "Readiness",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
        "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
        "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
        "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "READY",
+       "1": "DEGRADED",
+       "2": "BLOCKED",
+       "3": "UNKNOWN"
       }
      }
     }
@@ -252,7 +371,16 @@
    "inputs": [
     {
      "scalar": {
-      "semantic_type": "[Readiness; N]"
+      "semantic_type": {
+       "sequence": {
+        "element": {
+         "named": "Readiness"
+        },
+        "bound": {
+         "param": "N"
+        }
+       }
+      }
      }
     }
    ],
@@ -260,11 +388,18 @@
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "name": "Readiness",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
        "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
        "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
        "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "READY",
+       "1": "DEGRADED",
+       "2": "BLOCKED",
+       "3": "UNKNOWN"
       }
      }
     }
@@ -275,7 +410,12 @@
     {
      "sequence": {
       "semantic_type": "[Readiness; 8]",
-      "element": "Readiness",
+      "element": {
+       "finite": {
+        "identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+        "name": "Readiness"
+       }
+      },
       "length": 8
      }
     }
@@ -284,11 +424,18 @@
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "name": "Readiness",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
        "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
        "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
        "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "READY",
+       "1": "DEGRADED",
+       "2": "BLOCKED",
+       "3": "UNKNOWN"
       }
      }
     }
@@ -299,7 +446,12 @@
     {
      "sequence": {
       "semantic_type": "[Readiness; 4]",
-      "element": "Readiness",
+      "element": {
+       "finite": {
+        "identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+        "name": "Readiness"
+       }
+      },
       "length": 4
      }
     }
@@ -308,11 +460,18 @@
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "name": "Readiness",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
        "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
        "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
        "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "READY",
+       "1": "DEGRADED",
+       "2": "BLOCKED",
+       "3": "UNKNOWN"
       }
      }
     }
@@ -323,11 +482,481 @@
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "name": "Readiness",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
        "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
        "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
        "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "READY",
+       "1": "DEGRADED",
+       "2": "BLOCKED",
+       "3": "UNKNOWN"
+      }
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ]
+  },
+  "mncs.harness.readiness.v1::dominate_readiness": {
+   "inputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "name": "Readiness",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "READY",
+       "1": "DEGRADED",
+       "2": "BLOCKED",
+       "3": "UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "name": "Readiness",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "READY",
+       "1": "DEGRADED",
+       "2": "BLOCKED",
+       "3": "UNKNOWN"
+      }
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "name": "Readiness",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "READY",
+       "1": "DEGRADED",
+       "2": "BLOCKED",
+       "3": "UNKNOWN"
+      }
+     }
+    }
+   ]
+  },
+  "mncs.harness.readiness.v1::fold4": {
+   "inputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "name": "Readiness",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "READY",
+       "1": "DEGRADED",
+       "2": "BLOCKED",
+       "3": "UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "name": "Readiness",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "READY",
+       "1": "DEGRADED",
+       "2": "BLOCKED",
+       "3": "UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "name": "Readiness",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "READY",
+       "1": "DEGRADED",
+       "2": "BLOCKED",
+       "3": "UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "name": "Readiness",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "READY",
+       "1": "DEGRADED",
+       "2": "BLOCKED",
+       "3": "UNKNOWN"
+      }
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "name": "Readiness",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "READY",
+       "1": "DEGRADED",
+       "2": "BLOCKED",
+       "3": "UNKNOWN"
+      }
+     }
+    }
+   ]
+  },
+  "mncs.harness.readiness.v1::fold8": {
+   "inputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "name": "Readiness",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "READY",
+       "1": "DEGRADED",
+       "2": "BLOCKED",
+       "3": "UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "name": "Readiness",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "READY",
+       "1": "DEGRADED",
+       "2": "BLOCKED",
+       "3": "UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "name": "Readiness",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "READY",
+       "1": "DEGRADED",
+       "2": "BLOCKED",
+       "3": "UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "name": "Readiness",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "READY",
+       "1": "DEGRADED",
+       "2": "BLOCKED",
+       "3": "UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "name": "Readiness",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "READY",
+       "1": "DEGRADED",
+       "2": "BLOCKED",
+       "3": "UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "name": "Readiness",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "READY",
+       "1": "DEGRADED",
+       "2": "BLOCKED",
+       "3": "UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "name": "Readiness",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "READY",
+       "1": "DEGRADED",
+       "2": "BLOCKED",
+       "3": "UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "name": "Readiness",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "READY",
+       "1": "DEGRADED",
+       "2": "BLOCKED",
+       "3": "UNKNOWN"
+      }
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "name": "Readiness",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "READY",
+       "1": "DEGRADED",
+       "2": "BLOCKED",
+       "3": "UNKNOWN"
+      }
+     }
+    }
+   ]
+  },
+  "mncs.harness.readiness.v1::fold_readiness": {
+   "inputs": [
+    {
+     "scalar": {
+      "semantic_type": {
+       "sequence": {
+        "element": {
+         "named": "Readiness"
+        },
+        "bound": {
+         "param": "N"
+        }
+       }
+      }
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "name": "Readiness",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "READY",
+       "1": "DEGRADED",
+       "2": "BLOCKED",
+       "3": "UNKNOWN"
+      }
+     }
+    }
+   ]
+  },
+  "mncs.harness.readiness.v1::fold_readiness__spec_5e828a01": {
+   "inputs": [
+    {
+     "sequence": {
+      "semantic_type": "[Readiness; 8]",
+      "element": {
+       "finite": {
+        "identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+        "name": "Readiness"
+       }
+      },
+      "length": 8
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "name": "Readiness",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "READY",
+       "1": "DEGRADED",
+       "2": "BLOCKED",
+       "3": "UNKNOWN"
+      }
+     }
+    }
+   ]
+  },
+  "mncs.harness.readiness.v1::fold_readiness__spec_f10cf230": {
+   "inputs": [
+    {
+     "sequence": {
+      "semantic_type": "[Readiness; 4]",
+      "element": {
+       "finite": {
+        "identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+        "name": "Readiness"
+       }
+      },
+      "length": 4
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "name": "Readiness",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "READY",
+       "1": "DEGRADED",
+       "2": "BLOCKED",
+       "3": "UNKNOWN"
+      }
+     }
+    }
+   ]
+  },
+  "mncs.harness.readiness.v1::is_ready": {
+   "inputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+      "name": "Readiness",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
+       "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
+       "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "READY",
+       "1": "DEGRADED",
+       "2": "BLOCKED",
+       "3": "UNKNOWN"
       }
      }
     }
@@ -345,11 +974,18 @@
   "Readiness": {
    "finite": {
     "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+    "name": "Readiness",
     "variants": {
      "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
      "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
      "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
      "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+    },
+    "variant_names": {
+     "0": "READY",
+     "1": "DEGRADED",
+     "2": "BLOCKED",
+     "3": "UNKNOWN"
     },
     "payloads": {
      "0": [],
@@ -362,11 +998,18 @@
   "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness": {
    "finite": {
     "type_identity": "mncs:0.2:finite-type:mncs.harness.readiness.v1::Readiness",
+    "name": "Readiness",
     "variants": {
      "0": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::READY",
      "1": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::DEGRADED",
      "2": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::BLOCKED",
      "3": "mncs:0.2:finite-variant:mncs.harness.readiness.v1::Readiness::UNKNOWN"
+    },
+    "variant_names": {
+     "0": "READY",
+     "1": "DEGRADED",
+     "2": "BLOCKED",
+     "3": "UNKNOWN"
     },
     "payloads": {
      "0": [],

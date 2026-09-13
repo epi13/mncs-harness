@@ -1,16 +1,16 @@
 {
- "schema_version": "0.2",
- "identity": "mncs:compiler:backend-artifact:65a6858a833ae79b4f3b155d290833fd2e23fe56cca829029e00701ecaf2969e",
+ "schema_version": "0.5",
+ "identity": "mncs:compiler:backend-artifact:809cd9f638d47d6d2305a11dae686bd2c7a70659ba51c7d1634ce758b65f0140",
  "backend": {
   "identity": "mncs:compiler:backend:6bbc6f37c38ffa3353787ff9ea565d07db3755b42efa8a59871374123adbca15",
   "name": "mncs-portable-wasm-mvp",
   "version": "0.1"
  },
  "input": {
-  "identity": "mncs:compiler:compiler-artifact:5873618b81886ad42dc7756f6629bcce013099f2df7b6a6bd56edd741cd37b5e",
+  "identity": "mncs:compiler:compiler-artifact:5203cdd734b5d99031f61e1807220b998634204e0a982623c8fac18356b1a0a2",
   "representation": "selected_ssa",
-  "schema_version": "0.4",
-  "fingerprint": "49d9021c761aaf73e5a657f91ade11fe4e90a1b1d2b51ac218cb85004acaa203"
+  "schema_version": "0.5",
+  "fingerprint": "2cdc07ed397baaeb06a1de3dc35a8b433c797f02a7554f629ca46be2f1d9993f"
  },
  "target": {
   "identity": "mncs:compiler:target-contract:7db47a6485cddf8e3bbaa129f3cc126ee396c799b7ff1fb243a0b1bb4663f902",
@@ -32,11 +32,11 @@
  },
  "artifact_kind": "wasm_module",
  "format": "application/wasm; mncs-portable-wasm-mvp-0.1",
- "bytes_sha256": "38fed55bef47f682ee03ddb09f336570aee670fe46c4f32ac918f520607e1003",
- "bytes_hex": "0061736d01000000010f0260057f7f7f7f7f017f60017f017f03030200010726020f636c6173736966795f66616272696300001064697370617463685f616c6c6f77656400010aa70502bb0208017f017f017f017f017f017f017f017f4100210c0340200c4100460440200004404101210c054102210c0b0c010b200c41014604404100210520050f0b200c41024604404103210c0c010b200c4103460440200104404104210c054105210c0b0c010b200c41044604404106210c0c010b200c41054604404101210620060f0b200c4106460440200204404107210c054108210c0b0c010b200c41074604404102210720070f0b200c41084604404109210c0c010b200c410946044020030440410a210c05410b210c0b0c010b200c410a4604404103210820080f0b200c410b460440410c210c0c010b200c410c46044020040440410d210c05410e210c0b0c010b200c410d4604404104210920090f0b200c410e460440410f210c0c010b200c410f4604404105210a200a0f0b200c4110460440000b0b000be7020e017f017f017f017f017f017f017f017f017f017f017f017f017f017f4100210e0340200e410046044020004100462101200104404102210e054108210e0b0c010b200e410146044020020f0b200e410246044041002103200321024101210e0c010b200e410346044041002104200421024101210e0c010b200e410446044041002105200521024101210e0c010b200e410546044041012106200621024101210e0c010b200e410646044041012107200721024101210e0c010b200e410746044041012108200821024101210e0c010b200e410846044020004101462109200904404103210e054109210e0b0c010b200e41094604402000410246210a200a04404104210e05410a210e0b0c010b200e410a4604402000410346210b200b04404105210e05410b210e0b0c010b200e410b4604402000410446210c200c04404106210e05410c210e0b0c010b200e410c4604404107210e0c010b200e410d460440000b0b000b",
+ "bytes_sha256": "1992e050392183c3043483872c4c3472a9418960371040340979266545feaa88",
+ "bytes_hex": "0061736d01000000010f0260057f7f7f7f7f017f60017f017f03030200010762022d6d6e63735f6d6e63735f6861726e6573735f6661627269635f76315f5f636c6173736966795f5f66616272696300002e6d6e63735f6d6e63735f6861726e6573735f6661627269635f76315f5f64697370617463685f5f616c6c6f77656400010aa70502bb0208017f017f017f017f017f017f017f017f4100210c0340200c4100460440200004404101210c054102210c0b0c010b200c41014604404100210520050f0b200c41024604404103210c0c010b200c4103460440200104404104210c054105210c0b0c010b200c41044604404106210c0c010b200c41054604404101210620060f0b200c4106460440200204404107210c054108210c0b0c010b200c41074604404102210720070f0b200c41084604404109210c0c010b200c410946044020030440410a210c05410b210c0b0c010b200c410a4604404103210820080f0b200c410b460440410c210c0c010b200c410c46044020040440410d210c05410e210c0b0c010b200c410d4604404104210920090f0b200c410e460440410f210c0c010b200c410f4604404105210a200a0f0b200c4110460440000b0b000be7020e017f017f017f017f017f017f017f017f017f017f017f017f017f017f4100210e0340200e410046044020004100462101200104404102210e054108210e0b0c010b200e410146044020020f0b200e410246044041002103200321024101210e0c010b200e410346044041002104200421024101210e0c010b200e410446044041002105200521024101210e0c010b200e410546044041012106200621024101210e0c010b200e410646044041012107200721024101210e0c010b200e410746044041012108200821024101210e0c010b200e410846044020004101462109200904404103210e054109210e0b0c010b200e41094604402000410246210a200a04404104210e05410a210e0b0c010b200e410a4604402000410346210b200b04404105210e05410b210e0b0c010b200e410b4604402000410446210c200c04404106210e05410c210e0b0c010b200e410c4604404107210e0c010b200e410d460440000b0b000b",
  "exports": [
-  "classify_fabric",
-  "dispatch_allowed"
+  "mncs_mncs_harness_fabric_v1__classify__fabric",
+  "mncs_mncs_harness_fabric_v1__dispatch__allowed"
  ],
  "function_value_contracts": {
   "classify_fabric": {
@@ -71,6 +71,7 @@
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.fabric.v1::FabricClass",
+      "name": "FabricClass",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::INCOMPATIBLE",
        "1": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::UNKNOWN",
@@ -78,6 +79,14 @@
        "3": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::EXPERIMENT_CERTIFIED_EXACT",
        "4": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::COMPATIBLE_VERSION_ONLY",
        "5": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::COMPATIBLE_NEWER"
+      },
+      "variant_names": {
+       "0": "INCOMPATIBLE",
+       "1": "UNKNOWN",
+       "2": "TOO_OLD",
+       "3": "EXPERIMENT_CERTIFIED_EXACT",
+       "4": "COMPATIBLE_VERSION_ONLY",
+       "5": "COMPATIBLE_NEWER"
       }
      }
     }
@@ -88,6 +97,7 @@
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.fabric.v1::FabricClass",
+      "name": "FabricClass",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::INCOMPATIBLE",
        "1": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::UNKNOWN",
@@ -95,6 +105,100 @@
        "3": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::EXPERIMENT_CERTIFIED_EXACT",
        "4": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::COMPATIBLE_VERSION_ONLY",
        "5": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::COMPATIBLE_NEWER"
+      },
+      "variant_names": {
+       "0": "INCOMPATIBLE",
+       "1": "UNKNOWN",
+       "2": "TOO_OLD",
+       "3": "EXPERIMENT_CERTIFIED_EXACT",
+       "4": "COMPATIBLE_VERSION_ONLY",
+       "5": "COMPATIBLE_NEWER"
+      }
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ]
+  },
+  "mncs.harness.fabric.v1::classify_fabric": {
+   "inputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.fabric.v1::FabricClass",
+      "name": "FabricClass",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::INCOMPATIBLE",
+       "1": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::UNKNOWN",
+       "2": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::TOO_OLD",
+       "3": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::EXPERIMENT_CERTIFIED_EXACT",
+       "4": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::COMPATIBLE_VERSION_ONLY",
+       "5": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::COMPATIBLE_NEWER"
+      },
+      "variant_names": {
+       "0": "INCOMPATIBLE",
+       "1": "UNKNOWN",
+       "2": "TOO_OLD",
+       "3": "EXPERIMENT_CERTIFIED_EXACT",
+       "4": "COMPATIBLE_VERSION_ONLY",
+       "5": "COMPATIBLE_NEWER"
+      }
+     }
+    }
+   ]
+  },
+  "mncs.harness.fabric.v1::dispatch_allowed": {
+   "inputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.fabric.v1::FabricClass",
+      "name": "FabricClass",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::INCOMPATIBLE",
+       "1": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::UNKNOWN",
+       "2": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::TOO_OLD",
+       "3": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::EXPERIMENT_CERTIFIED_EXACT",
+       "4": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::COMPATIBLE_VERSION_ONLY",
+       "5": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::COMPATIBLE_NEWER"
+      },
+      "variant_names": {
+       "0": "INCOMPATIBLE",
+       "1": "UNKNOWN",
+       "2": "TOO_OLD",
+       "3": "EXPERIMENT_CERTIFIED_EXACT",
+       "4": "COMPATIBLE_VERSION_ONLY",
+       "5": "COMPATIBLE_NEWER"
       }
      }
     }
@@ -112,6 +216,7 @@
   "FabricClass": {
    "finite": {
     "type_identity": "mncs:0.2:finite-type:mncs.harness.fabric.v1::FabricClass",
+    "name": "FabricClass",
     "variants": {
      "0": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::INCOMPATIBLE",
      "1": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::UNKNOWN",
@@ -119,6 +224,14 @@
      "3": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::EXPERIMENT_CERTIFIED_EXACT",
      "4": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::COMPATIBLE_VERSION_ONLY",
      "5": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::COMPATIBLE_NEWER"
+    },
+    "variant_names": {
+     "0": "INCOMPATIBLE",
+     "1": "UNKNOWN",
+     "2": "TOO_OLD",
+     "3": "EXPERIMENT_CERTIFIED_EXACT",
+     "4": "COMPATIBLE_VERSION_ONLY",
+     "5": "COMPATIBLE_NEWER"
     },
     "payloads": {
      "0": [],
@@ -133,6 +246,7 @@
   "mncs:0.2:finite-type:mncs.harness.fabric.v1::FabricClass": {
    "finite": {
     "type_identity": "mncs:0.2:finite-type:mncs.harness.fabric.v1::FabricClass",
+    "name": "FabricClass",
     "variants": {
      "0": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::INCOMPATIBLE",
      "1": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::UNKNOWN",
@@ -140,6 +254,14 @@
      "3": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::EXPERIMENT_CERTIFIED_EXACT",
      "4": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::COMPATIBLE_VERSION_ONLY",
      "5": "mncs:0.2:finite-variant:mncs.harness.fabric.v1::FabricClass::COMPATIBLE_NEWER"
+    },
+    "variant_names": {
+     "0": "INCOMPATIBLE",
+     "1": "UNKNOWN",
+     "2": "TOO_OLD",
+     "3": "EXPERIMENT_CERTIFIED_EXACT",
+     "4": "COMPATIBLE_VERSION_ONLY",
+     "5": "COMPATIBLE_NEWER"
     },
     "payloads": {
      "0": [],
