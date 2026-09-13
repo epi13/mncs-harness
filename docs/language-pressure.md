@@ -33,6 +33,12 @@ Conventions: severity is `BLOCKER` / `MAJOR` / `MODERATE` / `ERGONOMIC` /
 `DOCUMENTATION`. Every entry distinguishes **(A)** "MNCS cannot currently
 express this" from **(B)** "the harness assumed a Python-specific model".
 
+Current source-profile status: all nine bounded Harness decision kernels now
+declare `mncs 0.16`. Their 18 portable-WASM and research-bytecode artifacts
+are generated and identity-checked with current `mncs-language` `main`; the
+historical entries below preserve the profiles and constraints observed when
+each kernel was originally converted.
+
 ---
 
 ## HARNESS-PRESSURE-016 — source-level function names versus backend exports
