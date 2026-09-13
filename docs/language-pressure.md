@@ -60,9 +60,9 @@ express this" from **(B)** "the harness assumed a Python-specific model".
 - **Evidence:** `python scripts/build_mncs_artifacts.py --verify`, the real
   execution agreement suite, and the artifact identity manifest all pass with
   the current executor.
-- **Commons coordination:** the cross-repository pressure record and its
-  resolved adapter change are linked here once the content-addressed Commons
-  identity is generated.
+- **Commons coordination:**
+  [`MNCS-LANG-59894A2D6A3D`](https://github.com/epi13/MNCS-Commons/blob/main/pressures/records/MNCS-LANG-59894A2D6A3D.json)
+  records the cross-repository pressure and its resolved adapter change.
 
 ---
 
