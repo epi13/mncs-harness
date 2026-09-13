@@ -1,16 +1,16 @@
 {
- "schema_version": "0.2",
- "identity": "mncs:compiler:backend-artifact:6d0e48e7d325452e5d49feb9c0cb8c218808bbfdc29c0b78576f920c56eb6a7f",
+ "schema_version": "0.5",
+ "identity": "mncs:compiler:backend-artifact:d60c82a91bb9047a6b9bc66de84f24285f058c6f25016611ce28b049d82dad1d",
  "backend": {
   "identity": "mncs:compiler:backend:6bbc6f37c38ffa3353787ff9ea565d07db3755b42efa8a59871374123adbca15",
   "name": "mncs-portable-wasm-mvp",
   "version": "0.1"
  },
  "input": {
-  "identity": "mncs:compiler:compiler-artifact:c2738799767f63e24c4c62004c2c8dc0b3038a3b4f94aedb72d91c538922a1f2",
+  "identity": "mncs:compiler:compiler-artifact:67f09dc2f4cbbbe8ab3d87b1827da26c70ee17d13841c5d5b20e6b0366782ee5",
   "representation": "selected_ssa",
-  "schema_version": "0.4",
-  "fingerprint": "cacc934c89825a9c14849a4d7bc519957a27cb4cb89d1f546e59094fd8d114a2"
+  "schema_version": "0.5",
+  "fingerprint": "5080b622609f9364bf6555f0841f0e300c9b6e35fb7399dc3d6649edd44f81fb"
  },
  "target": {
   "identity": "mncs:compiler:target-contract:7db47a6485cddf8e3bbaa129f3cc126ee396c799b7ff1fb243a0b1bb4663f902",
@@ -32,28 +32,125 @@
  },
  "artifact_kind": "wasm_module",
  "format": "application/wasm; mncs-portable-wasm-mvp-0.1",
- "bytes_sha256": "3aef30056f16cb2b316308fc5eb2bbef3b4af6d8276b3b599ea548b6ad90b38c",
- "bytes_hex": "0061736d01000000010f0260037e7e7e017f60037e7e7e017f0303020001072d02156174746573746174696f6e5f77696e646f775f6f6b0000116f62736572766174696f6e5f667265736800010aeb01027406017f017f017e017f017f017f4100210803402008410046044020002001552103200304404101210805410221080b0c010b200841014604404100210420040f0b20084102460440410321080c010b20084103460440200120007d21052005200257210620060f0b20084104460440000b0b000b7406017f017e017f017f017f017f4100210803402008410046044020012000592103200304404101210805410221080b0c010b20084101460440200120007d21042004200257210520050f0b20084102460440410321080c010b200841034604404101210620060f0b20084104460440000b0b000b",
+ "bytes_sha256": "e2ca26116ffb64500d89b60c4bf892c161711719c929d665ca0ddd192aac25d4",
+ "bytes_hex": "0061736d01000000010f0260037e7e7e017f60037e7e7e017f0303020001077002376d6e63735f6d6e63735f6861726e6573735f66726573686e6573735f76315f5f6174746573746174696f6e5f5f77696e646f775f5f6f6b0000326d6e63735f6d6e63735f6861726e6573735f66726573686e6573735f76315f5f6f62736572766174696f6e5f5f667265736800010aeb01027406017f017f017e017f017f017f4100210803402008410046044020002001552103200304404101210805410221080b0c010b200841014604404100210420040f0b20084102460440410321080c010b20084103460440200120007d21052005200257210620060f0b20084104460440000b0b000b7406017f017e017f017f017f017f4100210803402008410046044020012000592103200304404101210805410221080b0c010b20084101460440200120007d21042004200257210520050f0b20084102460440410321080c010b200841034604404101210620060f0b20084104460440000b0b000b",
  "exports": [
-  "attestation_window_ok",
-  "observation_fresh"
+  "mncs_mncs_harness_freshness_v1__attestation__window__ok",
+  "mncs_mncs_harness_freshness_v1__observation__fresh"
  ],
  "function_value_contracts": {
   "attestation_window_ok": {
    "inputs": [
     {
      "scalar": {
-      "semantic_type": "i64"
+      "semantic_type": {
+       "integer": {
+        "bits": 64,
+        "signed": true
+       }
+      }
      }
     },
     {
      "scalar": {
-      "semantic_type": "i64"
+      "semantic_type": {
+       "integer": {
+        "bits": 64,
+        "signed": true
+       }
+      }
      }
     },
     {
      "scalar": {
-      "semantic_type": "i64"
+      "semantic_type": {
+       "integer": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ]
+  },
+  "mncs.harness.freshness.v1::attestation_window_ok": {
+   "inputs": [
+    {
+     "scalar": {
+      "semantic_type": {
+       "integer": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": {
+       "integer": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": {
+       "integer": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ]
+  },
+  "mncs.harness.freshness.v1::observation_fresh": {
+   "inputs": [
+    {
+     "scalar": {
+      "semantic_type": {
+       "integer": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": {
+       "integer": {
+        "bits": 64,
+        "signed": true
+       }
+      }
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": {
+       "integer": {
+        "bits": 64,
+        "signed": true
+       }
+      }
      }
     }
    ],
@@ -69,17 +166,32 @@
    "inputs": [
     {
      "scalar": {
-      "semantic_type": "i64"
+      "semantic_type": {
+       "integer": {
+        "bits": 64,
+        "signed": true
+       }
+      }
      }
     },
     {
      "scalar": {
-      "semantic_type": "i64"
+      "semantic_type": {
+       "integer": {
+        "bits": 64,
+        "signed": true
+       }
+      }
      }
     },
     {
      "scalar": {
-      "semantic_type": "i64"
+      "semantic_type": {
+       "integer": {
+        "bits": 64,
+        "signed": true
+       }
+      }
      }
     }
    ],

@@ -1,16 +1,16 @@
 {
- "schema_version": "0.2",
- "identity": "mncs:compiler:backend-artifact:b23d27219456725ad5de4f63e634277deeb228828dbd52b02074be8c83170880",
+ "schema_version": "0.5",
+ "identity": "mncs:compiler:backend-artifact:6ff1e9c4146555d08f6b5435af89209e340e696efb2fe64b8b39840abff8934b",
  "backend": {
   "identity": "mncs:compiler:backend:6bbc6f37c38ffa3353787ff9ea565d07db3755b42efa8a59871374123adbca15",
   "name": "mncs-portable-wasm-mvp",
   "version": "0.1"
  },
  "input": {
-  "identity": "mncs:compiler:compiler-artifact:c8f9bbb1d91fd7f5308e1ce84b87ffa5e6e4150e3f508f30c2d3de39aa54f20c",
+  "identity": "mncs:compiler:compiler-artifact:5d8098a8b72c7f73539ea2c9ddc68ecb9e390d5da6c8be8489c4891acead90c8",
   "representation": "selected_ssa",
-  "schema_version": "0.4",
-  "fingerprint": "f130df773d580ddbae10d4ddc616a0d10cfc37b82a1ccb69d33d969566f58d20"
+  "schema_version": "0.5",
+  "fingerprint": "b76c759f18a18e2e10b16553ced088077d12b0b8616583cbc3d713623df0151a"
  },
  "target": {
   "identity": "mncs:compiler:target-contract:7db47a6485cddf8e3bbaa129f3cc126ee396c799b7ff1fb243a0b1bb4663f902",
@@ -32,13 +32,13 @@
  },
  "artifact_kind": "wasm_module",
  "format": "application/wasm; mncs-portable-wasm-mvp-0.1",
- "bytes_sha256": "1f88993e89d374f1125508f4b9f9aa75cdb8eb94f23d94363c52c4c709a169ad",
- "bytes_hex": "0061736d01000000012a0760077f7f7f7f7f7f7f017f60017f017f60037f7f7f017f60017f017e60017f017f60017f017e60000003080700010203040506050401008004060b027f0141080b7f0141080b07860108106576616c756174655f636f6d6d616e6400000e6576616c756174655f77726974650001107075626c69636174696f6e5f67617465000209726561736f6e5f6f6600030a6d6e63735f616c6c6f630004106d6e63735f686f73745f6275666665720005166d6e63735f686f73745f6275666665725f72657365740006066d656d6f727902000afc0807e10411017e017f017e017f017e017f017e017f017e017f017e017f017e017f017f017f017f41002117034020174100460440200004404101211705410221170b0c010b201741014604404201210741101004210820084101360200200841086a200737020020080f0b20174102460440410321170c010b20174103460440200104404104211705410521170b0c010b20174104460440410621170c010b201741054604404202210941101004210a200a4101360200200a41086a2009370200200a0f0b20174106460440200204404107211705410821170b0c010b201741074604404203210b41101004210c200c4101360200200c41086a200b370200200c0f0b20174108460440410921170c010b2017410946044020030440410a211705410b21170b0c010b2017410a460440410c21170c010b2017410b4604404204210d41101004210e200e4101360200200e41086a200d370200200e0f0b2017410c46044020040440410d211705410e21170b0c010b2017410d460440410f21170c010b2017410e4604404205210f41101004211020104101360200201041086a200f37020020100f0b2017410f460440200504404110211705411121170b0c010b20174110460440411221170c010b201741114604404206211141101004211220124101360200201241086a201137020020120f0b20174112460440200604404113211705411421170b0c010b20174113460440411521170c010b201741144604404207211341101004211420144101360200201441086a201337020020140f0b201741154604404108100421152015410036020020150f0b20174116460440000b0b000b810105017e017f017f017f017f41002105034020054100460440200004404101210505410221050b0c010b200541014604404208210141101004210220024101360200200241086a200137020020020f0b20054102460440410321050c010b200541034604404108100421032003410036020020030f0b20054104460440000b0b000bcd0106017f017f017f017f017f017f41002108034020084100460440200104404101210805410221080b0c010b20084101460440410321080c010b200841024604404102210320030f0b20084103460440200004404104210805410521080b0c010b20084104460440410621080c010b200841054604404101210420040f0b20084106460440200204404107210805410821080b0c010b20084107460440410921080c010b200841084604404103210520050f0b200841094604404100210620060f0b2008410a460440000b0b000b8c0106017f017e017e017e017e017f4100210603402006410046044020002802004101462101200104404102210605410421060b0c010b2006410146044020020f0b20064102460440200041086a290200210320032102410121060c010b200641034604404200210420042102410121060c010b20064104460440410321060c010b20064105460440000b0b000b1701017f230021012300200041076a4178716a240020010b1801017f200010042101230024012001ad2000ad422086840b0600230124000b",
+ "bytes_sha256": "1031a68f2f288734afb6024e3380064a67e692100e832fba813368f584d8f22c",
+ "bytes_hex": "0061736d01000000012a0760077f7f7f7f7f7f7f017f60017f017f60037f7f7f017f60017f017e60017f017f60017f017e60000003080700010203040506050401008004060b027f0141080b7f0141080b07fe01082e6d6e63735f6d6e63735f6861726e6573735f706f6c6963795f76315f5f6576616c756174655f5f636f6d6d616e6400002c6d6e63735f6d6e63735f6861726e6573735f706f6c6963795f76315f5f6576616c756174655f5f777269746500012e6d6e63735f6d6e63735f6861726e6573735f706f6c6963795f76315f5f7075626c69636174696f6e5f5f676174650002276d6e63735f6d6e63735f6861726e6573735f706f6c6963795f76315f5f726561736f6e5f5f6f6600030a6d6e63735f616c6c6f630004106d6e63735f686f73745f6275666665720005166d6e63735f686f73745f6275666665725f72657365740006066d656d6f727902000afc0807e10411017e017f017e017f017e017f017e017f017e017f017e017f017e017f017f017f017f41002117034020174100460440200004404101211705410221170b0c010b201741014604404201210741101004210820084101360200200841086a200737020020080f0b20174102460440410321170c010b20174103460440200104404104211705410521170b0c010b20174104460440410621170c010b201741054604404202210941101004210a200a4101360200200a41086a2009370200200a0f0b20174106460440200204404107211705410821170b0c010b201741074604404203210b41101004210c200c4101360200200c41086a200b370200200c0f0b20174108460440410921170c010b2017410946044020030440410a211705410b21170b0c010b2017410a460440410c21170c010b2017410b4604404204210d41101004210e200e4101360200200e41086a200d370200200e0f0b2017410c46044020040440410d211705410e21170b0c010b2017410d460440410f21170c010b2017410e4604404205210f41101004211020104101360200201041086a200f37020020100f0b2017410f460440200504404110211705411121170b0c010b20174110460440411221170c010b201741114604404206211141101004211220124101360200201241086a201137020020120f0b20174112460440200604404113211705411421170b0c010b20174113460440411521170c010b201741144604404207211341101004211420144101360200201441086a201337020020140f0b201741154604404108100421152015410036020020150f0b20174116460440000b0b000b810105017e017f017f017f017f41002105034020054100460440200004404101210505410221050b0c010b200541014604404208210141101004210220024101360200200241086a200137020020020f0b20054102460440410321050c010b200541034604404108100421032003410036020020030f0b20054104460440000b0b000bcd0106017f017f017f017f017f017f41002108034020084100460440200104404101210805410221080b0c010b20084101460440410321080c010b200841024604404102210320030f0b20084103460440200004404104210805410521080b0c010b20084104460440410621080c010b200841054604404101210420040f0b20084106460440200204404107210805410821080b0c010b20084107460440410921080c010b200841084604404103210520050f0b200841094604404100210620060f0b2008410a460440000b0b000b8c0106017f017e017e017e017e017f4100210603402006410046044020002802004101462101200104404102210605410421060b0c010b2006410146044020020f0b20064102460440200041086a290200210320032102410121060c010b200641034604404200210420042102410121060c010b20064104460440410321060c010b20064105460440000b0b000b1701017f230021012300200041076a4178716a240020010b1801017f200010042101230024012001ad2000ad422086840b0600230124000b",
  "exports": [
-  "evaluate_command",
-  "evaluate_write",
-  "publication_gate",
-  "reason_of"
+  "mncs_mncs_harness_policy_v1__evaluate__command",
+  "mncs_mncs_harness_policy_v1__evaluate__write",
+  "mncs_mncs_harness_policy_v1__publication__gate",
+  "mncs_mncs_harness_policy_v1__reason__of"
  ],
  "function_value_contracts": {
   "evaluate_command": {
@@ -83,16 +83,26 @@
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+      "name": "PolicyVerdict",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Allow",
        "1": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block"
+      },
+      "variant_names": {
+       "0": "Allow",
+       "1": "Block"
       },
       "payloads": {
        "0": [],
        "1": [
         [
          "reason",
-         "i64"
+         {
+          "integer": {
+           "bits": 64,
+           "signed": true
+          }
+         }
         ]
        ]
       }
@@ -112,18 +122,219 @@
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+      "name": "PolicyVerdict",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Allow",
        "1": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block"
+      },
+      "variant_names": {
+       "0": "Allow",
+       "1": "Block"
       },
       "payloads": {
        "0": [],
        "1": [
         [
          "reason",
-         "i64"
+         {
+          "integer": {
+           "bits": 64,
+           "signed": true
+          }
+         }
         ]
        ]
+      }
+     }
+    }
+   ]
+  },
+  "mncs.harness.policy.v1::evaluate_command": {
+   "inputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+      "name": "PolicyVerdict",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Allow",
+       "1": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block"
+      },
+      "variant_names": {
+       "0": "Allow",
+       "1": "Block"
+      },
+      "payloads": {
+       "0": [],
+       "1": [
+        [
+         "reason",
+         {
+          "integer": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        ]
+       ]
+      }
+     }
+    }
+   ]
+  },
+  "mncs.harness.policy.v1::evaluate_write": {
+   "inputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+      "name": "PolicyVerdict",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Allow",
+       "1": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block"
+      },
+      "variant_names": {
+       "0": "Allow",
+       "1": "Block"
+      },
+      "payloads": {
+       "0": [],
+       "1": [
+        [
+         "reason",
+         {
+          "integer": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        ]
+       ]
+      }
+     }
+    }
+   ]
+  },
+  "mncs.harness.policy.v1::publication_gate": {
+   "inputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    },
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PublicationDecision",
+      "name": "PublicationDecision",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PublicationDecision::PROCEED",
+       "1": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PublicationDecision::SKIP_DISABLED",
+       "2": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PublicationDecision::SKIP_NOT_READY",
+       "3": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PublicationDecision::SKIP_NO_RECORD"
+      },
+      "variant_names": {
+       "0": "PROCEED",
+       "1": "SKIP_DISABLED",
+       "2": "SKIP_NOT_READY",
+       "3": "SKIP_NO_RECORD"
+      }
+     }
+    }
+   ]
+  },
+  "mncs.harness.policy.v1::reason_of": {
+   "inputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+      "name": "PolicyVerdict",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Allow",
+       "1": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block"
+      },
+      "variant_names": {
+       "0": "Allow",
+       "1": "Block"
+      },
+      "payloads": {
+       "0": [],
+       "1": [
+        [
+         "reason",
+         {
+          "integer": {
+           "bits": 64,
+           "signed": true
+          }
+         }
+        ]
+       ]
+      }
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "scalar": {
+      "semantic_type": {
+       "integer": {
+        "bits": 64,
+        "signed": true
+       }
       }
      }
     }
@@ -151,11 +362,18 @@
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PublicationDecision",
+      "name": "PublicationDecision",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PublicationDecision::PROCEED",
        "1": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PublicationDecision::SKIP_DISABLED",
        "2": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PublicationDecision::SKIP_NOT_READY",
        "3": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PublicationDecision::SKIP_NO_RECORD"
+      },
+      "variant_names": {
+       "0": "PROCEED",
+       "1": "SKIP_DISABLED",
+       "2": "SKIP_NOT_READY",
+       "3": "SKIP_NO_RECORD"
       }
      }
     }
@@ -166,16 +384,26 @@
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+      "name": "PolicyVerdict",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Allow",
        "1": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block"
+      },
+      "variant_names": {
+       "0": "Allow",
+       "1": "Block"
       },
       "payloads": {
        "0": [],
        "1": [
         [
          "reason",
-         "i64"
+         {
+          "integer": {
+           "bits": 64,
+           "signed": true
+          }
+         }
         ]
        ]
       }
@@ -185,7 +413,12 @@
    "outputs": [
     {
      "scalar": {
-      "semantic_type": "i64"
+      "semantic_type": {
+       "integer": {
+        "bits": 64,
+        "signed": true
+       }
+      }
      }
     }
    ]
@@ -195,16 +428,26 @@
   "PolicyVerdict": {
    "finite": {
     "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+    "name": "PolicyVerdict",
     "variants": {
      "0": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Allow",
      "1": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block"
+    },
+    "variant_names": {
+     "0": "Allow",
+     "1": "Block"
     },
     "payloads": {
      "0": [],
      "1": [
       [
        "reason",
-       "i64"
+       {
+        "integer": {
+         "bits": 64,
+         "signed": true
+        }
+       }
       ]
      ]
     }
@@ -213,11 +456,18 @@
   "PublicationDecision": {
    "finite": {
     "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PublicationDecision",
+    "name": "PublicationDecision",
     "variants": {
      "0": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PublicationDecision::PROCEED",
      "1": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PublicationDecision::SKIP_DISABLED",
      "2": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PublicationDecision::SKIP_NOT_READY",
      "3": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PublicationDecision::SKIP_NO_RECORD"
+    },
+    "variant_names": {
+     "0": "PROCEED",
+     "1": "SKIP_DISABLED",
+     "2": "SKIP_NOT_READY",
+     "3": "SKIP_NO_RECORD"
     },
     "payloads": {
      "0": [],
@@ -230,16 +480,26 @@
   "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict": {
    "finite": {
     "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PolicyVerdict",
+    "name": "PolicyVerdict",
     "variants": {
      "0": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Allow",
      "1": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PolicyVerdict::Block"
+    },
+    "variant_names": {
+     "0": "Allow",
+     "1": "Block"
     },
     "payloads": {
      "0": [],
      "1": [
       [
        "reason",
-       "i64"
+       {
+        "integer": {
+         "bits": 64,
+         "signed": true
+        }
+       }
       ]
      ]
     }
@@ -248,11 +508,18 @@
   "mncs:0.2:finite-type:mncs.harness.policy.v1::PublicationDecision": {
    "finite": {
     "type_identity": "mncs:0.2:finite-type:mncs.harness.policy.v1::PublicationDecision",
+    "name": "PublicationDecision",
     "variants": {
      "0": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PublicationDecision::PROCEED",
      "1": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PublicationDecision::SKIP_DISABLED",
      "2": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PublicationDecision::SKIP_NOT_READY",
      "3": "mncs:0.2:finite-variant:mncs.harness.policy.v1::PublicationDecision::SKIP_NO_RECORD"
+    },
+    "variant_names": {
+     "0": "PROCEED",
+     "1": "SKIP_DISABLED",
+     "2": "SKIP_NOT_READY",
+     "3": "SKIP_NO_RECORD"
     },
     "payloads": {
      "0": [],

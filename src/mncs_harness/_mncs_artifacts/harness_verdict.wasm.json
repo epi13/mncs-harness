@@ -1,16 +1,16 @@
 {
- "schema_version": "0.2",
- "identity": "mncs:compiler:backend-artifact:189bb339bbf0033fa28bee989d14fa7bbff7b6eb25ffb431c4948aabb159abcf",
+ "schema_version": "0.5",
+ "identity": "mncs:compiler:backend-artifact:219b0c1038dcdeb1be90cceb70525175501c5e0b59836eb5ee2566a2ac8f5223",
  "backend": {
   "identity": "mncs:compiler:backend:6bbc6f37c38ffa3353787ff9ea565d07db3755b42efa8a59871374123adbca15",
   "name": "mncs-portable-wasm-mvp",
   "version": "0.1"
  },
  "input": {
-  "identity": "mncs:compiler:compiler-artifact:beeb87f53863ac2b3cbb1cb102c703b0fe75d710b0bf664b4e49702d23004a4a",
+  "identity": "mncs:compiler:compiler-artifact:7caf64464cabc440d97531ffb036490ea95e34ba285344e95dc61bd9f883adf8",
   "representation": "selected_ssa",
-  "schema_version": "0.4",
-  "fingerprint": "0c2c8fac91d0d83319001a1e6927797c282328d10e7d6ad926f453f4201deada"
+  "schema_version": "0.5",
+  "fingerprint": "9868d0b396a03a2524523b700ef84a9ec35cae90b4ea51903816c2eb1e096779"
  },
  "target": {
   "identity": "mncs:compiler:target-contract:7db47a6485cddf8e3bbaa129f3cc126ee396c799b7ff1fb243a0b1bb4663f902",
@@ -32,15 +32,15 @@
  },
  "artifact_kind": "wasm_module",
  "format": "application/wasm; mncs-portable-wasm-mvp-0.1",
- "bytes_sha256": "ac3bb87162b7fe11cd4ff8245a6d1db9e6433b6b9375afe5ead4aeb0a9165814",
- "bytes_hex": "0061736d0100000001370960047f7f7f7f017f60087f7f7f7f7f7f7f7f017f60017f017f60017f017f60027f7f017f60017f017f60017f017f60017f017e600000030a09000102030405060708050401008004060b027f0141080b7f0141080b07ab010a08636f6d62696e6534000008636f6d62696e653800011a636f6d62696e655f616c6c5f5f737065635f356538323861303100021a636f6d62696e655f616c6c5f5f737065635f6631306366323330000308646f6d696e61746500040a69735f6465636964656400050a6d6e63735f616c6c6f630006106d6e63735f686f73745f6275666665720007166d6e63735f686f73745f6275666665725f72657365740008066d656d6f727902000aad09095704017f017f017f017f4100210703402007410046044041201006210420042000360200200441086a2001360200200441106a2002360200200441186a200336020020041003210520050f0b20074101460440000b0b000b800104017f017f017f017f4100210b0340200b410046044041c0001006210820082000360200200841086a2001360200200841106a2002360200200841186a2003360200200841206a2004360200200841286a2005360200200841306a2006360200200841386a200736020020081002210920090f0b200b4101460440000b0b000bc6010e017e017f017f017e017e017f017e017f017f017e017e017f017f017f4100210e0340200e4100460440420821014100210220022001210421034101210e0c010b200e41014604404200210520042005562106200604404102210e052003210c4103210e0b0c010b200e4102460440200120047d210720002007420386a76a280200210820032008100421094201210a2004200a7d210b2004200b540440000b2009200b210421034101210e0c010b200e4103460440200c0f0b200e4104460440000b0b000bc6010e017e017f017f017e017e017f017e017f017f017e017e017f017f017f4100210e0340200e4100460440420421014100210220022001210421034101210e0c010b200e41014604404200210520042005562106200604404102210e052003210c4103210e0b0c010b200e4102460440200120047d210720002007420386a76a280200210820032008100421094201210a2004200a7d210b2004200b540440000b2009200b210421034101210e0c010b200e4103460440200c0f0b200e4104460440000b0b000bca020c017f017f017f017f017f017f017f017f017f017f017f017f4100210d0340200d410046044020004100462102200204404102210d054105210d0b0c010b200d410146044020030f0b200d4102460440200121034101210d0c010b200d410346044041012104200421034101210d0c010b200d410446044020014100462105200504404108210d05410b210d0b0c010b200d410546044020004101462106200604404103210d054106210d0b0c010b200d41064604404104210d0c010b200d4107460440200721034101210d0c010b200d410846044041022108200821074107210d0c010b200d410946044041012109200921074107210d0c010b200d410a4604404102210a200a21074107210d0c010b200d410b4604402001410146210b200b04404109210d05410c210d0b0c010b200d410c460440410a210d0c010b200d410d460440000b0b000bbc0108017f017f017f017f017f017f017f017f4100210803402008410046044020004100462101200104404102210805410521080b0c010b2008410146044020020f0b200841024604404101210320032102410121080c010b200841034604404101210420042102410121080c010b200841044604404100210520052102410121080c010b2008410546044020004101462106200604404103210805410621080b0c010b20084106460440410421080c010b20084107460440000b0b000b1701017f230021012300200041076a4178716a240020010b1801017f200010062101230024012001ad2000ad422086840b0600230124000b",
+ "bytes_sha256": "f880198cf0db2f4b126cc2a35b167832f990830226cde8307ed93dcaebacda67",
+ "bytes_hex": "0061736d0100000001370960047f7f7f7f017f60087f7f7f7f7f7f7f7f017f60017f017f60017f017f60027f7f017f60017f017f60017f017f60017f017e600000030a09000102030405060708050401008004061f067f0141080b7f0141000b7f0141000b7f0141000b7f0141000b7f0141080b07e8020a266d6e63735f6d6e63735f6861726e6573735f766572646963745f76315f5f636f6d62696e65340000266d6e63735f6d6e63735f6861726e6573735f766572646963745f76315f5f636f6d62696e653800013c6d6e63735f6d6e63735f6861726e6573735f766572646963745f76315f5f636f6d62696e655f5f616c6c5f5f5f5f737065635f5f356538323861303100023c6d6e63735f6d6e63735f6861726e6573735f766572646963745f76315f5f636f6d62696e655f5f616c6c5f5f5f5f737065635f5f66313063663233300003266d6e63735f6d6e63735f6861726e6573735f766572646963745f76315f5f646f6d696e6174650004296d6e63735f6d6e63735f6861726e6573735f766572646963745f76315f5f69735f5f6465636964656400050a6d6e63735f616c6c6f630006106d6e63735f686f73745f6275666665720007166d6e63735f686f73745f6275666665725f72657365740008066d656d6f727902000a960c095704017f017f017f017f4100210703402007410046044041201006210420042000360200200441086a2001360200200441106a2002360200200441186a200336020020041003210520050f0b20074101460440000b0b000b800104017f017f017f017f4100210b0340200b410046044041c0001006210820082000360200200841086a2001360200200841106a2002360200200841186a2003360200200841206a2004360200200841286a2005360200200841306a2006360200200841386a200736020020081002210920090f0b200b4101460440000b0b000bab0317017e017f017f017e017e017f017e017f017f017e017e017f017f017f017f017e017e017e017e017e017e017e017e410024034100210e0340200e4100460440420821014100210220022001210421034101210e0c010b200e4101460440230345044023002401410124030b4200210520042005562106200604404102210e052003210c410024034103210e0b0c010b200e4102460440200120047d210720002007420386a76a280200210820032008100421094201210a2004200a7d210b2004200b540440000b2009200b21042103230123054f04402000280200ad2110200041086a280200ad2111200041106a280200ad2112200041186a280200ad2113200041206a280200ad2114200041286a280200ad2115200041306a280200ad2116200041386a280200ad21172301240041c0001006210020002010a7360200200041086a2011a7360200200041106a2012a7360200200041186a2013a7360200200041206a2014a7360200200041286a2015a7360200200041306a2016a7360200200041386a2017a73602000b4101210e0c010b200e4103460440200c0f0b200e4104460440000b0b000bca0213017e017f017f017e017e017f017e017f017f017e017e017f017f017f017f017e017e017e017e410024044100210e0340200e4100460440420421014100210220022001210421034101210e0c010b200e4101460440230445044023002402410124040b4200210520042005562106200604404102210e052003210c410024044103210e0b0c010b200e4102460440200120047d210720002007420386a76a280200210820032008100421094201210a2004200a7d210b2004200b540440000b2009200b21042103230223054f04402000280200ad2110200041086a280200ad2111200041106a280200ad2112200041186a280200ad21132302240041201006210020002010a7360200200041086a2011a7360200200041106a2012a7360200200041186a2013a73602000b4101210e0c010b200e4103460440200c0f0b200e4104460440000b0b000bca020c017f017f017f017f017f017f017f017f017f017f017f017f4100210d0340200d410046044020004100462102200204404102210d054105210d0b0c010b200d410146044020030f0b200d4102460440200121034101210d0c010b200d410346044041012104200421034101210d0c010b200d410446044020014100462105200504404108210d05410b210d0b0c010b200d410546044020004101462106200604404103210d054106210d0b0c010b200d41064604404104210d0c010b200d4107460440200721034101210d0c010b200d410846044041022108200821074107210d0c010b200d410946044041012109200921074107210d0c010b200d410a4604404102210a200a21074107210d0c010b200d410b4604402001410146210b200b04404109210d05410c210d0b0c010b200d410c460440410a210d0c010b200d410d460440000b0b000bbc0108017f017f017f017f017f017f017f017f4100210803402008410046044020004100462101200104404102210805410521080b0c010b2008410146044020020f0b200841024604404101210320032102410121080c010b200841034604404101210420042102410121080c010b200841044604404100210520052102410121080c010b2008410546044020004101462106200604404103210805410621080b0c010b20084106460440410421080c010b20084107460440000b0b000b1701017f230021012300200041076a4178716a240020010b1801017f200010062101230024052001ad2000ad422086840b0600230524000b",
  "exports": [
-  "combine4",
-  "combine8",
-  "combine_all__spec_5e828a01",
-  "combine_all__spec_f10cf230",
-  "dominate",
-  "is_decided"
+  "mncs_mncs_harness_verdict_v1__combine4",
+  "mncs_mncs_harness_verdict_v1__combine8",
+  "mncs_mncs_harness_verdict_v1__combine__all____spec__5e828a01",
+  "mncs_mncs_harness_verdict_v1__combine__all____spec__f10cf230",
+  "mncs_mncs_harness_verdict_v1__dominate",
+  "mncs_mncs_harness_verdict_v1__is__decided"
  ],
  "function_value_contracts": {
   "combine4": {
@@ -48,40 +48,64 @@
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "name": "Status",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
        "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
        "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "PASS",
+       "1": "FAIL",
+       "2": "UNKNOWN"
       }
      }
     },
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "name": "Status",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
        "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
        "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "PASS",
+       "1": "FAIL",
+       "2": "UNKNOWN"
       }
      }
     },
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "name": "Status",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
        "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
        "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "PASS",
+       "1": "FAIL",
+       "2": "UNKNOWN"
       }
      }
     },
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "name": "Status",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
        "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
        "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "PASS",
+       "1": "FAIL",
+       "2": "UNKNOWN"
       }
      }
     }
@@ -90,10 +114,16 @@
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "name": "Status",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
        "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
        "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "PASS",
+       "1": "FAIL",
+       "2": "UNKNOWN"
       }
      }
     }
@@ -104,80 +134,128 @@
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "name": "Status",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
        "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
        "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "PASS",
+       "1": "FAIL",
+       "2": "UNKNOWN"
       }
      }
     },
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "name": "Status",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
        "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
        "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "PASS",
+       "1": "FAIL",
+       "2": "UNKNOWN"
       }
      }
     },
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "name": "Status",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
        "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
        "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "PASS",
+       "1": "FAIL",
+       "2": "UNKNOWN"
       }
      }
     },
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "name": "Status",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
        "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
        "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "PASS",
+       "1": "FAIL",
+       "2": "UNKNOWN"
       }
      }
     },
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "name": "Status",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
        "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
        "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "PASS",
+       "1": "FAIL",
+       "2": "UNKNOWN"
       }
      }
     },
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "name": "Status",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
        "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
        "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "PASS",
+       "1": "FAIL",
+       "2": "UNKNOWN"
       }
      }
     },
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "name": "Status",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
        "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
        "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "PASS",
+       "1": "FAIL",
+       "2": "UNKNOWN"
       }
      }
     },
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "name": "Status",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
        "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
        "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "PASS",
+       "1": "FAIL",
+       "2": "UNKNOWN"
       }
      }
     }
@@ -186,10 +264,16 @@
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "name": "Status",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
        "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
        "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "PASS",
+       "1": "FAIL",
+       "2": "UNKNOWN"
       }
      }
     }
@@ -199,7 +283,16 @@
    "inputs": [
     {
      "scalar": {
-      "semantic_type": "[Status; N]"
+      "semantic_type": {
+       "sequence": {
+        "element": {
+         "named": "Status"
+        },
+        "bound": {
+         "param": "N"
+        }
+       }
+      }
      }
     }
    ],
@@ -207,10 +300,16 @@
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "name": "Status",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
        "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
        "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "PASS",
+       "1": "FAIL",
+       "2": "UNKNOWN"
       }
      }
     }
@@ -221,7 +320,12 @@
     {
      "sequence": {
       "semantic_type": "[Status; 8]",
-      "element": "Status",
+      "element": {
+       "finite": {
+        "identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+        "name": "Status"
+       }
+      },
       "length": 8
      }
     }
@@ -230,10 +334,16 @@
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "name": "Status",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
        "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
        "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "PASS",
+       "1": "FAIL",
+       "2": "UNKNOWN"
       }
      }
     }
@@ -244,7 +354,12 @@
     {
      "sequence": {
       "semantic_type": "[Status; 4]",
-      "element": "Status",
+      "element": {
+       "finite": {
+        "identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+        "name": "Status"
+       }
+      },
       "length": 4
      }
     }
@@ -253,10 +368,16 @@
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "name": "Status",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
        "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
        "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "PASS",
+       "1": "FAIL",
+       "2": "UNKNOWN"
       }
      }
     }
@@ -267,20 +388,32 @@
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "name": "Status",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
        "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
        "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "PASS",
+       "1": "FAIL",
+       "2": "UNKNOWN"
       }
      }
     },
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "name": "Status",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
        "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
        "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "PASS",
+       "1": "FAIL",
+       "2": "UNKNOWN"
       }
      }
     }
@@ -289,10 +422,16 @@
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "name": "Status",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
        "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
        "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "PASS",
+       "1": "FAIL",
+       "2": "UNKNOWN"
       }
      }
     }
@@ -303,10 +442,437 @@
     {
      "finite": {
       "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "name": "Status",
       "variants": {
        "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
        "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
        "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "PASS",
+       "1": "FAIL",
+       "2": "UNKNOWN"
+      }
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "scalar": {
+      "semantic_type": "bool"
+     }
+    }
+   ]
+  },
+  "mncs.harness.verdict.v1::combine4": {
+   "inputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "name": "Status",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "PASS",
+       "1": "FAIL",
+       "2": "UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "name": "Status",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "PASS",
+       "1": "FAIL",
+       "2": "UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "name": "Status",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "PASS",
+       "1": "FAIL",
+       "2": "UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "name": "Status",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "PASS",
+       "1": "FAIL",
+       "2": "UNKNOWN"
+      }
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "name": "Status",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "PASS",
+       "1": "FAIL",
+       "2": "UNKNOWN"
+      }
+     }
+    }
+   ]
+  },
+  "mncs.harness.verdict.v1::combine8": {
+   "inputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "name": "Status",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "PASS",
+       "1": "FAIL",
+       "2": "UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "name": "Status",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "PASS",
+       "1": "FAIL",
+       "2": "UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "name": "Status",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "PASS",
+       "1": "FAIL",
+       "2": "UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "name": "Status",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "PASS",
+       "1": "FAIL",
+       "2": "UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "name": "Status",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "PASS",
+       "1": "FAIL",
+       "2": "UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "name": "Status",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "PASS",
+       "1": "FAIL",
+       "2": "UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "name": "Status",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "PASS",
+       "1": "FAIL",
+       "2": "UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "name": "Status",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "PASS",
+       "1": "FAIL",
+       "2": "UNKNOWN"
+      }
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "name": "Status",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "PASS",
+       "1": "FAIL",
+       "2": "UNKNOWN"
+      }
+     }
+    }
+   ]
+  },
+  "mncs.harness.verdict.v1::combine_all": {
+   "inputs": [
+    {
+     "scalar": {
+      "semantic_type": {
+       "sequence": {
+        "element": {
+         "named": "Status"
+        },
+        "bound": {
+         "param": "N"
+        }
+       }
+      }
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "name": "Status",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "PASS",
+       "1": "FAIL",
+       "2": "UNKNOWN"
+      }
+     }
+    }
+   ]
+  },
+  "mncs.harness.verdict.v1::combine_all__spec_5e828a01": {
+   "inputs": [
+    {
+     "sequence": {
+      "semantic_type": "[Status; 8]",
+      "element": {
+       "finite": {
+        "identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+        "name": "Status"
+       }
+      },
+      "length": 8
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "name": "Status",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "PASS",
+       "1": "FAIL",
+       "2": "UNKNOWN"
+      }
+     }
+    }
+   ]
+  },
+  "mncs.harness.verdict.v1::combine_all__spec_f10cf230": {
+   "inputs": [
+    {
+     "sequence": {
+      "semantic_type": "[Status; 4]",
+      "element": {
+       "finite": {
+        "identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+        "name": "Status"
+       }
+      },
+      "length": 4
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "name": "Status",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "PASS",
+       "1": "FAIL",
+       "2": "UNKNOWN"
+      }
+     }
+    }
+   ]
+  },
+  "mncs.harness.verdict.v1::dominate": {
+   "inputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "name": "Status",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "PASS",
+       "1": "FAIL",
+       "2": "UNKNOWN"
+      }
+     }
+    },
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "name": "Status",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "PASS",
+       "1": "FAIL",
+       "2": "UNKNOWN"
+      }
+     }
+    }
+   ],
+   "outputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "name": "Status",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "PASS",
+       "1": "FAIL",
+       "2": "UNKNOWN"
+      }
+     }
+    }
+   ]
+  },
+  "mncs.harness.verdict.v1::is_decided": {
+   "inputs": [
+    {
+     "finite": {
+      "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+      "name": "Status",
+      "variants": {
+       "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
+       "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
+       "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+      },
+      "variant_names": {
+       "0": "PASS",
+       "1": "FAIL",
+       "2": "UNKNOWN"
       }
      }
     }
@@ -324,10 +890,16 @@
   "Status": {
    "finite": {
     "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+    "name": "Status",
     "variants": {
      "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
      "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
      "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+    },
+    "variant_names": {
+     "0": "PASS",
+     "1": "FAIL",
+     "2": "UNKNOWN"
     },
     "payloads": {
      "0": [],
@@ -339,10 +911,16 @@
   "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status": {
    "finite": {
     "type_identity": "mncs:0.2:finite-type:mncs.harness.verdict.v1::Status",
+    "name": "Status",
     "variants": {
      "0": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::PASS",
      "1": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::FAIL",
      "2": "mncs:0.2:finite-variant:mncs.harness.verdict.v1::Status::UNKNOWN"
+    },
+    "variant_names": {
+     "0": "PASS",
+     "1": "FAIL",
+     "2": "UNKNOWN"
     },
     "payloads": {
      "0": [],

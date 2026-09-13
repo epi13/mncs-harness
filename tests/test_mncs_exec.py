@@ -64,7 +64,16 @@ class ArtifactIntegrityTests(unittest.TestCase):
         }
         for kernel, functions in required.items():
             artifact = mncs_runtime.load_kernel(kernel)
-            self.assertTrue(functions <= set(artifact.exports), kernel)
+            contracts = set(
+                artifact.raw().get("function_value_contracts", {})
+            )
+            available = set(artifact.exports) | contracts
+            available |= {
+                function
+                for function in functions
+                if f"{artifact.module}::{function}" in contracts
+            }
+            self.assertTrue(functions <= available, kernel)
 
 
 class RealExecutionTests(unittest.TestCase):

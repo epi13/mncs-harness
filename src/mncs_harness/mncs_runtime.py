@@ -146,7 +146,13 @@ def load_kernel(kernel: str, backend: str | None = None) -> KernelArtifact:
 def _discriminant_map(artifact: KernelArtifact, function: str) -> dict[str, int]:
     """Resolve (type_identity, variant) -> discriminant from artifact contracts."""
     raw = artifact.raw()
-    contracts = raw.get("function_value_contracts", {}).get(function, {})
+    function_contracts = raw.get("function_value_contracts", {})
+    contract_name = function
+    if contract_name not in function_contracts:
+        qualified_name = f"{artifact.module}::{function}"
+        if qualified_name in function_contracts:
+            contract_name = qualified_name
+    contracts = function_contracts.get(contract_name, {})
     mapping: dict[str, int] = {}
     for entry in contracts.get("inputs", []) + contracts.get("outputs", []):
         finite = entry.get("finite", {})
@@ -218,7 +224,13 @@ def call(kernel: str, function: str, args: list[Any], *, timeout: int = 120) -> 
     falls back to Python.
     """
     artifact = load_kernel(kernel)
-    if function not in artifact.exports:
+    # Current MNCS backends may mangle the physical export name while keeping
+    # the source-level function in ``function_value_contracts``. The execution
+    # request intentionally uses the stable source-level name. Older artifacts
+    # expose that name directly, so accept either representation.
+    function_contracts = artifact.raw().get("function_value_contracts", {})
+    qualified_name = f"{artifact.module}::{function}"
+    if function not in artifact.exports and function not in function_contracts and qualified_name not in function_contracts:
         raise MncsRuntimeError(f"{artifact.module}::{function} is not an artifact export")
     discriminants = _discriminant_map(artifact, function)
     corpus = {

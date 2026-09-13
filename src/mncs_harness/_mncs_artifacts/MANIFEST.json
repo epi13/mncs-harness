@@ -4,11 +4,11 @@
   "harness_routing.wasm.json": {
    "module": "mncs.harness.routing.v1",
    "backend": "mncs-portable-wasm-mvp",
-   "identity": "mncs:compiler:backend-artifact:335dcc38e400d71ed6d7e31b032864e387e4c8b04f18115da87106fd5af016b1",
-   "bytes_sha256": "f3ac64b2ab68c5226bcd8523f7bde3f380f30a714e26c2ce11567bd79a43ad3b",
+   "identity": "mncs:compiler:backend-artifact:0905fef2f6e4a18e11a2434b3586bbb9cc6ed078230fe5420e6a7b0db3e3b2af",
+   "bytes_sha256": "0f74dd9dad81338609d5b2b0985c430a6bd00138aeab4c3cb6c5ac111d56dec1",
    "exports": [
-    "classify_route",
-    "needs_coder"
+    "mncs_mncs_harness_routing_v1__classify__route",
+    "mncs_mncs_harness_routing_v1__needs__coder"
    ],
    "source": "mncs/harness_routing.mncs",
    "source_sha256": "sha256:1be174c81a8833935b5935d784288e31ce184cacfdc97bc1ee4e9fa21104b9f3",
@@ -17,8 +17,8 @@
   "harness_routing.bytecode.json": {
    "module": "mncs.harness.routing.v1",
    "backend": "mncs-research-bytecode",
-   "identity": "mncs:compiler:backend-artifact:2688e46b2b810ef8539ca4b4c8a3cd53b87bb4365230e75d24eefe6cc9fa6302",
-   "bytes_sha256": "a8732811aa917ffae9f905b503e3fd2cc1bdfa616f553cec7b1eeca629aa1c45",
+   "identity": "mncs:compiler:backend-artifact:0fe56a3cd98629c602a0047bbee7a68ff42b1fc7cb534b2c40da743ed330c389",
+   "bytes_sha256": "a43f5aed2ba402dd4664f91d3cc86a9eed03f46c89381f8d17a1f60854516cbe",
    "exports": [
     "classify_route",
     "needs_coder"
@@ -30,13 +30,13 @@
   "harness_policy.wasm.json": {
    "module": "mncs.harness.policy.v1",
    "backend": "mncs-portable-wasm-mvp",
-   "identity": "mncs:compiler:backend-artifact:b23d27219456725ad5de4f63e634277deeb228828dbd52b02074be8c83170880",
-   "bytes_sha256": "1f88993e89d374f1125508f4b9f9aa75cdb8eb94f23d94363c52c4c709a169ad",
+   "identity": "mncs:compiler:backend-artifact:6ff1e9c4146555d08f6b5435af89209e340e696efb2fe64b8b39840abff8934b",
+   "bytes_sha256": "1031a68f2f288734afb6024e3380064a67e692100e832fba813368f584d8f22c",
    "exports": [
-    "evaluate_command",
-    "evaluate_write",
-    "publication_gate",
-    "reason_of"
+    "mncs_mncs_harness_policy_v1__evaluate__command",
+    "mncs_mncs_harness_policy_v1__evaluate__write",
+    "mncs_mncs_harness_policy_v1__publication__gate",
+    "mncs_mncs_harness_policy_v1__reason__of"
    ],
    "source": "mncs/harness_policy.mncs",
    "source_sha256": "sha256:d73a6ed8b607d09bbeb107ecefc81c4ae2a8c8e932bdd7d205de03b9166f3cd3",
@@ -45,8 +45,8 @@
   "harness_policy.bytecode.json": {
    "module": "mncs.harness.policy.v1",
    "backend": "mncs-research-bytecode",
-   "identity": "mncs:compiler:backend-artifact:9264fd6f617fb5306fc5b3b46197a1c814349b86d7f6fe63a63d267c798303a9",
-   "bytes_sha256": "ca4a845ab2a4114d7250f2beebd1baec447238b0a31351aa049d83a400519cac",
+   "identity": "mncs:compiler:backend-artifact:bd97be5255b4bbe567911d4e265b5f025d898e4501f36333994c69db60e06ad3",
+   "bytes_sha256": "2487f974b5bb478b36c3acd55d3a2f23189777c8538051441ec19abc211e37e0",
    "exports": [
     "evaluate_command",
     "evaluate_write",
@@ -60,15 +60,15 @@
   "harness_verdict.wasm.json": {
    "module": "mncs.harness.verdict.v1",
    "backend": "mncs-portable-wasm-mvp",
-   "identity": "mncs:compiler:backend-artifact:189bb339bbf0033fa28bee989d14fa7bbff7b6eb25ffb431c4948aabb159abcf",
-   "bytes_sha256": "ac3bb87162b7fe11cd4ff8245a6d1db9e6433b6b9375afe5ead4aeb0a9165814",
+   "identity": "mncs:compiler:backend-artifact:219b0c1038dcdeb1be90cceb70525175501c5e0b59836eb5ee2566a2ac8f5223",
+   "bytes_sha256": "f880198cf0db2f4b126cc2a35b167832f990830226cde8307ed93dcaebacda67",
    "exports": [
-    "combine4",
-    "combine8",
-    "combine_all__spec_5e828a01",
-    "combine_all__spec_f10cf230",
-    "dominate",
-    "is_decided"
+    "mncs_mncs_harness_verdict_v1__combine4",
+    "mncs_mncs_harness_verdict_v1__combine8",
+    "mncs_mncs_harness_verdict_v1__combine__all____spec__5e828a01",
+    "mncs_mncs_harness_verdict_v1__combine__all____spec__f10cf230",
+    "mncs_mncs_harness_verdict_v1__dominate",
+    "mncs_mncs_harness_verdict_v1__is__decided"
    ],
    "source": "mncs/harness_verdict.mncs",
    "source_sha256": "sha256:7f0b83c8db2bcb3b00b42409d461cbe355012fc9f9fba7d35f0122413ac46a4c",
@@ -77,8 +77,8 @@
   "harness_verdict.bytecode.json": {
    "module": "mncs.harness.verdict.v1",
    "backend": "mncs-research-bytecode",
-   "identity": "mncs:compiler:backend-artifact:22366cf078be04ea2964eb777bb639d6047d374728ece2ee8376c2a380a2ddf9",
-   "bytes_sha256": "0c8d410c66c768773557a06af35e5198647ca23915b31def2c850bb1dc85c4c5",
+   "identity": "mncs:compiler:backend-artifact:459c59056f352f46d4b1f1124dc7dcdb7ea6463579da369ae6f4b1f2483049a5",
+   "bytes_sha256": "b357004090af61a61681fdb5d55aa7f53eded215e0a6c82dcdd41a2f3eba36a8",
    "exports": [
     "combine4",
     "combine8",
@@ -95,14 +95,14 @@
   "harness_atlas.wasm.json": {
    "module": "mncs.harness.atlas.v1",
    "backend": "mncs-portable-wasm-mvp",
-   "identity": "mncs:compiler:backend-artifact:3d63962720009c30c331e6c3b1673ecef786788f03f466c1190e5d40ed8e9b1f",
-   "bytes_sha256": "756ffeea1f84e7e50e0ce0476159eb6ee2c269edaa685dcbf4b96930adcff19b",
+   "identity": "mncs:compiler:backend-artifact:1643d3a641fe552832e59c16244c59ac561aca4282d960ef5ebd337b3965bf0e",
+   "bytes_sha256": "1f412bdea7e57de53e3606a7e10d2d9d821af32094aff7e222287904f098a50c",
    "exports": [
-    "dispatch_gate",
-    "fold4",
-    "fold_all__spec_f10cf230",
-    "fold_pair",
-    "tool_admission"
+    "mncs_mncs_harness_atlas_v1__dispatch__gate",
+    "mncs_mncs_harness_atlas_v1__fold4",
+    "mncs_mncs_harness_atlas_v1__fold__all____spec__f10cf230",
+    "mncs_mncs_harness_atlas_v1__fold__pair",
+    "mncs_mncs_harness_atlas_v1__tool__admission"
    ],
    "source": "mncs/harness_atlas.mncs",
    "source_sha256": "sha256:a1834aef6d68cb1e2cc9b95ef3c23da05786cc0922894993c15eb7899630a456",
@@ -111,8 +111,8 @@
   "harness_atlas.bytecode.json": {
    "module": "mncs.harness.atlas.v1",
    "backend": "mncs-research-bytecode",
-   "identity": "mncs:compiler:backend-artifact:3dd89fe81eef2b53f20ac820bf6fced36e60daaa9732dbe65dff7d981e65b35c",
-   "bytes_sha256": "25edda6a12ea04f4c46933e9f333c41375b7db679465dd24b96967db811df6fd",
+   "identity": "mncs:compiler:backend-artifact:7d9c9889e27aacfd828dcd401a2c56e9efef0a360709a6c49a0f9dc6978f2f08",
+   "bytes_sha256": "648136b1855b331e7fc39a09782d66cbadc3847459aeee54c3801f138af5f225",
    "exports": [
     "dispatch_gate",
     "fold4",
@@ -128,18 +128,18 @@
   "harness_pins.wasm.json": {
    "module": "mncs.harness.pins.v1",
    "backend": "mncs-portable-wasm-mvp",
-   "identity": "mncs:compiler:backend-artifact:d89ba60e889dac05f4cd526ff6bc2833ee8059c5c60b15444520bd9c6ec1858a",
-   "bytes_sha256": "f5138c5abe9c7ab6e5adfbe2b0ad427767ee6f22ad76450840639a2c8b14ec84",
+   "identity": "mncs:compiler:backend-artifact:1e2e7a6fc1fd71793aa9f5f28cd208fc570b2ca13f7dfc66052ddcdd57972ab9",
+   "bytes_sha256": "dc2701416516ae58960f3fb2185da8e877fac801966e05af2f9708212aff2cb4",
    "exports": [
-    "admit_placement",
-    "all_pins",
-    "is_exact_pin",
-    "no_flags",
-    "only_model",
-    "only_role",
-    "only_worker",
-    "pin_fields_valid",
-    "worker_and_model"
+    "mncs_mncs_harness_pins_v1__admit__placement",
+    "mncs_mncs_harness_pins_v1__all__pins",
+    "mncs_mncs_harness_pins_v1__is__exact__pin",
+    "mncs_mncs_harness_pins_v1__no__flags",
+    "mncs_mncs_harness_pins_v1__only__model",
+    "mncs_mncs_harness_pins_v1__only__role",
+    "mncs_mncs_harness_pins_v1__only__worker",
+    "mncs_mncs_harness_pins_v1__pin__fields__valid",
+    "mncs_mncs_harness_pins_v1__worker__and__model"
    ],
    "source": "mncs/harness_pins.mncs",
    "source_sha256": "sha256:a5fa50389b3f64056e75ce1f4f3d15bfd923554c8b7d8a1a1384bcd18f69d1bd",
@@ -148,8 +148,8 @@
   "harness_pins.bytecode.json": {
    "module": "mncs.harness.pins.v1",
    "backend": "mncs-research-bytecode",
-   "identity": "mncs:compiler:backend-artifact:cd04b88a2276c2edeca9864f5fca5841bbb31f34fd268645ad9f19304fdd663a",
-   "bytes_sha256": "e3ae246d97b3d6f4053b4ee0589874d33ec23d05dc5997c544cedd970dd97ed4",
+   "identity": "mncs:compiler:backend-artifact:4cd3cdc537a6ffa2d4e49d13858f441f88d1f16b525ac92b380c31e66099ec79",
+   "bytes_sha256": "97b7903c8cfd19881f143f929d6b2aaee8ab83eabbbb54cf986404c081436417",
    "exports": [
     "admit_placement",
     "all_pins",
@@ -168,11 +168,11 @@
   "harness_fabric.wasm.json": {
    "module": "mncs.harness.fabric.v1",
    "backend": "mncs-portable-wasm-mvp",
-   "identity": "mncs:compiler:backend-artifact:65a6858a833ae79b4f3b155d290833fd2e23fe56cca829029e00701ecaf2969e",
-   "bytes_sha256": "38fed55bef47f682ee03ddb09f336570aee670fe46c4f32ac918f520607e1003",
+   "identity": "mncs:compiler:backend-artifact:809cd9f638d47d6d2305a11dae686bd2c7a70659ba51c7d1634ce758b65f0140",
+   "bytes_sha256": "1992e050392183c3043483872c4c3472a9418960371040340979266545feaa88",
    "exports": [
-    "classify_fabric",
-    "dispatch_allowed"
+    "mncs_mncs_harness_fabric_v1__classify__fabric",
+    "mncs_mncs_harness_fabric_v1__dispatch__allowed"
    ],
    "source": "mncs/harness_fabric.mncs",
    "source_sha256": "sha256:341e19d7d6d9585848fb1510f020e3394113b20290dc134382ad164cb7e36bc1",
@@ -181,8 +181,8 @@
   "harness_fabric.bytecode.json": {
    "module": "mncs.harness.fabric.v1",
    "backend": "mncs-research-bytecode",
-   "identity": "mncs:compiler:backend-artifact:9a5adaac27a4c456d114a9feb053fa70337a4436692769537f401bfb24798a26",
-   "bytes_sha256": "30732587ea70c499e69306f2aa4035ecf2ff467e4a7b42cea9a14f705138d216",
+   "identity": "mncs:compiler:backend-artifact:b6c5936701ec77bbbbc7d3971618d2bfd6e900e8809fb69984a236b9a1d5be96",
+   "bytes_sha256": "b15d793d3ea860d86484344095b635470ce1b9cb7b545231c4b4f75953fcea22",
    "exports": [
     "classify_fabric",
     "dispatch_allowed"
@@ -194,15 +194,15 @@
   "harness_readiness.wasm.json": {
    "module": "mncs.harness.readiness.v1",
    "backend": "mncs-portable-wasm-mvp",
-   "identity": "mncs:compiler:backend-artifact:41ecb72e641d783c3605102a2be6a3dadbef474a8290b2005522c5b2da563642",
-   "bytes_sha256": "4e0768a503fd1320664f06f67421c17295d5eff5832a3dd0104a57e68c8f83d3",
+   "identity": "mncs:compiler:backend-artifact:b33484aa5dd090fe8222ace8059a951fd6cdbbe8bde9e6b82a4e2d3394525e1b",
+   "bytes_sha256": "52ebc5bbd138a1b387667ddfe769b7fd522a64452cec05294c2630aa0ff739cd",
    "exports": [
-    "dominate_readiness",
-    "fold4",
-    "fold8",
-    "fold_readiness__spec_5e828a01",
-    "fold_readiness__spec_f10cf230",
-    "is_ready"
+    "mncs_mncs_harness_readiness_v1__dominate__readiness",
+    "mncs_mncs_harness_readiness_v1__fold4",
+    "mncs_mncs_harness_readiness_v1__fold8",
+    "mncs_mncs_harness_readiness_v1__fold__readiness____spec__5e828a01",
+    "mncs_mncs_harness_readiness_v1__fold__readiness____spec__f10cf230",
+    "mncs_mncs_harness_readiness_v1__is__ready"
    ],
    "source": "mncs/harness_readiness.mncs",
    "source_sha256": "sha256:fea7a82b3f293dee912d87bddc8a1dc63162fac6acc68a843daaf7f1c4a42a8d",
@@ -211,8 +211,8 @@
   "harness_readiness.bytecode.json": {
    "module": "mncs.harness.readiness.v1",
    "backend": "mncs-research-bytecode",
-   "identity": "mncs:compiler:backend-artifact:c0c5be5394c944a29f422d24f0240e7cb4f719c856211ea5584cfaf18ab45843",
-   "bytes_sha256": "9311060e3c6ea49ec01b0069952e95e64a512c91a77bd35f4e8902f840fb0515",
+   "identity": "mncs:compiler:backend-artifact:6832eaccb54a70f7f3b2052ceed0b05d6520cd86cf02001d4d60f71a2fdad7a2",
+   "bytes_sha256": "e3386989411b7cb3371c204c2cba69416dbe0ad55f17657114a2966de8b2bf8e",
    "exports": [
     "dominate_readiness",
     "fold4",
@@ -229,20 +229,20 @@
   "harness_eligibility.wasm.json": {
    "module": "mncs.harness.eligibility.v1",
    "backend": "mncs-portable-wasm-mvp",
-   "identity": "mncs:compiler:backend-artifact:62786304aeaab8c037c3c68202400aa8c73f79133557dc5113d30d1ce66b13de",
-   "bytes_sha256": "c07606ecf701dcd8c9d9f95684b22992bff7d2cdbf54428a801135befb6c5866",
+   "identity": "mncs:compiler:backend-artifact:69291f6700cccd6c0ee069f2741c921f73ad21acdf076697c460a06713046b51",
+   "bytes_sha256": "eb07a5c25b198290c06728768ab5a1fffe4be097e552def7b3ded108a3727a6d",
    "exports": [
-    "capability_eligible",
-    "capability_source",
-    "code_edit_gate",
-    "completion_fail_closed",
-    "completion_gate",
-    "completion_unknown",
-    "residency_admit",
-    "resource_gate",
-    "tools_compat",
-    "tools_gate",
-    "tools_unknown"
+    "mncs_mncs_harness_eligibility_v1__capability__eligible",
+    "mncs_mncs_harness_eligibility_v1__capability__source",
+    "mncs_mncs_harness_eligibility_v1__code__edit__gate",
+    "mncs_mncs_harness_eligibility_v1__completion__fail__closed",
+    "mncs_mncs_harness_eligibility_v1__completion__gate",
+    "mncs_mncs_harness_eligibility_v1__completion__unknown",
+    "mncs_mncs_harness_eligibility_v1__residency__admit",
+    "mncs_mncs_harness_eligibility_v1__resource__gate",
+    "mncs_mncs_harness_eligibility_v1__tools__compat",
+    "mncs_mncs_harness_eligibility_v1__tools__gate",
+    "mncs_mncs_harness_eligibility_v1__tools__unknown"
    ],
    "source": "mncs/harness_eligibility.mncs",
    "source_sha256": "sha256:4f4d748aee1377642177dc2c47ebe98391d429b7074a504f0e8cb48c2b4c80d4",
@@ -251,8 +251,8 @@
   "harness_eligibility.bytecode.json": {
    "module": "mncs.harness.eligibility.v1",
    "backend": "mncs-research-bytecode",
-   "identity": "mncs:compiler:backend-artifact:20889c1a0c52fed20723b01f77af6e3e2e9da93b95e73906d7e45f90f7d1eaa3",
-   "bytes_sha256": "a26814ee6376d8941e2fc5b39a01a126f492122afe762fd30dabf71cd9bb070e",
+   "identity": "mncs:compiler:backend-artifact:c4eb6f15302d58e5d3d38f2e38a6aa8b4c7004b4e80121a8ddc8771a86e9ed0f",
+   "bytes_sha256": "22a922035b32718bd28cf3edf188e156e21ee6a29e9ae0c6bdf79de49b8a8002",
    "exports": [
     "capability_eligible",
     "capability_source",
@@ -273,11 +273,11 @@
   "harness_freshness.wasm.json": {
    "module": "mncs.harness.freshness.v1",
    "backend": "mncs-portable-wasm-mvp",
-   "identity": "mncs:compiler:backend-artifact:6d0e48e7d325452e5d49feb9c0cb8c218808bbfdc29c0b78576f920c56eb6a7f",
-   "bytes_sha256": "3aef30056f16cb2b316308fc5eb2bbef3b4af6d8276b3b599ea548b6ad90b38c",
+   "identity": "mncs:compiler:backend-artifact:d60c82a91bb9047a6b9bc66de84f24285f058c6f25016611ce28b049d82dad1d",
+   "bytes_sha256": "e2ca26116ffb64500d89b60c4bf892c161711719c929d665ca0ddd192aac25d4",
    "exports": [
-    "attestation_window_ok",
-    "observation_fresh"
+    "mncs_mncs_harness_freshness_v1__attestation__window__ok",
+    "mncs_mncs_harness_freshness_v1__observation__fresh"
    ],
    "source": "mncs/harness_freshness.mncs",
    "source_sha256": "sha256:bad1b29caf6d253ec1c732f8950d7429d97bd5ef968a008b7c09b497f94ce3bc",
@@ -286,8 +286,8 @@
   "harness_freshness.bytecode.json": {
    "module": "mncs.harness.freshness.v1",
    "backend": "mncs-research-bytecode",
-   "identity": "mncs:compiler:backend-artifact:7ed70504ce4189fc88983f2300efed683dfc4fd2cb4c8720947d11af6fa03e4b",
-   "bytes_sha256": "f2f595325c2da67b7388426d179752611b73af6c5e43976336a2b6729ae51cc7",
+   "identity": "mncs:compiler:backend-artifact:500f0a359c66ffe4e795b6f309cc804d9bae5fde7e467a8c40aa8673981e1ef3",
+   "bytes_sha256": "02d70e2ff601b824f59b3c1c1de276612932c1f2a4dda39baea78d962312c3c5",
    "exports": [
     "attestation_window_ok",
     "observation_fresh"
