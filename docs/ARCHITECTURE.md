@@ -131,6 +131,22 @@ owns durable shared coordination/history; Forge owns evaluation, evidence, and c
 semantics. A submitting client may disconnect after Fabric acceptance without
 transferring any of these authority boundaries.
 
+## Atlas context preflight
+
+Every routed `ask`, interactive `chat` turn, and detached `submit` may receive a
+small family-awareness capsule from the local MNCS Atlas checkout. Harness identifies
+the workspace, discovers Atlas through `MNCS_ATLAS_ROOT` or the conventional sibling
+checkout, and invokes Atlas's existing `python -m registry context <workspace>` query.
+It does not parse or cache a second copy of the registry and never performs a network
+lookup for preflight.
+
+The capsule is bounded to 6,000 characters and is added to the model's system prompt
+alongside the workspace root. Missing, stale, malformed, or slow Atlas data fails open:
+ordinary Harness routing continues without family context. Operators can inspect the
+same data directly with Atlas for deeper queries. This keeps agent preflight cheap while
+leaving Atlas authoritative for project, capability, ownership, dependency, and decision
+semantics.
+
 Shell access follows the same authority boundary. The preferred primitive remains a
 guarded executable plus argv. Bash or PowerShell script tools may be added where they
 provide real value, but script content must pass policy inspection and approval before
