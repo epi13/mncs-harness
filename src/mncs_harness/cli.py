@@ -15,6 +15,7 @@ from typing import Any, Callable, Sequence
 
 from . import __version__
 from .agent import LocalAgent
+from .atlas_context import load_atlas_context
 from .commons import CommonsError, CommonsSession
 from .commons_operator import CommonsOperatorService
 from .config import bundled_evals_path, default_config_path, initialize_config, load_config
@@ -23,6 +24,7 @@ from .fabric_inventory_session import InventoryAwareFabricSession
 from .fleet import FleetService
 from .metrics import MetricsStore
 from .models import RoutingOverride
+from .prompts import system_prompt
 from .router import plan_route
 from .verifiers import Verifier
 
@@ -215,6 +217,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="Accept exact-pin inference as detached persistent Fabric work and return immediately",
     )
     submit_parser.add_argument("task", nargs="?", help="Task text; reads stdin when omitted")
+    submit_parser.add_argument("--workspace", type=_path, default=Path.cwd())
     _add_routing_arguments(submit_parser)
     submit_parser.add_argument("--idempotency-key")
     submit_parser.add_argument(
@@ -932,6 +935,9 @@ def cmd_submit(args: argparse.Namespace) -> int:
         raise ValueError("elh submit requires exact --worker and --model-name pins")
     config = load_config(args.config)
     task = _task_text(args.task)
+    workspace = args.workspace.resolve()
+    if not workspace.is_dir():
+        raise ValueError(f"Workspace is not a directory: {workspace}")
     atlas_requirement, atlas_leg = _load_atlas_binding(args)
     agent = LocalAgent(
         config,
@@ -969,7 +975,7 @@ def cmd_submit(args: argparse.Namespace) -> int:
     from .tools import ToolRegistry
 
     registry = ToolRegistry(
-        Path.cwd(),
+        workspace,
         config.policy,
         auto_approve=True,
         interactive=False,
@@ -978,9 +984,21 @@ def cmd_submit(args: argparse.Namespace) -> int:
     tools = registry.available_schemas(
         tuple(dict.fromkeys((*model.tools, *agent.commons_session.tool_names)))
     )
+    atlas_context = load_atlas_context(workspace)
     accepted = agent.fabric_session.submit_chat(
         model,
-        [{"role": "user", "content": task}],
+        [
+            {
+                "role": "system",
+                "content": system_prompt(
+                    role,
+                    workspace,
+                    commons_available=agent.commons_session.ready,
+                    atlas_context=atlas_context.prompt_fragment(),
+                ),
+            },
+            {"role": "user", "content": task},
+        ],
         worker_id=selection.worker_id,
         idempotency_key=args.idempotency_key,
         tools=tools or None,
