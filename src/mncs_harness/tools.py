@@ -265,6 +265,22 @@ class ToolRegistry:
         if not tool:
             decision = PolicyDecision(False, "blocked", f"Unknown tool: {name}")
             return ToolExecution(name, arguments, decision.reason, False, decision)
+        # A disabled Commons publication surface is an explicit controller
+        # policy denial. Resolve that cheaper, local condition before asking
+        # Atlas for a consequential-write admission decision.
+        if (
+            self.commons is not None
+            and name in WRITE_TOOLS
+            and not self.commons.config.allow_model_publication
+        ):
+            decision = PolicyDecision(
+                False,
+                "blocked",
+                "Commons model publication is disabled by controller policy",
+            )
+            return ToolExecution(
+                name, arguments, "COMMONS_TOOL_DENIED: " + decision.reason, False, decision
+            )
         needs = TOOL_CAPABILITY_NEEDS.get(name)
         if needs is not None:
             refusal = self._atlas_gate(name, needs)

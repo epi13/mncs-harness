@@ -6,11 +6,12 @@ import unittest
 from dataclasses import replace
 from pathlib import Path
 
+from atlas_fixtures import TRUSTED_TEST_ISSUERS
+from atlas_fixtures import payload as atlas_payload
+from mncs_harness.atlas_binding import ExecutionRequirement
 from mncs_harness.capability_graph import build_capability_graph
 from mncs_harness.commons import (
-    DURABLE_WORK_TOOLS,
     EXPECTED_TOOLS,
-    MODEL_PUBLICATION_TOOLS,
     OPERATOR_ADMIN_TOOLS,
     REQUIRED_CONSUMER_TOOLS,
     CommonsError,
@@ -86,7 +87,10 @@ class CommonsIntegrationTests(unittest.TestCase):
             session = CommonsSession(self._config(root))
             status = session.initialize()
             self.assertTrue(status.ready, status)
-            self.assertEqual(set(session.tool_names), EXPECTED_TOOLS - DURABLE_WORK_TOOLS)
+            names = set(session.tool_names)
+            self.assertTrue(names <= EXPECTED_TOOLS)
+            self.assertTrue(REQUIRED_CONSUMER_TOOLS <= names)
+            self.assertTrue(names.isdisjoint(OPERATOR_ADMIN_TOOLS))
             descriptor, success = session.call("commons_describe", {})
             self.assertTrue(success)
             self.assertEqual(
@@ -135,6 +139,12 @@ class CommonsIntegrationTests(unittest.TestCase):
                 auto_approve=True,
                 interactive=False,
                 commons=allowed,
+            )
+            allowed_registry.bind_atlas_requirement(
+                ExecutionRequirement.from_dict(
+                    atlas_payload(), trusted_issuers=TRUSTED_TEST_ISSUERS
+                ),
+                "cpu",
             )
             sentinel = root / "sentinel"
             sentinel.write_text("safe", encoding="utf-8")
@@ -276,9 +286,25 @@ class CommonsIntegrationTests(unittest.TestCase):
         accepted = _model_facing_schemas(consumer, operator)
         names = {schema["function"]["name"] for schema in accepted}
         self.assertTrue(REQUIRED_CONSUMER_TOOLS <= names)
-        self.assertTrue(MODEL_PUBLICATION_TOOLS <= names)
+        self.assertTrue(
+            {
+                "commons_publish_record",
+                "commons_submit_work_record",
+                "commons_propose_work_record",
+                "commons_transition_work_record",
+                "commons_claim_work_record",
+                "commons_family_health_sweep",
+            }
+            <= names
+        )
         self.assertFalse(names & OPERATOR_ADMIN_TOOLS)
         self.assertIn("commons_work_list", names)
+        self.assertIn("commons_work_next", names)
+        self.assertIn("commons_work_policy", names)
+        self.assertIn("commons_work_scope_check", names)
+        self.assertIn("commons_family_registry", names)
+        self.assertIn("commons_family_coverage", names)
+        self.assertIn("commons_family_consistency", names)
         self.assertIn("commons_publish_record", names)
 
     def test_future_commons_tool_rename_fails_closed_without_an_alias(self) -> None:

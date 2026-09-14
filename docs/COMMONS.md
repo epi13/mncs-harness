@@ -53,10 +53,14 @@ max_response_bytes = 1048576
 The model-facing Commons surface is capability-driven. Consumer-read tools
 (`commons_describe`, `commons_validate_record`, `commons_get_record`,
 `commons_query`, `commons_sync`, `commons_conversation`, `commons_work_list`,
+`commons_work_next`, `commons_work_policy`, `commons_work_scope_check`,
+`commons_family_registry`, `commons_family_coverage`, `commons_family_consistency`,
 `commons_work_status`, `commons_durable_work_list`, `commons_evidence_trace`)
 are read-only policy operations. Model-publication tools
 (`commons_publish_record`, `commons_submit_work_record`,
-`commons_transition_work_record`) mutate persistent controller state and
+`commons_propose_work_record`, `commons_work_propose`,
+`commons_transition_work_record`, `commons_claim_work_record`,
+`commons_family_health_sweep`) mutate persistent controller state and
 require both `allow_model_publication = true` and normal harness approval.
 Operator-admin tools (`commons_retention_status`, `commons_compact_store`) stay
 on the operator socket and are never projected to the model. Compatibility
