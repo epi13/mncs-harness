@@ -24,6 +24,12 @@ CONSUMER_READ_TOOLS = frozenset(
         "commons_sync",
         "commons_conversation",
         "commons_work_list",
+        "commons_work_next",
+        "commons_work_policy",
+        "commons_work_scope_check",
+        "commons_family_registry",
+        "commons_family_coverage",
+        "commons_family_consistency",
         "commons_work_status",
         "commons_durable_work_list",
         "commons_evidence_trace",
@@ -47,6 +53,10 @@ MODEL_PUBLICATION_TOOLS = frozenset(
     {
         "commons_publish_record",
         "commons_submit_work_record",
+        "commons_propose_work_record",
+        "commons_work_propose",
+        "commons_family_health_sweep",
+        "commons_claim_work_record",
         "commons_transition_work_record",
     }
 )
@@ -495,6 +505,24 @@ class CommonsSession:
             "commons_durable_work_list": lambda: client.work_list(
                 states=arguments.get("states"), limit=arguments.get("limit", 100)
             ),
+            "commons_work_next": lambda: client.work_next(
+                lane=arguments.get("lane"),
+                repository=arguments.get("repository"),
+                capabilities=arguments.get("capabilities"),
+                limit=arguments.get("limit", 1),
+            ),
+            "commons_work_policy": lambda: client.work_policy(arguments.get("lane")),
+            "commons_work_scope_check": lambda: client.work_scope_check(
+                arguments.get("lane", ""),
+                arguments.get("path", ""),
+                repository=arguments.get("repository"),
+                allowed_write_scope=arguments.get("allowedWriteScope"),
+            ),
+            "commons_family_registry": lambda: client.family_registry(),
+            "commons_family_coverage": lambda: client.family_coverage(),
+            "commons_family_consistency": lambda: client.family_consistency(
+                arguments.get("standard", {}), arguments.get("atlas", {})
+            ),
             "commons_evidence_trace": lambda: client.evidence(
                 arguments.get("root", ""),
                 depth=arguments.get("depth", 3),
@@ -507,6 +535,10 @@ class CommonsSession:
             ),
             "commons_publish_record": lambda: self._admin_publish(arguments),
             "commons_submit_work_record": lambda: self._admin_submit_work(arguments),
+            "commons_propose_work_record": lambda: self._admin_propose_work(arguments),
+            "commons_work_propose": lambda: self._admin_propose_work(arguments),
+            "commons_family_health_sweep": lambda: self._admin_family_health_sweep(arguments),
+            "commons_claim_work_record": lambda: self._admin_claim_work(arguments),
             "commons_transition_work_record": lambda: self._admin_transition_work(arguments),
         }
         operation = operations.get(name)
@@ -576,6 +608,44 @@ class CommonsSession:
         if not isinstance(request, dict):
             raise CommonsError("COMMONS_INVALID_ARGUMENTS", "request must be an object")
         return admin.submit_work(request)
+
+    def _admin_propose_work(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        admin = self._ensure_admin_client()
+        proposal = arguments.get("proposal")
+        if not isinstance(proposal, dict):
+            raise CommonsError("COMMONS_INVALID_ARGUMENTS", "proposal must be an object")
+        return admin.propose_work(proposal)
+
+    def _admin_family_health_sweep(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        admin = self._ensure_admin_client()
+        observations = arguments.get("observations")
+        if not isinstance(observations, list) or not all(
+            isinstance(item, dict) for item in observations
+        ):
+            raise CommonsError(
+                "COMMONS_INVALID_ARGUMENTS", "observations must be a list of objects"
+            )
+        return admin.family_health_sweep(observations)
+
+    def _admin_claim_work(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        admin = self._ensure_admin_client()
+        work_id = arguments.get("workId")
+        actor = arguments.get("actor")
+        expected_digest = arguments.get("expectedPreviousDigest")
+        if not isinstance(work_id, str) or not isinstance(actor, dict) or not isinstance(
+            expected_digest, str
+        ):
+            raise CommonsError(
+                "COMMONS_INVALID_ARGUMENTS",
+                "workId, actor, and expectedPreviousDigest are required",
+            )
+        return admin.claim_work(
+            work_id,
+            actor=actor,
+            expected_previous_digest=expected_digest,
+            session_id=arguments.get("sessionId"),
+            lane=arguments.get("lane"),
+        )
 
     def _admin_transition_work(self, arguments: dict[str, Any]) -> dict[str, Any]:
         admin = self._ensure_admin_client()
