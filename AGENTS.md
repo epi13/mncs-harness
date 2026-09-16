@@ -33,7 +33,7 @@ a reason to grow a harness-local substitute.
 Unresolved needs become development-pressure evidence with an explicit owner
 (same authority vocabulary as the mncs-actions contract: pressure semantics
 MNCDS, rights mncs-rights-provenance, coordination MNCS-Commons, language
-capability mncs-language, assurance mncs-forge-mcp, transport the routing
+capability mncs-language, assurance mncs-forge, transport the routing
 repository). Fix upstream, re-run that repository's suite, then resume here.
 
 ## 3. Routing and acceptance must be evidence-honest
