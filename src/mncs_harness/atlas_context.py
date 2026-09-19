@@ -1,6 +1,6 @@
-"""Small, local Atlas context capsules for agent preflight.
+"""Small, local Atlas context capsules for optional orientation.
 
-Harness deliberately treats Atlas as an optional local producer.  It discovers
+Harness deliberately treats Atlas as an optional orientation producer.  It discovers
 the existing Atlas CLI and asks it for a context capsule; it does not parse the
 registry, fetch repositories, or maintain a second family-knowledge model.
 """
@@ -22,7 +22,7 @@ CAPSULE_TIMEOUT_SECONDS = 2.0
 
 @dataclass(frozen=True)
 class AtlasContext:
-    """Result of the optional local Atlas preflight."""
+    """Result of the optional local Atlas orientation query."""
 
     status: str
     text: str = ""
@@ -37,7 +37,7 @@ class AtlasContext:
         if not self.available:
             return None
         return (
-            "MNCS family context (local Atlas capsule; use targeted Atlas queries for more detail):\n"
+            "MNCS family orientation (local Atlas capsule; Language Service is authoritative; use targeted Atlas queries for more detail):\n"
             f"{self.text}"
         )
 
@@ -85,8 +85,9 @@ def load_atlas_context(
 ) -> AtlasContext:
     """Load a bounded capsule from the local Atlas CLI, failing open.
 
-    Atlas remains authoritative for registry semantics.  A missing, stale, or
-    malformed local checkout must not prevent ordinary Harness operation.
+    Atlas is authoritative only for this optional orientation capsule. A
+    missing, stale, or malformed local checkout must not prevent ordinary
+    Harness operation or alter Language Service completeness.
     """
 
     root = find_atlas_root(workspace, atlas_root)

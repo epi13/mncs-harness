@@ -28,6 +28,7 @@ CONSUMER_READ_TOOLS = frozenset(
         "commons_work_policy",
         "commons_work_scope_check",
         "commons_family_registry",
+        "commons_family_graph",
         "commons_family_coverage",
         "commons_family_consistency",
         "commons_work_status",
@@ -519,6 +520,7 @@ class CommonsSession:
                 allowed_write_scope=arguments.get("allowedWriteScope"),
             ),
             "commons_family_registry": lambda: client.family_registry(),
+            "commons_family_graph": lambda: client.family_graph(),
             "commons_family_coverage": lambda: client.family_coverage(),
             "commons_family_consistency": lambda: client.family_consistency(
                 arguments.get("standard", {}), arguments.get("atlas", {})

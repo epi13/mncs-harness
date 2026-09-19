@@ -10,6 +10,7 @@ from typing import Any
 from . import mncs_exec
 from .atlas_binding import ExecutionRequirement
 from .atlas_context import load_atlas_context
+from .family_context import load_family_context
 from .capability_graph import build_capability_graph
 from .commons import CommonsError, CommonsSession, CommonsStatus
 from .fabric import FabricStatus
@@ -428,6 +429,7 @@ class LocalAgent:
         verifier = Verifier(registry.workspace, self.config.verification)
         enabled_tools = tuple(dict.fromkeys((*model.tools, *self.commons_session.tool_names)))
         tools = registry.available_schemas(enabled_tools)
+        family_context = load_family_context(registry.workspace)
         atlas_context = load_atlas_context(registry.workspace)
         messages: list[dict[str, Any]] = [
             {
@@ -436,6 +438,7 @@ class LocalAgent:
                     role,
                     registry.workspace,
                     commons_available=self.commons_session.ready,
+                    family_context=family_context.prompt_fragment(),
                     atlas_context=atlas_context.prompt_fragment(),
                 ),
             },

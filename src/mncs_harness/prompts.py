@@ -30,6 +30,7 @@ def system_prompt(
     workspace: Path,
     *,
     commons_available: bool = False,
+    family_context: str | None = None,
     atlas_context: str | None = None,
 ) -> str:
     role_text = ROLE_PROMPTS.get(role, ROLE_PROMPTS["reviewer"])
@@ -39,7 +40,8 @@ def system_prompt(
         if commons_available
         else ""
     )
-    context = f"\n\n{atlas_context}" if atlas_context else ""
+    context_parts = [part for part in (family_context, atlas_context) if part]
+    context = "\n\n" + "\n\n".join(context_parts) if context_parts else ""
     return (
         f"{role_text}{commons}\n\n"
         f"Workspace root: {workspace.resolve()}\n"

@@ -131,21 +131,23 @@ owns durable shared coordination/history; Forge owns evaluation, evidence, and c
 semantics. A submitting client may disconnect after Fabric acceptance without
 transferring any of these authority boundaries.
 
-## Atlas context preflight
+## Family context preflight
 
-Every routed `ask`, interactive `chat` turn, and detached `submit` may receive a
-small family-awareness capsule from the local MNCS Atlas checkout. Harness identifies
-the workspace, discovers Atlas through `MNCS_ATLAS_ROOT` or the conventional sibling
-checkout, and invokes Atlas's existing `python -m registry context <workspace>` query.
-It does not parse or cache a second copy of the registry and never performs a network
-lookup for preflight.
+Every routed `ask`, interactive `chat` turn, and detached `submit` may receive one
+bounded family packet from the Language Service `mncs.family-agent-context/1`
+interface. Harness owns prompt assembly and preserves the packet's `complete`,
+`partial`, or `unknown` state; it does not parse Commons, Standard, or language
+repository files itself.
 
-The capsule is bounded to 6,000 characters and is added to the model's system prompt
-alongside the workspace root. Missing, stale, malformed, or slow Atlas data fails open:
-ordinary Harness routing continues without family context. Operators can inspect the
-same data directly with Atlas for deeper queries. This keeps agent preflight cheap while
-leaving Atlas authoritative for project, capability, ownership, dependency, and decision
-semantics.
+The packet is authoritative for family preflight because it composes the validated
+repository-local manifest, the current language/compiler projection, and Commons'
+validated architecture and pressure projections. Missing, stale, malformed, or slow
+required authority remains visible as `partial`/`unknown`; it is never upgraded by
+Atlas or by a local fallback.
+
+Atlas remains an optional, separately labelled orientation fragment for human
+exploration and related-project navigation. It is not an agent preflight authority and
+its absence cannot reduce an otherwise complete Language Service packet.
 
 Shell access follows the same authority boundary. The preferred primitive remains a
 guarded executable plus argv. Bash or PowerShell script tools may be added where they

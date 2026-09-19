@@ -16,6 +16,7 @@ from typing import Any, Callable, Sequence
 from . import __version__
 from .agent import LocalAgent
 from .atlas_context import load_atlas_context
+from .family_context import load_family_context
 from .commons import CommonsError, CommonsSession
 from .commons_operator import CommonsOperatorService
 from .config import bundled_evals_path, default_config_path, initialize_config, load_config
@@ -984,6 +985,7 @@ def cmd_submit(args: argparse.Namespace) -> int:
     tools = registry.available_schemas(
         tuple(dict.fromkeys((*model.tools, *agent.commons_session.tool_names)))
     )
+    family_context = load_family_context(workspace)
     atlas_context = load_atlas_context(workspace)
     accepted = agent.fabric_session.submit_chat(
         model,
@@ -994,6 +996,7 @@ def cmd_submit(args: argparse.Namespace) -> int:
                     role,
                     workspace,
                     commons_available=agent.commons_session.ready,
+                    family_context=family_context.prompt_fragment(),
                     atlas_context=atlas_context.prompt_fragment(),
                 ),
             },
