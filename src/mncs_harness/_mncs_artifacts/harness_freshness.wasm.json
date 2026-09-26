@@ -1,6 +1,6 @@
 {
- "schema_version": "0.5",
- "identity": "mncs:compiler:backend-artifact:a21908e4883359f8cdff5e1ea6c6412218b06b6b8f8a0226acfcc79280f3134c",
+ "schema_version": "0.6",
+ "identity": "mncs:compiler:backend-artifact:e7ef88f79e013863676b9df58039f779d2699424544d4c960f00aa4f8f291d9e",
  "backend": {
   "identity": "mncs:compiler:backend:6bbc6f37c38ffa3353787ff9ea565d07db3755b42efa8a59871374123adbca15",
   "name": "mncs-portable-wasm-mvp",
@@ -38,6 +38,7 @@
   "mncs_mncs_harness_freshness_v1__attestation__window__ok",
   "mncs_mncs_harness_freshness_v1__observation__fresh"
  ],
+ "interface_identity": "ddac6885bd23b33b201ac06d3cc44c971b807fb1684d985a7c6e3f7a4fd5cff0",
  "function_value_contracts": {
   "attestation_window_ok": {
    "inputs": [
@@ -78,6 +79,14 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "issued_at",
+    "now",
+    "max_age"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.freshness.v1::attestation_window_ok": {
@@ -119,6 +128,14 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "issued_at",
+    "now",
+    "max_age"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.freshness.v1::observation_fresh": {
@@ -160,6 +177,14 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "stored",
+    "now",
+    "max_age"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "observation_fresh": {
@@ -201,6 +226,14 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "stored",
+    "now",
+    "max_age"
+   ],
+   "output_names": [
+    "result"
    ]
   }
  },

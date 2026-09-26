@@ -1,6 +1,6 @@
 {
- "schema_version": "0.5",
- "identity": "mncs:compiler:backend-artifact:219b0c1038dcdeb1be90cceb70525175501c5e0b59836eb5ee2566a2ac8f5223",
+ "schema_version": "0.6",
+ "identity": "mncs:compiler:backend-artifact:5bb294183f68f0926aa544e55e7aa1ad2038f6c7cc42e65fb583a541873166cf",
  "backend": {
   "identity": "mncs:compiler:backend:6bbc6f37c38ffa3353787ff9ea565d07db3755b42efa8a59871374123adbca15",
   "name": "mncs-portable-wasm-mvp",
@@ -42,6 +42,7 @@
   "mncs_mncs_harness_verdict_v1__dominate",
   "mncs_mncs_harness_verdict_v1__is__decided"
  ],
+ "interface_identity": "a03acc75aeef0ed8957c2a68c05a80935e72cf5efab6e6b9f9827753ddf560ba",
  "function_value_contracts": {
   "combine4": {
    "inputs": [
@@ -127,6 +128,15 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "first",
+    "second",
+    "third",
+    "fourth"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "combine8": {
@@ -277,6 +287,19 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "first",
+    "second",
+    "third",
+    "fourth",
+    "fifth",
+    "sixth",
+    "seventh",
+    "eighth"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "combine_all": {
@@ -313,6 +336,12 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "checks"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "combine_all__spec_5e828a01": {
@@ -347,6 +376,12 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "checks"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "combine_all__spec_f10cf230": {
@@ -381,6 +416,12 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "checks"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "dominate": {
@@ -435,6 +476,13 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "left",
+    "right"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "is_decided": {
@@ -462,6 +510,12 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "subject"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.verdict.v1::combine4": {
@@ -548,6 +602,15 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "first",
+    "second",
+    "third",
+    "fourth"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.verdict.v1::combine8": {
@@ -698,6 +761,19 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "first",
+    "second",
+    "third",
+    "fourth",
+    "fifth",
+    "sixth",
+    "seventh",
+    "eighth"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.verdict.v1::combine_all": {
@@ -734,6 +810,12 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "checks"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.verdict.v1::combine_all__spec_5e828a01": {
@@ -768,6 +850,12 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "checks"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.verdict.v1::combine_all__spec_f10cf230": {
@@ -802,6 +890,12 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "checks"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.verdict.v1::dominate": {
@@ -856,6 +950,13 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "left",
+    "right"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.verdict.v1::is_decided": {
@@ -883,6 +984,12 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "subject"
+   ],
+   "output_names": [
+    "result"
    ]
   }
  },

@@ -4,7 +4,7 @@
   "harness_routing.wasm.json": {
    "module": "mncs.harness.routing.v1",
    "backend": "mncs-portable-wasm-mvp",
-   "identity": "mncs:compiler:backend-artifact:28313559259fbf16d771d94e0a3b1535e0498d3469487ddc3928d14c7f95e53c",
+   "identity": "mncs:compiler:backend-artifact:ed05c09619411bbe5e96806c61a7e7ae0d6dc66d76e58b62b6a4d6c68d37bb7b",
    "bytes_sha256": "0f74dd9dad81338609d5b2b0985c430a6bd00138aeab4c3cb6c5ac111d56dec1",
    "exports": [
     "mncs_mncs_harness_routing_v1__classify__route",
@@ -17,7 +17,7 @@
   "harness_routing.bytecode.json": {
    "module": "mncs.harness.routing.v1",
    "backend": "mncs-research-bytecode",
-   "identity": "mncs:compiler:backend-artifact:9b971dec2803ef5c1c0ae9b64ffffe6fb50a0ee02b21f9f8fd92931232fb7f0b",
+   "identity": "mncs:compiler:backend-artifact:d3d04ff912ee82949910f9815c7261df8ee9948ff7f2d80a3f6367711b215ac8",
    "bytes_sha256": "5735c2e673a49d8e5b95c4eb732dcabae12c45f4c11fa07bfdd474b2575b063e",
    "exports": [
     "classify_route",
@@ -30,7 +30,7 @@
   "harness_policy.wasm.json": {
    "module": "mncs.harness.policy.v1",
    "backend": "mncs-portable-wasm-mvp",
-   "identity": "mncs:compiler:backend-artifact:fda888d4e8997de2602862a7aa0efedc6a596082f5d79ba3fa3954ddecef8c82",
+   "identity": "mncs:compiler:backend-artifact:5214b1c5169e266bf2e0092ca356bfde160da852e32a94e435e0eb45e8198090",
    "bytes_sha256": "1031a68f2f288734afb6024e3380064a67e692100e832fba813368f584d8f22c",
    "exports": [
     "mncs_mncs_harness_policy_v1__evaluate__command",
@@ -45,7 +45,7 @@
   "harness_policy.bytecode.json": {
    "module": "mncs.harness.policy.v1",
    "backend": "mncs-research-bytecode",
-   "identity": "mncs:compiler:backend-artifact:9c25408aeb3d61b9925c89e4dddc8df701727f01470d5d16fa2ab3430a1cb7a7",
+   "identity": "mncs:compiler:backend-artifact:00b154530e155f0fa0db72e96375aa9766d4bd534c7fd4e1d9991f3d5d394bcf",
    "bytes_sha256": "6cfb3e57124eb49daf60f7473b424d4005dd8dda90bc52617aa9140ddc7bc282",
    "exports": [
     "evaluate_command",
@@ -60,7 +60,7 @@
   "harness_verdict.wasm.json": {
    "module": "mncs.harness.verdict.v1",
    "backend": "mncs-portable-wasm-mvp",
-   "identity": "mncs:compiler:backend-artifact:219b0c1038dcdeb1be90cceb70525175501c5e0b59836eb5ee2566a2ac8f5223",
+   "identity": "mncs:compiler:backend-artifact:5bb294183f68f0926aa544e55e7aa1ad2038f6c7cc42e65fb583a541873166cf",
    "bytes_sha256": "f880198cf0db2f4b126cc2a35b167832f990830226cde8307ed93dcaebacda67",
    "exports": [
     "mncs_mncs_harness_verdict_v1__combine4",
@@ -77,7 +77,7 @@
   "harness_verdict.bytecode.json": {
    "module": "mncs.harness.verdict.v1",
    "backend": "mncs-research-bytecode",
-   "identity": "mncs:compiler:backend-artifact:459c59056f352f46d4b1f1124dc7dcdb7ea6463579da369ae6f4b1f2483049a5",
+   "identity": "mncs:compiler:backend-artifact:f4294f6eeb9d1f39424978845a6986cd7e7321dbc8a86e82885781af8e32fa06",
    "bytes_sha256": "b357004090af61a61681fdb5d55aa7f53eded215e0a6c82dcdd41a2f3eba36a8",
    "exports": [
     "combine4",
@@ -95,7 +95,7 @@
   "harness_atlas.wasm.json": {
    "module": "mncs.harness.atlas.v1",
    "backend": "mncs-portable-wasm-mvp",
-   "identity": "mncs:compiler:backend-artifact:1643d3a641fe552832e59c16244c59ac561aca4282d960ef5ebd337b3965bf0e",
+   "identity": "mncs:compiler:backend-artifact:7e517964ba30f8888570ddd94cb277c22335bd1e894789eeb51a0053299fe4bf",
    "bytes_sha256": "1f412bdea7e57de53e3606a7e10d2d9d821af32094aff7e222287904f098a50c",
    "exports": [
     "mncs_mncs_harness_atlas_v1__dispatch__gate",
@@ -111,7 +111,7 @@
   "harness_atlas.bytecode.json": {
    "module": "mncs.harness.atlas.v1",
    "backend": "mncs-research-bytecode",
-   "identity": "mncs:compiler:backend-artifact:7d9c9889e27aacfd828dcd401a2c56e9efef0a360709a6c49a0f9dc6978f2f08",
+   "identity": "mncs:compiler:backend-artifact:d603992b3419719278a5e582c8927451a9ff4894aa25def53a439ec276e90af3",
    "bytes_sha256": "648136b1855b331e7fc39a09782d66cbadc3847459aeee54c3801f138af5f225",
    "exports": [
     "dispatch_gate",
@@ -128,7 +128,7 @@
   "harness_pins.wasm.json": {
    "module": "mncs.harness.pins.v1",
    "backend": "mncs-portable-wasm-mvp",
-   "identity": "mncs:compiler:backend-artifact:80b0c417db1d6cd08daa84a62fcd5c4d678ed0ecaf3a86212c090b2c746b8f47",
+   "identity": "mncs:compiler:backend-artifact:03d3b3510f022afbb3165efdec515718e432621426b032a0cf84d4f5554617ee",
    "bytes_sha256": "dc2701416516ae58960f3fb2185da8e877fac801966e05af2f9708212aff2cb4",
    "exports": [
     "mncs_mncs_harness_pins_v1__admit__placement",
@@ -148,7 +148,7 @@
   "harness_pins.bytecode.json": {
    "module": "mncs.harness.pins.v1",
    "backend": "mncs-research-bytecode",
-   "identity": "mncs:compiler:backend-artifact:717867c28e4dbf205398fb06f0380cf3ef39891969327141abc592175edb8e5d",
+   "identity": "mncs:compiler:backend-artifact:e8b53107b593d1e465cbcab1836ae4434f5c062b34599c122b8b1cc58ce508b6",
    "bytes_sha256": "30504745bae88e980414a2cf3c61b7ab6ae48bf7b413004fc051885ee57160c0",
    "exports": [
     "admit_placement",
@@ -168,7 +168,7 @@
   "harness_fabric.wasm.json": {
    "module": "mncs.harness.fabric.v1",
    "backend": "mncs-portable-wasm-mvp",
-   "identity": "mncs:compiler:backend-artifact:bc6d355244ba022d330c0c6c00b3f711cab019eb765302e52f0e0b931ace749f",
+   "identity": "mncs:compiler:backend-artifact:59ebfc6a590506437e69cbac021b870688da6a353b0701efb673f95b7ede737a",
    "bytes_sha256": "1992e050392183c3043483872c4c3472a9418960371040340979266545feaa88",
    "exports": [
     "mncs_mncs_harness_fabric_v1__classify__fabric",
@@ -181,7 +181,7 @@
   "harness_fabric.bytecode.json": {
    "module": "mncs.harness.fabric.v1",
    "backend": "mncs-research-bytecode",
-   "identity": "mncs:compiler:backend-artifact:df2c5ec5ec4fd25511b7c7ee88a27d2cd14f58c003d69a932973efa97db7b98c",
+   "identity": "mncs:compiler:backend-artifact:faffa1fcfad926314bcc5af684b616ad2ff316a22a9cf10d3f241050749561ea",
    "bytes_sha256": "4bf63b2df8684a6053c157885c544fa9a5040b5cb0682af7680c11a1ffd094a6",
    "exports": [
     "classify_fabric",
@@ -194,7 +194,7 @@
   "harness_readiness.wasm.json": {
    "module": "mncs.harness.readiness.v1",
    "backend": "mncs-portable-wasm-mvp",
-   "identity": "mncs:compiler:backend-artifact:b33484aa5dd090fe8222ace8059a951fd6cdbbe8bde9e6b82a4e2d3394525e1b",
+   "identity": "mncs:compiler:backend-artifact:dcd283c119669c09ab557686bad1a5bacb695f4bd95633716108cac63dbd3d5c",
    "bytes_sha256": "52ebc5bbd138a1b387667ddfe769b7fd522a64452cec05294c2630aa0ff739cd",
    "exports": [
     "mncs_mncs_harness_readiness_v1__dominate__readiness",
@@ -211,7 +211,7 @@
   "harness_readiness.bytecode.json": {
    "module": "mncs.harness.readiness.v1",
    "backend": "mncs-research-bytecode",
-   "identity": "mncs:compiler:backend-artifact:6832eaccb54a70f7f3b2052ceed0b05d6520cd86cf02001d4d60f71a2fdad7a2",
+   "identity": "mncs:compiler:backend-artifact:d0ec0444f3648f043e839dda1588b0aed4a7d9d137439a6cdd6996bd5f5cee78",
    "bytes_sha256": "e3386989411b7cb3371c204c2cba69416dbe0ad55f17657114a2966de8b2bf8e",
    "exports": [
     "dominate_readiness",
@@ -229,7 +229,7 @@
   "harness_eligibility.wasm.json": {
    "module": "mncs.harness.eligibility.v1",
    "backend": "mncs-portable-wasm-mvp",
-   "identity": "mncs:compiler:backend-artifact:b85a068e1e86a28722f133277a4e73a52ef318e38efec3d5979239d36f8441cb",
+   "identity": "mncs:compiler:backend-artifact:7174494ed0e4c22645efe4a92b33b5a066d40b69d079dfe2e460c23f9136b630",
    "bytes_sha256": "eb07a5c25b198290c06728768ab5a1fffe4be097e552def7b3ded108a3727a6d",
    "exports": [
     "mncs_mncs_harness_eligibility_v1__capability__eligible",
@@ -251,7 +251,7 @@
   "harness_eligibility.bytecode.json": {
    "module": "mncs.harness.eligibility.v1",
    "backend": "mncs-research-bytecode",
-   "identity": "mncs:compiler:backend-artifact:4b59df0a87718e22f95865c58655414744dd39994827cff0da1c60116430d605",
+   "identity": "mncs:compiler:backend-artifact:c5b4ddb33099322c72286b155c39b3953b60aefba45a2c706274b95cf6ddc22f",
    "bytes_sha256": "47a8400443fa9ad8de5a523a0de4877a3c6b4e82876fd59f978c33ef685f2bcc",
    "exports": [
     "capability_eligible",
@@ -273,7 +273,7 @@
   "harness_freshness.wasm.json": {
    "module": "mncs.harness.freshness.v1",
    "backend": "mncs-portable-wasm-mvp",
-   "identity": "mncs:compiler:backend-artifact:a21908e4883359f8cdff5e1ea6c6412218b06b6b8f8a0226acfcc79280f3134c",
+   "identity": "mncs:compiler:backend-artifact:e7ef88f79e013863676b9df58039f779d2699424544d4c960f00aa4f8f291d9e",
    "bytes_sha256": "e2ca26116ffb64500d89b60c4bf892c161711719c929d665ca0ddd192aac25d4",
    "exports": [
     "mncs_mncs_harness_freshness_v1__attestation__window__ok",
@@ -286,7 +286,7 @@
   "harness_freshness.bytecode.json": {
    "module": "mncs.harness.freshness.v1",
    "backend": "mncs-research-bytecode",
-   "identity": "mncs:compiler:backend-artifact:0e9ee0a5448a7a9baba285396cb46d0a3b73d42970dc02e384217db0df209648",
+   "identity": "mncs:compiler:backend-artifact:cbeed5ce82485eac822076db8fcd1b5de5a94ed87d2948cf774faf6f2dbe3334",
    "bytes_sha256": "63205043eba48ddd4ce642086553c3d471031b1f7e3407a4c74aeebd440cf3fb",
    "exports": [
     "attestation_window_ok",

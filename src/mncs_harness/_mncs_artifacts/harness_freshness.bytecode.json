@@ -1,6 +1,6 @@
 {
- "schema_version": "0.5",
- "identity": "mncs:compiler:backend-artifact:0e9ee0a5448a7a9baba285396cb46d0a3b73d42970dc02e384217db0df209648",
+ "schema_version": "0.6",
+ "identity": "mncs:compiler:backend-artifact:cbeed5ce82485eac822076db8fcd1b5de5a94ed87d2948cf774faf6f2dbe3334",
  "backend": {
   "identity": "mncs:compiler:backend:1f24243c2c15f1826cd129742e8217e09fab7a2911123043814f5c7ae5f16910",
   "name": "mncs-research-bytecode",
@@ -37,6 +37,7 @@
   "attestation_window_ok",
   "observation_fresh"
  ],
+ "interface_identity": "ddac6885bd23b33b201ac06d3cc44c971b807fb1684d985a7c6e3f7a4fd5cff0",
  "function_value_contracts": {
   "attestation_window_ok": {
    "inputs": [
@@ -77,6 +78,14 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "issued_at",
+    "now",
+    "max_age"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.freshness.v1::attestation_window_ok": {
@@ -118,6 +127,14 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "issued_at",
+    "now",
+    "max_age"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.freshness.v1::observation_fresh": {
@@ -159,6 +176,14 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "stored",
+    "now",
+    "max_age"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "observation_fresh": {
@@ -200,6 +225,14 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "stored",
+    "now",
+    "max_age"
+   ],
+   "output_names": [
+    "result"
    ]
   }
  },

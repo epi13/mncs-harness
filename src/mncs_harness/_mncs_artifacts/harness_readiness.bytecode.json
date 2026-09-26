@@ -1,6 +1,6 @@
 {
- "schema_version": "0.5",
- "identity": "mncs:compiler:backend-artifact:6832eaccb54a70f7f3b2052ceed0b05d6520cd86cf02001d4d60f71a2fdad7a2",
+ "schema_version": "0.6",
+ "identity": "mncs:compiler:backend-artifact:d0ec0444f3648f043e839dda1588b0aed4a7d9d137439a6cdd6996bd5f5cee78",
  "backend": {
   "identity": "mncs:compiler:backend:1f24243c2c15f1826cd129742e8217e09fab7a2911123043814f5c7ae5f16910",
   "name": "mncs-research-bytecode",
@@ -42,6 +42,7 @@
   "fold_readiness__spec_f10cf230",
   "is_ready"
  ],
+ "interface_identity": "f292d08b8a72c06d5c3128b653ee99157654e14866e7e6f4e8affcbc28c7f41e",
  "function_value_contracts": {
   "dominate_readiness": {
    "inputs": [
@@ -101,6 +102,13 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "left",
+    "right"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "fold4": {
@@ -197,6 +205,15 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "first",
+    "second",
+    "third",
+    "fourth"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "fold8": {
@@ -365,6 +382,19 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "first",
+    "second",
+    "third",
+    "fourth",
+    "fifth",
+    "sixth",
+    "seventh",
+    "eighth"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "fold_readiness": {
@@ -403,6 +433,12 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "layers"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "fold_readiness__spec_5e828a01": {
@@ -439,6 +475,12 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "layers"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "fold_readiness__spec_f10cf230": {
@@ -475,6 +517,12 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "layers"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "is_ready": {
@@ -504,6 +552,12 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "state"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.readiness.v1::dominate_readiness": {
@@ -564,6 +618,13 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "left",
+    "right"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.readiness.v1::fold4": {
@@ -660,6 +721,15 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "first",
+    "second",
+    "third",
+    "fourth"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.readiness.v1::fold8": {
@@ -828,6 +898,19 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "first",
+    "second",
+    "third",
+    "fourth",
+    "fifth",
+    "sixth",
+    "seventh",
+    "eighth"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.readiness.v1::fold_readiness": {
@@ -866,6 +949,12 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "layers"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.readiness.v1::fold_readiness__spec_5e828a01": {
@@ -902,6 +991,12 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "layers"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.readiness.v1::fold_readiness__spec_f10cf230": {
@@ -938,6 +1033,12 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "layers"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.readiness.v1::is_ready": {
@@ -967,6 +1068,12 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "state"
+   ],
+   "output_names": [
+    "result"
    ]
   }
  },

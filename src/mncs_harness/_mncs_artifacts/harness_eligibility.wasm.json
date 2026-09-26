@@ -1,6 +1,6 @@
 {
- "schema_version": "0.5",
- "identity": "mncs:compiler:backend-artifact:b85a068e1e86a28722f133277a4e73a52ef318e38efec3d5979239d36f8441cb",
+ "schema_version": "0.6",
+ "identity": "mncs:compiler:backend-artifact:7174494ed0e4c22645efe4a92b33b5a066d40b69d079dfe2e460c23f9136b630",
  "backend": {
   "identity": "mncs:compiler:backend:6bbc6f37c38ffa3353787ff9ea565d07db3755b42efa8a59871374123adbca15",
   "name": "mncs-portable-wasm-mvp",
@@ -47,6 +47,7 @@
   "mncs_mncs_harness_eligibility_v1__tools__gate",
   "mncs_mncs_harness_eligibility_v1__tools__unknown"
  ],
+ "interface_identity": "8c986e3aacb69ddea43b4d5a456e40f08313c8170dd0e74c5286ab449a22344b",
  "function_value_contracts": {
   "capability_eligible": {
    "inputs": [
@@ -122,6 +123,17 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "gate",
+    "observed",
+    "claimed",
+    "unknown_policy",
+    "require_observed",
+    "allow_unclaimed"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "capability_source": {
@@ -164,6 +176,15 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "available",
+    "inventory_current",
+    "observation_present",
+    "legacy_present"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "code_edit_gate": {
@@ -191,6 +212,12 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "observed"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "completion_fail_closed": {
@@ -207,6 +234,12 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "require_observed"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "completion_gate": {
@@ -262,6 +295,15 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "observed",
+    "claimed",
+    "unknown_policy",
+    "require_observed"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "completion_unknown": {
@@ -301,6 +343,14 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "claimed",
+    "unknown_policy",
+    "require_observed"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.eligibility.v1::capability_eligible": {
@@ -377,6 +427,17 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "gate",
+    "observed",
+    "claimed",
+    "unknown_policy",
+    "require_observed",
+    "allow_unclaimed"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.eligibility.v1::capability_source": {
@@ -419,6 +480,15 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "available",
+    "inventory_current",
+    "observation_present",
+    "legacy_present"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.eligibility.v1::code_edit_gate": {
@@ -446,6 +516,12 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "observed"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.eligibility.v1::completion_fail_closed": {
@@ -462,6 +538,12 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "require_observed"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.eligibility.v1::completion_gate": {
@@ -517,6 +599,15 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "observed",
+    "claimed",
+    "unknown_policy",
+    "require_observed"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.eligibility.v1::completion_unknown": {
@@ -556,6 +647,14 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "claimed",
+    "unknown_policy",
+    "require_observed"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.eligibility.v1::residency_admit": {
@@ -582,6 +681,14 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "has_conflicts",
+    "reject_conflicting",
+    "already_loaded"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.eligibility.v1::resource_gate": {
@@ -646,6 +753,16 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "facts_complete",
+    "size",
+    "budget",
+    "has_available",
+    "available"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.eligibility.v1::tools_compat": {
@@ -662,6 +779,12 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "allow_unclaimed"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.eligibility.v1::tools_gate": {
@@ -722,6 +845,16 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "observed",
+    "claimed",
+    "unknown_policy",
+    "require_observed",
+    "allow_unclaimed"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.eligibility.v1::tools_unknown": {
@@ -766,6 +899,15 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "claimed",
+    "unknown_policy",
+    "require_observed",
+    "allow_unclaimed"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "residency_admit": {
@@ -792,6 +934,14 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "has_conflicts",
+    "reject_conflicting",
+    "already_loaded"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "resource_gate": {
@@ -856,6 +1006,16 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "facts_complete",
+    "size",
+    "budget",
+    "has_available",
+    "available"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "tools_compat": {
@@ -872,6 +1032,12 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "allow_unclaimed"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "tools_gate": {
@@ -932,6 +1098,16 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "observed",
+    "claimed",
+    "unknown_policy",
+    "require_observed",
+    "allow_unclaimed"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "tools_unknown": {
@@ -976,6 +1152,15 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "claimed",
+    "unknown_policy",
+    "require_observed",
+    "allow_unclaimed"
+   ],
+   "output_names": [
+    "result"
    ]
   }
  },

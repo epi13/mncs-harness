@@ -1,6 +1,6 @@
 {
- "schema_version": "0.5",
- "identity": "mncs:compiler:backend-artifact:df2c5ec5ec4fd25511b7c7ee88a27d2cd14f58c003d69a932973efa97db7b98c",
+ "schema_version": "0.6",
+ "identity": "mncs:compiler:backend-artifact:faffa1fcfad926314bcc5af684b616ad2ff316a22a9cf10d3f241050749561ea",
  "backend": {
   "identity": "mncs:compiler:backend:1f24243c2c15f1826cd129742e8217e09fab7a2911123043814f5c7ae5f16910",
   "name": "mncs-research-bytecode",
@@ -37,6 +37,7 @@
   "classify_fabric",
   "dispatch_allowed"
  ],
+ "interface_identity": "e30d9547d7dd45445d4346411df3568310836c1cb6e8296e7edd207822b27ae3",
  "function_value_contracts": {
   "classify_fabric": {
    "inputs": [
@@ -89,6 +90,16 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "missing_any",
+    "parseable",
+    "too_old",
+    "exact",
+    "version_is_certified"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "dispatch_allowed": {
@@ -122,6 +133,12 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "class"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.fabric.v1::classify_fabric": {
@@ -175,6 +192,16 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "missing_any",
+    "parseable",
+    "too_old",
+    "exact",
+    "version_is_certified"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.fabric.v1::dispatch_allowed": {
@@ -208,6 +235,12 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "class"
+   ],
+   "output_names": [
+    "result"
    ]
   }
  },

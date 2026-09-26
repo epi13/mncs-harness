@@ -47,6 +47,34 @@ REQUIRED_EXPORTS = {
     "harness_eligibility": {"capability_eligible", "capability_source", "residency_admit", "resource_gate"},
 }
 
+# Backend export spellings differ: the research-bytecode artifacts keep source
+# function names while the portable-wasm-mvp artifacts mangle them as
+# ``mncs_<dotted.module.with.underscores>__<name.with.__.escapes>``. The
+# gate accepts either spelling so a compiler-side naming change fails
+# closed (verdict FAIL with the artifact named) rather than comparing
+# against only one backend's convention.
+def _wasm_spelling(module: str, name: str) -> str:
+    return "mncs_" + module.replace(".", "_") + "__" + name.replace("_", "__")
+
+
+def _missing_exports(module: str, backend: str, required: set[str], actual: set[str]) -> set[str]:
+    """Required exports absent in BOTH spellings.
+
+    Research-bytecode artifacts keep source names; portable-wasm-mvp
+    artifacts mangle them (see _wasm_spelling). Each required export must
+    appear in at least one spelling; a compiler-side naming change fails
+    closed with the artifact named.
+    """
+    missing = set()
+    for name in required:
+        if name in actual:
+            continue
+        if backend == "mncs-portable-wasm-mvp" and _wasm_spelling(module, name) in actual:
+            continue
+        missing.add(name)
+    return missing
+
+
 # (label, mncs_exec function, args, expected) — expectations are hardcoded
 # here, never sourced from the Python mirror.
 LIVE_VECTORS = [
@@ -126,8 +154,15 @@ def _static_gates(repo: Path) -> list[str]:
         if raw.get("status") != "PASS":
             raise RuntimeError(f"artifact {name} is not a PASS artifact")
         kernel = name.split(".")[0]
-        if kernel in REQUIRED_EXPORTS and not REQUIRED_EXPORTS[kernel] <= set(entry.get("exports", [])):
-            raise RuntimeError(f"artifact {name} missing required exports")
+        if kernel in REQUIRED_EXPORTS:
+            missing = _missing_exports(
+                str(entry.get("module", "")),
+                str(entry.get("backend", "")),
+                REQUIRED_EXPORTS[kernel],
+                set(entry.get("exports", [])),
+            )
+            if missing:
+                raise RuntimeError(f"artifact {name} missing required exports: {sorted(missing)}")
         checked += 1
     notes.append(f"{checked} shipped artifacts validate (identity+digest+exports)")
 

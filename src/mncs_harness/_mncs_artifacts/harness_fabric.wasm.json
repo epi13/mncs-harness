@@ -1,6 +1,6 @@
 {
- "schema_version": "0.5",
- "identity": "mncs:compiler:backend-artifact:bc6d355244ba022d330c0c6c00b3f711cab019eb765302e52f0e0b931ace749f",
+ "schema_version": "0.6",
+ "identity": "mncs:compiler:backend-artifact:59ebfc6a590506437e69cbac021b870688da6a353b0701efb673f95b7ede737a",
  "backend": {
   "identity": "mncs:compiler:backend:6bbc6f37c38ffa3353787ff9ea565d07db3755b42efa8a59871374123adbca15",
   "name": "mncs-portable-wasm-mvp",
@@ -38,6 +38,7 @@
   "mncs_mncs_harness_fabric_v1__classify__fabric",
   "mncs_mncs_harness_fabric_v1__dispatch__allowed"
  ],
+ "interface_identity": "e30d9547d7dd45445d4346411df3568310836c1cb6e8296e7edd207822b27ae3",
  "function_value_contracts": {
   "classify_fabric": {
    "inputs": [
@@ -90,6 +91,16 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "missing_any",
+    "parseable",
+    "too_old",
+    "exact",
+    "version_is_certified"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "dispatch_allowed": {
@@ -123,6 +134,12 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "class"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.fabric.v1::classify_fabric": {
@@ -176,6 +193,16 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "missing_any",
+    "parseable",
+    "too_old",
+    "exact",
+    "version_is_certified"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.fabric.v1::dispatch_allowed": {
@@ -209,6 +236,12 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "class"
+   ],
+   "output_names": [
+    "result"
    ]
   }
  },

@@ -10,12 +10,11 @@ least one entry; statuses are `MNCS-EXECUTED`, `HOST-EFFECT-BOUNDARY`,
 - `BLOCKED:HARNESS-PRESSURE-001`: 5
 - `BLOCKED:HARNESS-PRESSURE-002`: 2
 - `BLOCKED:HARNESS-PRESSURE-004`: 1
-- `BLOCKED:HARNESS-PRESSURE-005`: 3
 - `BLOCKED:HARNESS-PRESSURE-006`: 1
 - `BLOCKED:HARNESS-PRESSURE-007`: 1
 - `BLOCKED:HARNESS-PRESSURE-009`: 1
-- `HOST-EFFECT-BOUNDARY`: 37
-- `MNCS-EXECUTED`: 33
+- `HOST-EFFECT-BOUNDARY`: 40
+- `MNCS-EXECUTED`: 35
 - `TEST-BUILD-ONLY`: 4
 
 ## Entries
@@ -28,8 +27,9 @@ least one entry; statuses are `MNCS-EXECUTED`, `HOST-EFFECT-BOUNDARY`,
 - `agent.tool-loop/runtime` — **BLOCKED:HARNESS-PRESSURE-007** — Multi-turn loop, spawning, cancellation need concurrency.
 - `atlas_binding._fold_capability` — **MNCS-EXECUTED** — Duplicate-decision fold executes mncs.harness.atlas.v1::fold4 via mncs_exec.fold; reasons/outstanding host-side.
 - `atlas_binding.confirm_execution` — **MNCS-EXECUTED** — Final target comparison executes mncs.harness.atlas.v1::dispatch_gate via mncs_exec.dispatch_gate; freshness/signature host-side.
-- `atlas_binding.freshness/session` — **BLOCKED:HARNESS-PRESSURE-005** — Freshness windows and session echo need a clock.
-- `atlas_binding.signature/digest-verify` — **BLOCKED:HARNESS-PRESSURE-006** — Ed25519 issuance verification and SHA-256 canonical digests need crypto.
+- `atlas_binding.freshness/session` — **MNCS-EXECUTED** — Attestation window verdict executes mncs.harness.freshness.v1::attestation_window_ok via mncs_exec inside check_attestation; host owns shape checks, issuer trust, and signatures.
+- `atlas_binding.signature/digest-verify` — **BLOCKED:HARNESS-PRESSURE-006** — Ed25519 issuance verification and SHA-256 canonical digests need crypto over arbitrary-length messages; verify-only primitives exist (HARNESS-PRESSURE-006) but the 64-byte view bound blocks them here. Narrowest next primitive: chunked/streaming digest.
+- `atlas_context.capsule` — **HOST-EFFECT-BOUNDARY** — Optional Atlas CLI subprocess invocation, output truncation, and fail-closed parsing are host transport/observation effects; no family-knowledge model is maintained.
 - `bridge.bridge` — **HOST-EFFECT-BOUNDARY** — JSON-RPC stdio transport to the extension host.
 - `capability_graph.build_capability_graph` — **MNCS-EXECUTED** — Inventory-source selection executes mncs.harness.eligibility.v1::capability_source via mncs_exec; string matching/sorting/paths host-side.
 - `cli.cli` — **HOST-EFFECT-BOUNDARY** — Subcommand dispatch, approval interaction, output rendering.
@@ -59,8 +59,9 @@ least one entry; statuses are `MNCS-EXECUTED`, `HOST-EFFECT-BOUNDARY`,
 - `fabric_profile_inventory.profiles` — **HOST-EFFECT-BOUNDARY** — Inventory-backed profile resolution over files.
 - `fabric_target_tools.target-tools` — **HOST-EFFECT-BOUNDARY** — Worker-side tool shims over transports.
 - `fabric_test_support.fixtures` — **TEST-BUILD-ONLY** — Test fixtures and fakes for distributed tests.
+- `family_context.packet` — **HOST-EFFECT-BOUNDARY** — Language-service CLI subprocess invocation and packet validation with fail-closed UNKNOWN preservation are host transport/parsing effects.
 - `fleet.role_availability` — **HOST-EFFECT-BOUNDARY** — Row availability is string-identity set membership over live inventory plus delegation to fabric_session.resolve (external); no bounded numeric/threshold decision exists to move (strings blocked by HARNESS-PRESSURE-001).
-- `metrics.metrics/events` — **BLOCKED:HARNESS-PRESSURE-005** — Timestamps, durations, and SQLite persistence need clock + storage.
+- `metrics.metrics/events` — **HOST-EFFECT-BOUNDARY** — Timestamps flow through clock_read/mncs.harness.freshness.v1; SQLite persistence of metric events is a storage effect owned by the host.
 - `mncs.atlas-fold` — **MNCS-EXECUTED** — mncs/harness_atlas.mncs generic fold_all<4> over fold4 envelope + fold_pair/dispatch_gate/tool_admission executed via mncs_exec.
 - `mncs.capability_source` — **MNCS-EXECUTED** — mncs/harness_eligibility.mncs inventory-source selection executed via mncs_exec by capability_graph.
 - `mncs.classify_route` — **MNCS-EXECUTED** — mncs/harness_routing.mncs executed via mncs_exec on every route.
@@ -92,7 +93,7 @@ least one entry; statuses are `MNCS-EXECUTED`, `HOST-EFFECT-BOUNDARY`,
 - `prompts.system_prompt` — **BLOCKED:HARNESS-PRESSURE-001** — Prompt templates are string construction.
 - `provider.dispatch` — **HOST-EFFECT-BOUNDARY** — Provider dispatch over HTTP/subprocess transports.
 - `residency._resource_decision` — **MNCS-EXECUTED** — Integer budget/availability verdict executes mncs.harness.eligibility.v1::resource_gate via mncs_exec.resource_gate; facts contract unchanged.
-- `residency.observation-freshness` — **BLOCKED:HARNESS-PRESSURE-005** — Age arithmetic and timeouts need a clock.
+- `residency.observation-freshness` — **MNCS-EXECUTED** — Window verdict executes mncs.harness.freshness.v1::observation_fresh via mncs_exec; host owns ISO parsing, clock reads, and integer-ms marshaling.
 - `residency.probes/transports` — **HOST-EFFECT-BOUNDARY** — Probe subprocesses and Ollama HTTP are process/network effects.
 - `residency.reconcile-conflict` — **MNCS-EXECUTED** — Implicit-eviction veto executes mncs.harness.eligibility.v1::residency_admit via mncs_exec; inventory/freshness probes host-side.
 - `router._deterministic_route` — **MNCS-EXECUTED** — Primary classification + coder chain execute mncs.harness.routing.v1::classify_route/::needs_coder via mncs_exec.primary_role/needs_coder; availability mapping host-side.

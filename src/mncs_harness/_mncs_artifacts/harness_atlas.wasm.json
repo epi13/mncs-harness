@@ -1,6 +1,6 @@
 {
- "schema_version": "0.5",
- "identity": "mncs:compiler:backend-artifact:1643d3a641fe552832e59c16244c59ac561aca4282d960ef5ebd337b3965bf0e",
+ "schema_version": "0.6",
+ "identity": "mncs:compiler:backend-artifact:7e517964ba30f8888570ddd94cb277c22335bd1e894789eeb51a0053299fe4bf",
  "backend": {
   "identity": "mncs:compiler:backend:6bbc6f37c38ffa3353787ff9ea565d07db3755b42efa8a59871374123adbca15",
   "name": "mncs-portable-wasm-mvp",
@@ -41,6 +41,7 @@
   "mncs_mncs_harness_atlas_v1__fold__pair",
   "mncs_mncs_harness_atlas_v1__tool__admission"
  ],
+ "interface_identity": "527c5c9017300314fbc7c5b0266ee18c67042116e685d5f285e0fef06957b858",
  "function_value_contracts": {
   "dispatch_gate": {
    "inputs": [
@@ -83,6 +84,13 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "folded",
+    "target_matches"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "fold4": {
@@ -169,6 +177,15 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "first",
+    "second",
+    "third",
+    "fourth"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "fold_all": {
@@ -205,6 +222,12 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "grants"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "fold_all__spec_f10cf230": {
@@ -239,6 +262,12 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "grants"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "fold_pair": {
@@ -293,6 +322,13 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "left",
+    "right"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.atlas.v1::dispatch_gate": {
@@ -336,6 +372,13 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "folded",
+    "target_matches"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.atlas.v1::fold4": {
@@ -422,6 +465,15 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "first",
+    "second",
+    "third",
+    "fourth"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.atlas.v1::fold_all": {
@@ -458,6 +510,12 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "grants"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.atlas.v1::fold_all__spec_f10cf230": {
@@ -492,6 +550,12 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "grants"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.atlas.v1::fold_pair": {
@@ -546,6 +610,13 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "left",
+    "right"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.atlas.v1::tool_admission": {
@@ -578,6 +649,13 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "granted",
+    "covered"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "tool_admission": {
@@ -610,6 +688,13 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "granted",
+    "covered"
+   ],
+   "output_names": [
+    "result"
    ]
   }
  },

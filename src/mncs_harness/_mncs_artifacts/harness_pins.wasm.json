@@ -1,6 +1,6 @@
 {
- "schema_version": "0.5",
- "identity": "mncs:compiler:backend-artifact:80b0c417db1d6cd08daa84a62fcd5c4d678ed0ecaf3a86212c090b2c746b8f47",
+ "schema_version": "0.6",
+ "identity": "mncs:compiler:backend-artifact:03d3b3510f022afbb3165efdec515718e432621426b032a0cf84d4f5554617ee",
  "backend": {
   "identity": "mncs:compiler:backend:6bbc6f37c38ffa3353787ff9ea565d07db3755b42efa8a59871374123adbca15",
   "name": "mncs-portable-wasm-mvp",
@@ -45,6 +45,7 @@
   "mncs_mncs_harness_pins_v1__pin__fields__valid",
   "mncs_mncs_harness_pins_v1__worker__and__model"
  ],
+ "interface_identity": "9538730c8405d090910fcf574f036608aea378688b22f06f575097a956ae8af2",
  "function_value_contracts": {
   "admit_placement": {
    "inputs": [
@@ -83,6 +84,14 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "auto_or_role",
+    "selection_present",
+    "allow_fallback"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "all_pins": {
@@ -109,6 +118,14 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "has_role",
+    "has_worker",
+    "has_model"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "is_exact_pin": {
@@ -142,6 +159,12 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "mode"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.pins.v1::admit_placement": {
@@ -181,6 +204,14 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "auto_or_role",
+    "selection_present",
+    "allow_fallback"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.pins.v1::all_pins": {
@@ -207,6 +238,14 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "has_role",
+    "has_worker",
+    "has_model"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.pins.v1::is_exact_pin": {
@@ -240,6 +279,12 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "mode"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.pins.v1::no_flags": {
@@ -266,6 +311,14 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "has_role",
+    "has_worker",
+    "has_model"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.pins.v1::only_model": {
@@ -292,6 +345,14 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "has_role",
+    "has_worker",
+    "has_model"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.pins.v1::only_role": {
@@ -318,6 +379,14 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "has_role",
+    "has_worker",
+    "has_model"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.pins.v1::only_worker": {
@@ -344,6 +413,14 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "has_role",
+    "has_worker",
+    "has_model"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.pins.v1::pin_fields_valid": {
@@ -392,6 +469,15 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "mode",
+    "has_role",
+    "has_worker",
+    "has_model"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.pins.v1::worker_and_model": {
@@ -418,6 +504,14 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "has_role",
+    "has_worker",
+    "has_model"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "no_flags": {
@@ -444,6 +538,14 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "has_role",
+    "has_worker",
+    "has_model"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "only_model": {
@@ -470,6 +572,14 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "has_role",
+    "has_worker",
+    "has_model"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "only_role": {
@@ -496,6 +606,14 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "has_role",
+    "has_worker",
+    "has_model"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "only_worker": {
@@ -522,6 +640,14 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "has_role",
+    "has_worker",
+    "has_model"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "pin_fields_valid": {
@@ -570,6 +696,15 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "mode",
+    "has_role",
+    "has_worker",
+    "has_model"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "worker_and_model": {
@@ -596,6 +731,14 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "has_role",
+    "has_worker",
+    "has_model"
+   ],
+   "output_names": [
+    "result"
    ]
   }
  },

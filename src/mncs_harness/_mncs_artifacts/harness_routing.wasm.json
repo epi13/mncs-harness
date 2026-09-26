@@ -1,6 +1,6 @@
 {
- "schema_version": "0.5",
- "identity": "mncs:compiler:backend-artifact:28313559259fbf16d771d94e0a3b1535e0498d3469487ddc3928d14c7f95e53c",
+ "schema_version": "0.6",
+ "identity": "mncs:compiler:backend-artifact:ed05c09619411bbe5e96806c61a7e7ae0d6dc66d76e58b62b6a4d6c68d37bb7b",
  "backend": {
   "identity": "mncs:compiler:backend:6bbc6f37c38ffa3353787ff9ea565d07db3755b42efa8a59871374123adbca15",
   "name": "mncs-portable-wasm-mvp",
@@ -38,6 +38,7 @@
   "mncs_mncs_harness_routing_v1__classify__route",
   "mncs_mncs_harness_routing_v1__needs__coder"
  ],
+ "interface_identity": "9b711d569171923997f513a1031d70fddec55889e86f7c1df346342ce9286f88",
  "function_value_contracts": {
   "classify_route": {
    "inputs": [
@@ -91,6 +92,17 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "has_code",
+    "asks_edit",
+    "asks_exec",
+    "is_high_risk",
+    "has_image",
+    "is_complex"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.routing.v1::classify_route": {
@@ -145,6 +157,17 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "has_code",
+    "asks_edit",
+    "asks_exec",
+    "is_high_risk",
+    "has_image",
+    "is_complex"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.routing.v1::needs_coder": {
@@ -184,6 +207,14 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "primary",
+    "code_specialist",
+    "has_code"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "needs_coder": {
@@ -223,6 +254,14 @@
       "semantic_type": "bool"
      }
     }
+   ],
+   "input_names": [
+    "primary",
+    "code_specialist",
+    "has_code"
+   ],
+   "output_names": [
+    "result"
    ]
   }
  },

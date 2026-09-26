@@ -1,6 +1,6 @@
 {
- "schema_version": "0.5",
- "identity": "mncs:compiler:backend-artifact:fda888d4e8997de2602862a7aa0efedc6a596082f5d79ba3fa3954ddecef8c82",
+ "schema_version": "0.6",
+ "identity": "mncs:compiler:backend-artifact:5214b1c5169e266bf2e0092ca356bfde160da852e32a94e435e0eb45e8198090",
  "backend": {
   "identity": "mncs:compiler:backend:6bbc6f37c38ffa3353787ff9ea565d07db3755b42efa8a59871374123adbca15",
   "name": "mncs-portable-wasm-mvp",
@@ -40,6 +40,7 @@
   "mncs_mncs_harness_policy_v1__publication__gate",
   "mncs_mncs_harness_policy_v1__reason__of"
  ],
+ "interface_identity": "4fe2faf74484ec4148aaafd65035d25c67c81b5a37c19c357bc495bd5bff4505",
  "function_value_contracts": {
   "evaluate_command": {
    "inputs": [
@@ -108,6 +109,18 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "executable_blocked",
+    "allowlisted",
+    "has_shell_operator",
+    "shell_ok",
+    "python_ok",
+    "git_ok",
+    "path_ok"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "evaluate_write": {
@@ -147,6 +160,12 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "targets_protected_internals"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.policy.v1::evaluate_command": {
@@ -216,6 +235,18 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "executable_blocked",
+    "allowlisted",
+    "has_shell_operator",
+    "shell_ok",
+    "python_ok",
+    "git_ok",
+    "path_ok"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.policy.v1::evaluate_write": {
@@ -255,6 +286,12 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "targets_protected_internals"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.policy.v1::publication_gate": {
@@ -294,6 +331,14 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "configured",
+    "session_ready",
+    "record_present"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "mncs.harness.policy.v1::reason_of": {
@@ -338,6 +383,12 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "verdict"
+   ],
+   "output_names": [
+    "result_code"
    ]
   },
   "publication_gate": {
@@ -377,6 +428,14 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "configured",
+    "session_ready",
+    "record_present"
+   ],
+   "output_names": [
+    "result"
    ]
   },
   "reason_of": {
@@ -421,6 +480,12 @@
       }
      }
     }
+   ],
+   "input_names": [
+    "verdict"
+   ],
+   "output_names": [
+    "result_code"
    ]
   }
  },
