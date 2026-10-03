@@ -1,6 +1,20 @@
 # MNCS Harness
 
 <!-- MNCS:generated:begin -->
+## Project entry
+
+MNCS Harness is a policy-aware operator harness for routing work across configured models, executing narrowly scoped tools, and accepting or escalating results for a particular deployment.
+
+```bash
+python -m unittest discover -s tests
+```
+
+Declared capabilities (declarations do not establish execution health):
+
+- `actor-provenance/0.1` — record-schema (experimental)
+- `experiment-stack/1` — record-schema (experimental)
+
+Semantic sources and ownership: `.mncs/projections.json`.
 <!-- MNCS:generated:end -->
 
 MNCS Harness is a policy-aware operator harness for routing work across

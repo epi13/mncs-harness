@@ -1,0 +1,65 @@
+{
+  "capabilities": [
+    {
+      "contract": "actor-provenance",
+      "fingerprint_sources": [
+        "src/mncs_harness/actor_provenance.py"
+      ],
+      "kind": "record-schema",
+      "stability": "experimental",
+      "version": "0.1"
+    },
+    {
+      "contract": "experiment-stack",
+      "fingerprint_sources": [
+        "src/mncs_harness/experiment_stack.py"
+      ],
+      "kind": "record-schema",
+      "stability": "experimental",
+      "version": "1"
+    }
+  ],
+  "dependencies": [
+    {
+      "contract": "mncs-fabric.public-controller-contract",
+      "envelope": {
+        "op": "compatible-minor",
+        "version": "0.2.0a17"
+      },
+      "evidence_refs": [
+        "src/mncs_harness/fabric_compat.py"
+      ],
+      "required": true
+    },
+    {
+      "contract": "mncs-commons.record-store-api",
+      "envelope": {
+        "op": "compatible-minor",
+        "version": "0.5.0.dev1"
+      },
+      "evidence_refs": [
+        "pyproject.toml"
+      ],
+      "required": true
+    },
+    {
+      "contract": "mncs-language-service.family-agent-context",
+      "envelope": {
+        "op": "compatible-minor",
+        "version": "1"
+      },
+      "evidence_refs": [
+        "src/mncs_harness/family_context.py"
+      ],
+      "required": true
+    }
+  ],
+  "entry": [
+    "python -m unittest discover -s tests"
+  ],
+  "purpose": "MNCS Harness is a policy-aware operator harness for routing work across configured models, executing narrowly scoped tools, and accepting or escalating results for a particular deployment.",
+  "repository": "mncs-harness",
+  "schema_version": "mncs.project-view/1",
+  "source_identity": "sha256:fb62e968d34b8e5ab4fea2f10ce39d3ee51b40651b70ec85d56e69dc5f91f002",
+  "structure": {}
+}
