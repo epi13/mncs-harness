@@ -1,5 +1,8 @@
 # MNCS Harness
 
+<!-- MNCS:generated:begin -->
+<!-- MNCS:generated:end -->
+
 MNCS Harness is a policy-aware operator harness for routing work across
 configured models, executing narrowly scoped tools, and accepting or escalating
 results for a particular deployment.

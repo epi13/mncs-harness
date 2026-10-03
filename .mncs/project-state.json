@@ -1,0 +1,17 @@
+{
+  "schema_version": "mncs.project-intent/1",
+  "purpose": "MNCS Harness is a policy-aware operator harness for routing work across configured models, executing narrowly scoped tools, and accepting or escalating results for a particular deployment.",
+  "entry": [
+    "python -m unittest discover -s tests"
+  ],
+  "milestones": [
+    {
+      "id": "mncs-harness:projection-conformance",
+      "title": "Declared ambient projection surfaces satisfy their contract",
+      "subject_slot": "declarations",
+      "evidence": "projection-conformance",
+      "dependencies": [],
+      "blockers": []
+    }
+  ]
+}
